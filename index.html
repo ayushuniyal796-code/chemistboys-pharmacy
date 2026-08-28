@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChemistBoys - Online Pharmacy & Medicine Store</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- NAVIGATION HEADER -->
+    <header class="header">
+        <div class="container">
+            <div class="header-top">
+                <div class="logo">
+                    <span class="logo-icon">💊</span>
+                    <span class="logo-text">ChemistBoys</span>
+                </div>
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="Search medicines, vitamins...">
+                    <button class="search-btn">🔍</button>
+                </div>
+                <div class="header-actions">
+                    <a href="#" class="account-btn">👤 Account</a>
+                    <a href="cart.html" class="cart-btn">
+                        🛒 Cart 
+                        <span class="cart-count" id="cartCount">0</span>
+                    </a>
+                </div>
+            </div>
+            <nav class="navbar">
+                <a href="#" class="nav-link active">Home</a>
+                <a href="#" class="nav-link">All Medicines</a>
+                <a href="#" class="nav-link">Vitamins</a>
+                <a href="#" class="nav-link">First Aid</a>
+                <a href="#" class="nav-link">Offers</a>
+                <a href="#" class="nav-link">About</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- HERO BANNER SECTION -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Your Health, Our Priority</h1>
+            <p class="hero-subtitle">Buy medicines online with doorstep delivery</p>
+            <button class="hero-btn">Shop Now</button>
+        </div>
+        <div class="hero-image">
+            💉
+        </div>
+    </section>
+
+    <!-- FILTER & SORTING SECTION -->
+    <section class="filter-section">
+        <div class="container">
+            <div class="filter-controls">
+                <select id="categoryFilter" class="filter-select">
+                    <option value="">All Categories</option>
+                    <option value="painrelief">Pain Relief</option>
+                    <option value="vitamins">Vitamins & Supplements</option>
+                    <option value="cough">Cough & Cold</option>
+                    <option value="firstaid">First Aid</option>
+                    <option value="skincare">Skin Care</option>
+                </select>
+
+                <select id="sortFilter" class="filter-select">
+                    <option value="">Sort By</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="rating">Rating</option>
+                    <option value="newest">Newest</option>
+                </select>
+
+                <input type="range" id="priceRange" min="0" max="5000" value="5000" class="price-slider">
+                <span id="priceLabel">Max Price: ₹5000</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRODUCTS GRID SECTION -->
+    <section class="products-section">
+        <div class="container">
+            <h2 class="section-title">Featured Products</h2>
+            <div class="products-grid" id="productsGrid">
+                <!-- PRODUCTS WILL BE LOADED HERE FROM products.js -->
+                <!-- Each product is dynamically inserted here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- SPECIAL OFFERS SECTION -->
+    <section class="offers-section">
+        <div class="container">
+            <h2 class="section-title">Special Offers</h2>
+            <div class="offers-grid">
+                <div class="offer-card offer-1">
+                    <h3>Health Care</h3>
+                    <p>Up to 50% OFF</p>
+                </div>
+                <div class="offer-card offer-2">
+                    <h3>Vitamins & Immunity</h3>
+                    <p>Buy 2 Get 1 Free</p>
+                </div>
+                <div class="offer-card offer-3">
+                    <h3>First Aid Kits</h3>
+                    <p>Flat 30% OFF</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES SECTION -->
+    <section class="features-section">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">🚚</span>
+                    <h3>Free Delivery</h3>
+                    <p>On orders above ₹500</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">💳</span>
+                    <h3>Secure Payment</h3>
+                    <p>100% Safe Transactions</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">✅</span>
+                    <h3>Authentic Products</h3>
+                    <p>100% Genuine Medicines</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🔄</span>
+                    <h3>Easy Returns</h3>
+                    <p>30-day Return Policy</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-column">
+                    <h4>About ChemistBoys</h4>
+                    <p>Your trusted online pharmacy for authentic medicines and healthcare products.</p>
+                </div>
+                <div class="footer-column">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Contact Us</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms & Conditions</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Customer Service</h4>
+                    <ul>
+                        <li><a href="#">Track Order</a></li>
+                        <li><a href="#">Returns</a></li>
+                        <li><a href="#">FAQ</a></li>
+                        <li><a href="#">Help Center</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Contact Us</h4>
+                    <p>📞 1800-CHEMIST (1800-243-6478)</p>
+                    <p>📧 support@chemistboys.com</p>
+                    <p>📍 Available 24/7</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 ChemistBoys. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- CART NOTIFICATION -->
+    <div class="toast-notification" id="toastNotification"></div>
+
+    <script src="products.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
