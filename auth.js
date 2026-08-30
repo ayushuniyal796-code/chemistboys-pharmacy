@@ -1,42 +1,27 @@
 import {
-    initializeApp
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    auth,
+    authReady
+} from "./firebase.js";
 
 import {
-    getAuth,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     updateProfile
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-const firebaseConfig = {
-    apiKey: "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWk1TFLjcmQ",
-    authDomain: "chemistboys.firebaseapp.com",
-    projectId: "chemistboys",
-    storageBucket: "chemistboys.firebasestorage.app",
-    messagingSenderId: "696067008650",
-    appId: "1:696067008650:web:aba739ed1593d315002573",
-    measurementId: "G-G3BHP0PSB0"
-};
-
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-
-/* =========================
+/* =================================================
    REGISTER
-========================= */
+================================================= */
 
 const registerForm =
     document.getElementById("registerForm");
 
 if (registerForm) {
 
-    registerForm.addEventListener("submit", async (e) => {
+    registerForm.addEventListener("submit", async (event) => {
 
-        e.preventDefault();
+        event.preventDefault();
 
         const name =
             document.getElementById("name").value.trim();
@@ -54,16 +39,27 @@ if (registerForm) {
             document.getElementById("authMessage");
 
 
+        message.textContent = "";
+
+
         if (password.length < 6) {
+
             message.textContent =
                 "❌ Password must be at least 6 characters.";
+
+            message.style.color = "#e63b59";
+
             return;
         }
 
 
         if (password !== confirmPassword) {
+
             message.textContent =
                 "❌ Passwords do not match.";
+
+            message.style.color = "#e63b59";
+
             return;
         }
 
@@ -71,10 +67,13 @@ if (registerForm) {
         try {
 
             message.textContent =
-                "Creating account...";
+                "Creating your account...";
+
+            message.style.color =
+                "#087c6b";
 
 
-            const result =
+            const userCredential =
                 await createUserWithEmailAndPassword(
                     auth,
                     email,
@@ -82,21 +81,24 @@ if (registerForm) {
                 );
 
 
-            await updateProfile(result.user, {
+            const user =
+                userCredential.user;
+
+
+            await updateProfile(user, {
                 displayName: name
             });
 
 
-            /*
-             * Force Firebase to refresh
-             * the user profile.
-             */
-
-            await result.user.reload();
-
-
             message.textContent =
-                "✅ Registration successful!";
+                "✅ Account created successfully!";
+
+            message.style.color =
+                "#087c6b";
+
+
+            // Firebase auth state confirm hone do
+            await authReady;
 
 
             setTimeout(() => {
@@ -109,11 +111,47 @@ if (registerForm) {
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "Registration error:",
+                error
+            );
 
-            message.textContent =
-                "❌ Registration failed: " +
-                error.message;
+
+            message.style.color =
+                "#e63b59";
+
+
+            if (
+                error.code ===
+                "auth/email-already-in-use"
+            ) {
+
+                message.textContent =
+                    "❌ This email is already registered.";
+
+            } else if (
+                error.code ===
+                "auth/weak-password"
+            ) {
+
+                message.textContent =
+                    "❌ Password is too weak.";
+
+            } else if (
+                error.code ===
+                "auth/invalid-email"
+            ) {
+
+                message.textContent =
+                    "❌ Invalid email address.";
+
+            } else {
+
+                message.textContent =
+                    "❌ Registration failed: " +
+                    error.message;
+
+            }
 
         }
 
@@ -122,49 +160,58 @@ if (registerForm) {
 }
 
 
-/* =========================
+/* =================================================
    LOGIN
-========================= */
+================================================= */
 
 const loginForm =
     document.getElementById("loginForm");
 
 if (loginForm) {
 
-    loginForm.addEventListener("submit", async (e) => {
+    loginForm.addEventListener("submit", async (event) => {
 
-        e.preventDefault();
+        event.preventDefault();
 
 
         const email =
-            document.getElementById("loginEmail").value.trim();
+            document.getElementById("loginEmail")
+                .value
+                .trim();
 
         const password =
-            document.getElementById("loginPassword").value;
+            document.getElementById("loginPassword")
+                .value;
 
         const message =
             document.getElementById("loginMessage");
 
 
+        message.textContent =
+            "Logging in...";
+
+        message.style.color =
+            "#087c6b";
+
+
         try {
 
-            message.textContent =
-                "Logging in...";
-
-
-            const result =
-                await signInWithEmailAndPassword(
-                    auth,
-                    email,
-                    password
-                );
-
-
-            await result.user.reload();
+            await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
 
 
             message.textContent =
                 "✅ Login successful!";
+
+            message.style.color =
+                "#087c6b";
+
+
+            // Firebase state ready
+            await authReady;
 
 
             setTimeout(() => {
@@ -177,11 +224,121 @@ if (loginForm) {
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "Login error:",
+                error
+            );
 
-            message.textContent =
-                "❌ Login failed: " +
-                error.message;
+
+            message.style.color =
+                "#e63b59";
+
+
+            if (
+                error.code ===
+                    "auth/invalid-credential" ||
+                error.code ===
+                    "auth/wrong-password"
+            ) {
+
+                message.textContent =
+                    "❌ Incorrect email or password.";
+
+            } else if (
+                error.code ===
+                "auth/user-not-found"
+            ) {
+
+                message.textContent =
+                    "❌ Account not found.";
+
+            } else if (
+                error.code ===
+                "auth/invalid-email"
+            ) {
+
+                message.textContent =
+                    "❌ Invalid email address.";
+
+            } else {
+
+                message.textContent =
+                    "❌ Login failed: " +
+                    error.message;
+
+            }
+
+        }
+
+    });
+
+}
+
+
+/* =================================================
+   REGISTER PASSWORD SHOW / HIDE
+================================================= */
+
+const showPassword =
+    document.getElementById("showPassword");
+
+if (showPassword) {
+
+    showPassword.addEventListener("click", () => {
+
+        const input =
+            document.getElementById("password");
+
+
+        if (input.type === "password") {
+
+            input.type = "text";
+
+            showPassword.textContent =
+                "🙈";
+
+        } else {
+
+            input.type = "password";
+
+            showPassword.textContent =
+                "👁️";
+
+        }
+
+    });
+
+}
+
+
+/* =================================================
+   LOGIN PASSWORD SHOW / HIDE
+================================================= */
+
+const showLoginPassword =
+    document.getElementById("showLoginPassword");
+
+if (showLoginPassword) {
+
+    showLoginPassword.addEventListener("click", () => {
+
+        const input =
+            document.getElementById("loginPassword");
+
+
+        if (input.type === "password") {
+
+            input.type = "text";
+
+            showLoginPassword.textContent =
+                "🙈";
+
+        } else {
+
+            input.type = "password";
+
+            showLoginPassword.textContent =
+                "👁️";
 
         }
 
