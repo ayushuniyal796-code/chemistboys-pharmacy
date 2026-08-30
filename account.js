@@ -9,12 +9,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-/* =========================================================
+/* =========================================
    FIREBASE CONFIG
-========================================================= */
+========================================= */
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCiRX_njBfJAAgUzM1vHDTEYgWk1TFLjcmQ",
+    apiKey: "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWk1TFLjcmQ",
     authDomain: "chemistboys.firebaseapp.com",
     projectId: "chemistboys",
     storageBucket: "chemistboys.firebasestorage.app",
@@ -24,46 +24,35 @@ const firebaseConfig = {
 };
 
 
-/* =========================================================
+/* =========================================
    FIREBASE
-========================================================= */
+========================================= */
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 
-/* =========================================================
-   GLOBAL AUTH STATE
-========================================================= */
+/* =========================================
+   MAKE AUTH AVAILABLE TO ALL SCRIPTS
+========================================= */
 
-window.currentFirebaseUser = null;
+window.firebaseAuth = auth;
 
 
-/*
-   Ye promise Firebase ka login status confirm
-   hone tak wait karega.
-*/
+/* =========================================
+   AUTH READY PROMISE
+========================================= */
+
+let resolveAuthReady;
 
 window.firebaseAuthReady = new Promise((resolve) => {
-
-    const unsubscribe = onAuthStateChanged(
-        auth,
-        (user) => {
-
-            window.currentFirebaseUser = user;
-
-            resolve(user);
-
-            unsubscribe();
-        }
-    );
-
+    resolveAuthReady = resolve;
 });
 
 
-/* =========================================================
-   HEADER ELEMENTS
-========================================================= */
+/* =========================================
+   ELEMENTS
+========================================= */
 
 const accountBtn =
     document.getElementById("accountBtn");
@@ -78,42 +67,39 @@ const ordersBtn =
     document.getElementById("ordersBtn");
 
 
-/* =========================================================
-   KEEP HEADER UPDATED
-========================================================= */
+/* =========================================
+   AUTH STATE
+========================================= */
 
 onAuthStateChanged(auth, (user) => {
 
-    window.currentFirebaseUser = user;
+    window.currentFirebaseUser = user || null;
 
+    resolveAuthReady(user || null);
+
+
+    /* =====================================
+       LOGGED IN
+    ===================================== */
 
     if (user) {
 
-        console.log(
-            "LOGIN ACTIVE:",
-            user.email
-        );
-
-
         const name =
             user.displayName ||
-            user.email.split("@")[0];
+            user.email?.split("@")[0] ||
+            "Account";
 
-
-        /* ACCOUNT BUTTON */
 
         if (accountBtn) {
 
             accountBtn.textContent =
-                "👤 " + name;
+                `👤 ${name}`;
 
             accountBtn.href =
                 "account.html";
 
         }
 
-
-        /* REGISTER */
 
         if (registerBtn) {
 
@@ -123,8 +109,6 @@ onAuthStateChanged(auth, (user) => {
         }
 
 
-        /* LOGOUT */
-
         if (logoutBtn) {
 
             logoutBtn.style.display =
@@ -132,8 +116,6 @@ onAuthStateChanged(auth, (user) => {
 
         }
 
-
-        /* ORDERS */
 
         if (ordersBtn) {
 
@@ -144,14 +126,12 @@ onAuthStateChanged(auth, (user) => {
 
     }
 
+
+    /* =====================================
+       LOGGED OUT
+    ===================================== */
+
     else {
-
-        console.log(
-            "USER NOT LOGGED IN"
-        );
-
-
-        /* ACCOUNT */
 
         if (accountBtn) {
 
@@ -164,8 +144,6 @@ onAuthStateChanged(auth, (user) => {
         }
 
 
-        /* REGISTER */
-
         if (registerBtn) {
 
             registerBtn.style.display =
@@ -174,8 +152,6 @@ onAuthStateChanged(auth, (user) => {
         }
 
 
-        /* LOGOUT */
-
         if (logoutBtn) {
 
             logoutBtn.style.display =
@@ -183,8 +159,6 @@ onAuthStateChanged(auth, (user) => {
 
         }
 
-
-        /* ORDERS */
 
         if (ordersBtn) {
 
@@ -198,53 +172,36 @@ onAuthStateChanged(auth, (user) => {
 });
 
 
-/* =========================================================
+/* =========================================
    LOGOUT
-========================================================= */
+========================================= */
 
 if (logoutBtn) {
 
-    logoutBtn.addEventListener(
-        "click",
-        async () => {
+    logoutBtn.addEventListener("click", async () => {
 
-            try {
+        try {
 
-                await signOut(auth);
+            await signOut(auth);
 
-                window.currentFirebaseUser =
-                    null;
-
-                alert(
-                    "✅ You have been logged out."
-                );
-
-                window.location.href =
-                    "index.html";
-
-            }
-
-            catch (error) {
-
-                console.error(
-                    "Logout error:",
-                    error
-                );
-
-                alert(
-                    "❌ Logout failed."
-                );
-
-            }
+            window.location.href =
+                "index.html";
 
         }
-    );
+
+        catch (error) {
+
+            console.error(
+                "Logout error:",
+                error
+            );
+
+            alert(
+                "Logout failed. Please try again."
+            );
+
+        }
+
+    });
 
 }
-
-
-/* =========================================================
-   GLOBAL AUTH
-========================================================= */
-
-window.firebaseAuth = auth;
