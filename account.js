@@ -11,32 +11,35 @@ import {
 
 /* ==========================================
    FIREBASE CONFIG
-   ========================================== */
+========================================== */
 
 const firebaseConfig = {
 
-    apiKey: "YOUR_API_KEY",
+    apiKey: "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWk1TFLjcmQ",
 
     authDomain:
-        "YOUR_PROJECT.firebaseapp.com",
+        "chemistboys.firebaseapp.com",
 
     projectId:
-        "YOUR_PROJECT_ID",
+        "chemistboys",
 
     storageBucket:
-        "YOUR_PROJECT.firebasestorage.app",
+        "chemistboys.firebasestorage.app",
 
     messagingSenderId:
-        "YOUR_MESSAGING_SENDER_ID",
+        "696067008650",
 
     appId:
-        "YOUR_APP_ID"
+        "1:696067008650:web:aba739ed1593d315002573",
+
+    measurementId:
+        "G-G3BHP0PSB0"
 };
 
 
 /* ==========================================
    FIREBASE INITIALIZE
-   ========================================== */
+========================================== */
 
 const app =
     initializeApp(firebaseConfig);
@@ -47,60 +50,126 @@ const auth =
 
 /* ==========================================
    ELEMENTS
-   ========================================== */
+========================================== */
 
 const accountBtn =
     document.getElementById("accountBtn");
 
+const registerBtn =
+    document.getElementById("registerBtn");
+
 const logoutBtn =
     document.getElementById("logoutBtn");
+
+const ordersBtn =
+    document.getElementById("ordersBtn");
 
 
 /* ==========================================
    CHECK LOGIN STATUS
-   ========================================== */
+========================================== */
 
 onAuthStateChanged(auth, (user) => {
 
     if (user) {
 
-        /*
-        User logged in
-        */
+        /* ==============================
+           USER LOGGED IN
+        ============================== */
 
         const name =
             user.displayName ||
             user.email.split("@")[0];
 
 
-        accountBtn.textContent =
-            `👤 ${name}`;
+        /* ACCOUNT BUTTON */
+
+        if (accountBtn) {
+
+            accountBtn.textContent =
+                `👤 ${name}`;
+
+            accountBtn.href =
+                "account.html";
+
+        }
 
 
-        accountBtn.href =
-            "account.html";
+        /* REGISTER BUTTON HIDE */
+
+        if (registerBtn) {
+
+            registerBtn.style.display =
+                "none";
+
+        }
 
 
-        logoutBtn.style.display =
-            "inline-block";
+        /* LOGOUT SHOW */
+
+        if (logoutBtn) {
+
+            logoutBtn.style.display =
+                "inline-block";
+
+        }
+
+
+        /* ORDERS SHOW */
+
+        if (ordersBtn) {
+
+            ordersBtn.style.display =
+                "inline-block";
+
+        }
 
 
     } else {
 
-        /*
-        User logged out
-        */
+        /* ==============================
+           USER LOGGED OUT
+        ============================== */
 
-        accountBtn.textContent =
-            "👤 Login";
+        if (accountBtn) {
+
+            accountBtn.textContent =
+                "👤 Login";
+
+            accountBtn.href =
+                "login.html";
+
+        }
 
 
-        accountBtn.href =
-            "login.html";
+        /* REGISTER SHOW */
+
+        if (registerBtn) {
+
+            registerBtn.style.display =
+                "inline-block";
+
+        }
 
 
-        logoutBtn.style.display =
-            "none";
+        /* LOGOUT HIDE */
+
+        if (logoutBtn) {
+
+            logoutBtn.style.display =
+                "none";
+
+        }
+
+
+        /* ORDERS */
+
+        if (ordersBtn) {
+
+            ordersBtn.style.display =
+                "inline-block";
+
+        }
 
     }
 
@@ -109,7 +178,7 @@ onAuthStateChanged(auth, (user) => {
 
 /* ==========================================
    LOGOUT
-   ========================================== */
+========================================== */
 
 if (logoutBtn) {
 
@@ -130,10 +199,13 @@ if (logoutBtn) {
 
             } catch (error) {
 
-                console.error(error);
+                console.error(
+                    "Logout error:",
+                    error
+                );
 
                 alert(
-                    "Logout failed."
+                    "Logout failed. Please try again."
                 );
 
             }
