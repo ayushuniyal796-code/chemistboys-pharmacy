@@ -1828,3 +1828,51 @@ body::after {
         font-size: 30px;
     }
 }
+/* ================= PRODUCT ADD TO CART ================= */
+
+.add-to-cart,
+.add-cart-btn,
+.product-card button {
+    display: block;
+    width: 100%;
+    margin-top: 15px;
+    padding: 13px 18px;
+
+    border: none;
+    border-radius: 12px;
+
+    background: #0ca88f !important;
+    color: white !important;
+
+    font-size: 16px;
+    font-weight: 700;
+
+    cursor: pointer;
+    text-align: center;
+
+    box-shadow: 0 5px 14px rgba(0, 120, 100, 0.18);
+
+    transition: 0.2s ease;
+}
+
+.add-to-cart:hover,
+.add-cart-btn:hover,
+.product-card button:hover {
+    background: #087c6b !important;
+    transform: translateY(-2px);
+}
+
+/* Mobile product cards */
+
+@media (max-width: 700px) {
+
+    .product-card button,
+    .add-to-cart,
+    .add-cart-btn {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        border-radius: 12px;
+        margin-top: 14px;
+    }
+}
