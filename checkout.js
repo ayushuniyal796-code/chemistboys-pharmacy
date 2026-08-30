@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
 
     /* =========================================
-       GET ELEMENTS
+       ELEMENTS
     ========================================= */
 
     const checkoutForm =
@@ -25,9 +25,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     /* =========================================
        LOAD CART
-
-       IMPORTANT:
-       cart.js saves data as "chemistCart"
     ========================================= */
 
     let cart =
@@ -37,7 +34,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* =========================================
-       EMPTY CART CHECK
+       CHECK CART
     ========================================= */
 
     if (
@@ -61,7 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     <p>
                         Please add products to your cart
-                        before proceeding to checkout.
+                        before checkout.
                     </p>
 
                     <a
@@ -82,39 +79,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* =========================================
-       PRODUCT NAME
-    ========================================= */
-
-    function getProductName(item) {
-
-        return item.name || "Medicine";
-
-    }
-
-
-    /* =========================================
-       PRODUCT PRICE
-    ========================================= */
-
-    function getProductPrice(item) {
-
-        return Number(item.price) || 0;
-
-    }
-
-
-    /* =========================================
-       PRODUCT QUANTITY
-    ========================================= */
-
-    function getProductQuantity(item) {
-
-        return Number(item.quantity) || 1;
-
-    }
-
-
-    /* =========================================
        DISPLAY CART ITEMS
     ========================================= */
 
@@ -127,15 +91,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         cart.forEach(function (item) {
 
-            const name =
-                getProductName(item);
-
             const price =
-                getProductPrice(item);
+                Number(item.price) || 0;
 
             const quantity =
-                getProductQuantity(item);
-
+                Number(item.quantity) || 1;
 
             const itemTotal =
                 price * quantity;
@@ -148,24 +108,24 @@ document.addEventListener("DOMContentLoaded", function () {
                 document.createElement("div");
 
             itemElement.className =
-                "cart-item";
+                "checkout-item";
 
 
             itemElement.innerHTML = `
 
                 <div>
 
-                    <div class="cart-item-name">
-                        ${name}
+                    <div class="checkout-item-name">
+                        ${item.name || "Medicine"}
                     </div>
 
-                    <small>
+                    <div class="checkout-item-quantity">
                         Quantity: ${quantity}
-                    </small>
+                    </div>
 
                 </div>
 
-                <div class="cart-item-price">
+                <div class="checkout-item-price">
                     ₹${itemTotal}
                 </div>
 
@@ -183,26 +143,15 @@ document.addEventListener("DOMContentLoaded", function () {
            DELIVERY CHARGE
         ===================================== */
 
-        let deliveryCharge = 0;
-
-
-        if (
-            subtotal > 0 &&
-            subtotal < 500
-        ) {
-
-            deliveryCharge = 50;
-
-        }
+        const deliveryCharge =
+            subtotal >= 500
+                ? 0
+                : 50;
 
 
         const grandTotal =
             subtotal + deliveryCharge;
 
-
-        /* =====================================
-           SHOW TOTALS
-        ===================================== */
 
         subtotalElement.textContent =
             `₹${subtotal}`;
@@ -219,18 +168,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         return {
-            subtotal,
-            deliveryCharge,
-            grandTotal
+            subtotal: subtotal,
+            deliveryCharge: deliveryCharge,
+            grandTotal: grandTotal
         };
 
     }
 
 
     /* =========================================
-       DELIVERY DATE OPTIONS
-       
-       Tomorrow + next 4 days
+       DELIVERY DATES
     ========================================= */
 
     function createDeliveryDates() {
@@ -248,26 +195,25 @@ document.addEventListener("DOMContentLoaded", function () {
             i++
         ) {
 
-            const deliveryDate =
+            const date =
                 new Date(today);
 
 
-            deliveryDate.setDate(
+            date.setDate(
                 today.getDate() + i
             );
 
 
-            const dateValue =
-                deliveryDate
-                    .toISOString()
+            const value =
+                date.toISOString()
                     .split("T")[0];
 
 
-            const readableDate =
-                deliveryDate.toLocaleDateString(
+            const readable =
+                date.toLocaleDateString(
                     "en-IN",
                     {
-                        weekday: "short",
+                        weekday: "long",
                         day: "numeric",
                         month: "long",
                         year: "numeric"
@@ -288,12 +234,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 <input
                     type="radio"
                     name="deliveryDate"
-                    value="${dateValue}"
+                    value="${value}"
                     required
                 >
 
                 <span>
-                    📅 ${readableDate}
+                    📅 ${readable}
                 </span>
 
             `;
@@ -309,7 +255,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* =========================================
-       INITIAL DISPLAY
+       INITIAL LOAD
     ========================================= */
 
     const totals =
@@ -330,39 +276,39 @@ document.addEventListener("DOMContentLoaded", function () {
             event.preventDefault();
 
 
-            /* =====================================
+            /* ==============================
                CUSTOMER DETAILS
-            ===================================== */
+            ============================== */
 
-            const customerName =
+            const name =
                 document
                     .getElementById("customerName")
                     .value
                     .trim();
 
 
-            const customerPhone =
+            const phone =
                 document
                     .getElementById("customerPhone")
                     .value
                     .trim();
 
 
-            const customerAddress =
+            const address =
                 document
                     .getElementById("customerAddress")
                     .value
                     .trim();
 
 
-            const customerCity =
+            const city =
                 document
                     .getElementById("customerCity")
                     .value
                     .trim();
 
 
-            const customerPincode =
+            const pincode =
                 document
                     .getElementById("customerPincode")
                     .value
@@ -375,20 +321,20 @@ document.addEventListener("DOMContentLoaded", function () {
                     .value;
 
 
-            const selectedDelivery =
+            const deliveryInput =
                 document.querySelector(
                     'input[name="deliveryDate"]:checked'
                 );
 
 
-            /* =====================================
+            /* ==============================
                VALIDATION
-            ===================================== */
+            ============================== */
 
-            if (customerName === "") {
+            if (name === "") {
 
                 alert(
-                    "Please enter your name."
+                    "Please enter your full name."
                 );
 
                 return;
@@ -396,9 +342,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
             if (
-                !/^\d{10}$/.test(
-                    customerPhone
-                )
+                !/^\d{10}$/.test(phone)
             ) {
 
                 alert(
@@ -409,7 +353,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
 
-            if (customerAddress === "") {
+            if (address === "") {
 
                 alert(
                     "Please enter your delivery address."
@@ -419,7 +363,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
 
-            if (customerCity === "") {
+            if (city === "") {
 
                 alert(
                     "Please enter your city."
@@ -430,9 +374,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
             if (
-                !/^\d{6}$/.test(
-                    customerPincode
-                )
+                !/^\d{6}$/.test(pincode)
             ) {
 
                 alert(
@@ -443,7 +385,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
 
-            if (!selectedDelivery) {
+            if (!deliveryInput) {
 
                 alert(
                     "Please select a delivery date."
@@ -463,11 +405,9 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
 
-            /* =====================================
-               ORDER DATE
-
-               Automatically today's date
-            ===================================== */
+            /* ==============================
+               CURRENT DATE & TIME
+            ============================== */
 
             const now =
                 new Date();
@@ -498,32 +438,31 @@ document.addEventListener("DOMContentLoaded", function () {
                 now.toISOString();
 
 
-            /* =====================================
+            /* ==============================
                DELIVERY DATE
-            ===================================== */
+            ============================== */
 
             const deliveryDateObject =
                 new Date(
-                    selectedDelivery.value +
+                    deliveryInput.value +
                     "T00:00:00"
                 );
 
 
             const deliveryDate =
-                deliveryDateObject
-                    .toLocaleDateString(
-                        "en-IN",
-                        {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric"
-                        }
-                    );
+                deliveryDateObject.toLocaleDateString(
+                    "en-IN",
+                    {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric"
+                    }
+                );
 
 
-            /* =====================================
-               CREATE ORDER ID
-            ===================================== */
+            /* ==============================
+               ORDER ID
+            ============================== */
 
             const orderId =
                 "CB" +
@@ -532,78 +471,85 @@ document.addEventListener("DOMContentLoaded", function () {
                     .slice(-8);
 
 
-            /* =====================================
-               CREATE ORDER OBJECT
-            ===================================== */
+            /* ==============================
+               PAYMENT STATUS
+            ============================== */
+
+            let paymentStatus =
+                "Pending";
+
+
+            if (paymentMethod === "cod") {
+
+                paymentStatus =
+                    "Pending";
+
+            }
+
+
+            /* ==============================
+               CREATE ORDER
+            ============================== */
 
             const newOrder = {
 
-                id:
-                    orderId,
+                id: orderId,
 
-                orderDate:
-                    orderDate,
+                orderDate: orderDate,
 
-                orderDateISO:
-                    orderDateISO,
+                orderDateISO: orderDateISO,
 
-                orderTime:
-                    orderTime,
+                orderTime: orderTime,
 
-                deliveryDate:
-                    deliveryDate,
+                deliveryDate: deliveryDate,
 
                 deliveryDateISO:
-                    selectedDelivery.value,
+                    deliveryInput.value,
 
-                status:
-                    "Processing",
+                status: "Processing",
 
                 paymentMethod:
                     paymentMethod,
 
                 paymentStatus:
-                    "Pending",
+                    paymentStatus,
+
 
                 customer: {
 
-                    name:
-                        customerName,
+                    name: name,
 
-                    phone:
-                        customerPhone,
+                    phone: phone,
 
-                    address:
-                        customerAddress,
+                    address: address,
 
-                    city:
-                        customerCity,
+                    city: city,
 
-                    pincode:
-                        customerPincode
+                    pincode: pincode
 
                 },
+
 
                 items:
                     cart.map(function (item) {
 
                         return {
 
-                            id:
-                                item.id,
+                            id: item.id,
 
                             name:
-                                getProductName(item),
+                                item.name,
 
                             price:
-                                getProductPrice(item),
+                                Number(item.price) || 0,
 
                             quantity:
-                                getProductQuantity(item)
+                                Number(item.quantity) || 1
 
                         };
 
                     }),
+
 
                 subtotal:
                     totals.subtotal,
@@ -617,9 +563,9 @@ document.addEventListener("DOMContentLoaded", function () {
             };
 
 
-            /* =====================================
-               GET OLD ORDERS
-            ===================================== */
+            /* ==============================
+               LOAD OLD ORDERS
+            ============================== */
 
             let orders =
                 JSON.parse(
@@ -634,9 +580,9 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
 
-            /* =====================================
-               SAVE NEW ORDER
-            ===================================== */
+            /* ==============================
+               SAVE ORDER
+            ============================== */
 
             orders.push(newOrder);
 
@@ -647,18 +593,9 @@ document.addEventListener("DOMContentLoaded", function () {
             );
 
 
-            /* =====================================
-               CLEAR CART AFTER ORDER
-            ===================================== */
-
-            localStorage.removeItem(
-                "chemistCart"
-            );
-
-
-            /* =====================================
+            /* ==============================
                SAVE LAST ORDER
-            ===================================== */
+            ============================== */
 
             localStorage.setItem(
                 "lastOrder",
@@ -666,9 +603,18 @@ document.addEventListener("DOMContentLoaded", function () {
             );
 
 
-            /* =====================================
-               SUCCESS MESSAGE
-            ===================================== */
+            /* ==============================
+               CLEAR CART
+            ============================== */
+
+            localStorage.removeItem(
+                "chemistCart"
+            );
+
+
+            /* ==============================
+               SUCCESS
+            ============================== */
 
             alert(
 
@@ -686,9 +632,9 @@ document.addEventListener("DOMContentLoaded", function () {
             );
 
 
-            /* =====================================
-               GO TO MY ORDERS
-            ===================================== */
+            /* ==============================
+               MY ORDERS
+            ============================== */
 
             window.location.href =
                 "orders.html";
