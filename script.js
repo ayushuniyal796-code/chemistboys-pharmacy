@@ -4,7 +4,7 @@
 
 
 /* =========================================================
-   GLOBAL CART
+   CART
 ========================================================= */
 
 let cart =
@@ -55,8 +55,8 @@ async function requireLogin() {
     try {
 
         /*
-         * account.js Firebase authentication
-         * completely ready hone ka wait.
+         * Firebase ka authentication status
+         * completely load hone ka wait.
          */
 
         const user =
@@ -65,11 +65,23 @@ async function requireLogin() {
 
         if (user) {
 
+            console.log(
+                "User authenticated:",
+                user.email
+            );
+
             return true;
 
         }
 
-    } catch (error) {
+
+        console.log(
+            "User is not authenticated."
+        );
+
+    }
+
+    catch (error) {
 
         console.error(
             "Firebase authentication error:",
@@ -151,12 +163,16 @@ function showToast(message) {
         message;
 
 
-    toastNotification.classList.add("show");
+    toastNotification.classList.add(
+        "show"
+    );
 
 
     setTimeout(() => {
 
-        toastNotification.classList.remove("show");
+        toastNotification.classList.remove(
+            "show"
+        );
 
     }, 2500);
 
@@ -213,7 +229,9 @@ async function addToCart(productId) {
         existing.quantity =
             Number(existing.quantity || 0) + 1;
 
-    } else {
+    }
+
+    else {
 
         cart.push({
 
@@ -284,24 +302,28 @@ async function buyNow(productId) {
     }
 
 
-    cart = [{
+    cart = [
 
-        id: product.id,
+        {
 
-        name: product.name,
+            id: product.id,
 
-        price:
-            Number(product.price) || 0,
+            name: product.name,
 
-        category:
-            product.category || "",
+            price:
+                Number(product.price) || 0,
 
-        rating:
-            Number(product.rating) || 0,
+            category:
+                product.category || "",
 
-        quantity: 1
+            rating:
+                Number(product.rating) || 0,
 
-    }];
+            quantity: 1
+
+        }
+
+    ];
 
 
     saveCart();
@@ -376,11 +398,13 @@ function displayProducts(list) {
 
                 ${
                     product.image
-                        ? `<img
-                            src="${product.image}"
-                            alt="${product.name || "Medicine"}"
-                          >`
-                        : "💊"
+                    ?
+                    `<img
+                        src="${product.image}"
+                        alt="${product.name || "Medicine"}"
+                    >`
+                    :
+                    "💊"
                 }
 
             </div>
@@ -445,7 +469,7 @@ function displayProducts(list) {
 
 
 /* =========================================================
-   PRODUCT BUTTON EVENTS
+   PRODUCT EVENTS
 ========================================================= */
 
 function addProductEvents() {
@@ -489,7 +513,7 @@ function addProductEvents() {
 
 
 /* =========================================================
-   FILTER + SEARCH
+   FILTER PRODUCTS
 ========================================================= */
 
 function filterProducts() {
@@ -510,10 +534,12 @@ function filterProducts() {
 
     const search =
         searchInput
-            ? searchInput.value
-                .trim()
-                .toLowerCase()
-            : "";
+        ?
+        searchInput.value
+            .trim()
+            .toLowerCase()
+        :
+        "";
 
 
     if (search) {
@@ -545,8 +571,10 @@ function filterProducts() {
 
     const category =
         categoryFilter
-            ? categoryFilter.value
-            : "";
+        ?
+        categoryFilter.value
+        :
+        "";
 
 
     if (category) {
@@ -566,8 +594,10 @@ function filterProducts() {
 
     const maxPrice =
         priceRange
-            ? Number(priceRange.value)
-            : 5000;
+        ?
+        Number(priceRange.value)
+        :
+        5000;
 
 
     filtered =
@@ -582,8 +612,10 @@ function filterProducts() {
 
     const sort =
         sortFilter
-            ? sortFilter.value
-            : "";
+        ?
+        sortFilter.value
+        :
+        "";
 
 
     if (sort === "price-low") {
@@ -649,7 +681,7 @@ if (searchInput) {
 
     searchInput.addEventListener(
         "keydown",
-        event => {
+        function (event) {
 
             if (event.key === "Enter") {
 
@@ -672,7 +704,7 @@ if (searchInput) {
 
 
 /* =========================================================
-   FILTERS
+   FILTER EVENTS
 ========================================================= */
 
 if (categoryFilter) {
@@ -699,7 +731,7 @@ if (priceRange) {
 
     priceRange.addEventListener(
         "input",
-        () => {
+        function () {
 
             if (priceLabel) {
 
@@ -725,10 +757,12 @@ if (shopNowBtn) {
 
     shopNowBtn.addEventListener(
         "click",
-        () => {
+        function () {
 
             const productsSection =
-                document.getElementById("products");
+                document.getElementById(
+                    "products"
+                );
 
 
             if (productsSection) {
