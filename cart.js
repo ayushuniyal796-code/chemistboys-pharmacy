@@ -31,7 +31,7 @@ const firebaseConfig = {
 
 
 /* ==========================================
-   FIREBASE INITIALIZE
+   FIREBASE
 ========================================== */
 
 const app = initializeApp(firebaseConfig);
@@ -40,10 +40,55 @@ const auth = getAuth(app);
 
 
 /* ==========================================
+   AUTH READY
+========================================== */
+
+/*
+ * Firebase ko pehle authentication restore
+ * karne do. Random setTimeout use nahi kar rahe.
+ */
+
+let currentUser = null;
+
+let authReadyResolve;
+
+const firebaseAuthReady = new Promise((resolve) => {
+
+    authReadyResolve = resolve;
+
+});
+
+
+let authInitialized = false;
+
+
+onAuthStateChanged(auth, (user) => {
+
+    currentUser = user;
+
+    if (!authInitialized) {
+
+        authInitialized = true;
+
+        authReadyResolve(user);
+
+    }
+
+});
+
+
+/*
+ * Dusre scripts ke liye bhi available
+ */
+
+window.firebaseAuthReady = firebaseAuthReady;
+
+
+/* ==========================================
    CART
 ========================================== */
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
 
     let cart =
         JSON.parse(
@@ -78,32 +123,31 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* ==========================================
-       FIREBASE USER
+       UPDATE BUTTON
     ========================================== */
 
-    let currentUser = null;
+    function updateCheckoutButton() {
 
-
-    onAuthStateChanged(auth, function (user) {
-
-        currentUser = user;
+        if (!checkoutBtn) return;
 
         /*
-         * IMPORTANT:
-         * Button ka text yahan change nahi karna.
-         *
-         * Cart page par hamesha:
-         * 🛒 Buy Now
+         * Cart page par logged-in user ko
+         * hamesha Buy Now dikhana hai.
          */
 
-        if (checkoutBtn) {
+        if (currentUser) {
 
             checkoutBtn.textContent =
                 "🛒 Buy Now";
 
+        } else {
+
+            checkoutBtn.textContent =
+                "🔒 Login to Checkout";
+
         }
 
-    });
+    }
 
 
     /* ==========================================
@@ -114,7 +158,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const count =
             cart.reduce(
-                function (total, item) {
+                (total, item) => {
 
                     return total +
                         Number(item.quantity || 0);
@@ -126,7 +170,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (cartCount) {
 
-            cartCount.textContent = count;
+            cartCount.textContent =
+                count;
 
         }
 
@@ -162,8 +207,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         cartItems.innerHTML = "";
 
-
-        /* EMPTY CART */
 
         if (cart.length === 0) {
 
@@ -201,9 +244,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
 
-        /* CART PRODUCTS */
-
-        cart.forEach(function (item) {
+        cart.forEach((item) => {
 
             const price =
                 Number(item.price) || 0;
@@ -217,6 +258,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const div =
                 document.createElement("div");
+
 
             div.className =
                 "cart-product";
@@ -299,15 +341,13 @@ document.addEventListener("DOMContentLoaded", function () {
     function addEvents() {
 
 
-        /* INCREASE */
-
         document
             .querySelectorAll(".increase")
-            .forEach(function (button) {
+            .forEach((button) => {
 
                 button.addEventListener(
                     "click",
-                    function () {
+                    () => {
 
                         changeQuantity(
                             button.dataset.id,
@@ -320,15 +360,13 @@ document.addEventListener("DOMContentLoaded", function () {
             });
 
 
-        /* DECREASE */
-
         document
             .querySelectorAll(".decrease")
-            .forEach(function (button) {
+            .forEach((button) => {
 
                 button.addEventListener(
                     "click",
-                    function () {
+                    () => {
 
                         changeQuantity(
                             button.dataset.id,
@@ -341,15 +379,13 @@ document.addEventListener("DOMContentLoaded", function () {
             });
 
 
-        /* REMOVE */
-
         document
             .querySelectorAll(".remove-btn")
-            .forEach(function (button) {
+            .forEach((button) => {
 
                 button.addEventListener(
                     "click",
-                    function () {
+                    () => {
 
                         removeItem(
                             button.dataset.id
@@ -373,12 +409,14 @@ document.addEventListener("DOMContentLoaded", function () {
     ) {
 
         const item =
-            cart.find(function (product) {
+            cart.find(
+                (product) => {
 
-                return String(product.id) ===
-                    String(productId);
+                    return String(product.id) ===
+                        String(productId);
 
-            });
+                }
+            );
 
 
         if (!item) return;
@@ -392,12 +430,14 @@ document.addEventListener("DOMContentLoaded", function () {
         if (item.quantity <= 0) {
 
             cart =
-                cart.filter(function (product) {
+                cart.filter(
+                    (product) => {
 
-                    return String(product.id) !==
-                        String(productId);
+                        return String(product.id) !==
+                            String(productId);
 
-                });
+                    }
+                );
 
         }
 
@@ -414,12 +454,14 @@ document.addEventListener("DOMContentLoaded", function () {
     function removeItem(productId) {
 
         cart =
-            cart.filter(function (item) {
+            cart.filter(
+                (item) => {
 
-                return String(item.id) !==
-                    String(productId);
+                    return String(item.id) !==
+                        String(productId);
 
-            });
+                }
+            );
 
 
         saveCart();
@@ -438,7 +480,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let items = 0;
 
 
-        cart.forEach(function (item) {
+        cart.forEach((item) => {
 
             const price =
                 Number(item.price) || 0;
@@ -505,18 +547,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* ==========================================
-       BUY NOW / CHECKOUT
+       CHECKOUT / BUY NOW
     ========================================== */
 
     if (checkoutBtn) {
 
-        checkoutBtn.textContent =
-            "🛒 Buy Now";
-
-
         checkoutBtn.addEventListener(
             "click",
-            function (event) {
+            async (event) => {
 
                 event.preventDefault();
 
@@ -535,11 +573,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
                 /*
-                 * Agar Firebase user logged in hai
-                 * to direct checkout.
+                 * IMPORTANT:
+                 *
+                 * Firebase authentication state
+                 * restore hone ka wait karo.
                  */
 
-                if (currentUser) {
+                const user =
+                    await firebaseAuthReady;
+
+
+                /*
+                 * LOGGED IN
+                 */
+
+                if (user) {
 
                     window.location.href =
                         "checkout.html";
@@ -550,8 +598,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
                 /*
-                 * Agar logged in nahi hai
-                 * to login page.
+                 * NOT LOGGED IN
                  */
 
                 alert(
@@ -568,11 +615,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* ==========================================
-       INITIAL LOAD
+       AUTH STATE CHANGE
+    ========================================== */
+
+    firebaseAuthReady.then((user) => {
+
+        currentUser = user;
+
+        updateCheckoutButton();
+
+    });
+
+
+    /* ==========================================
+       START
     ========================================== */
 
     updateCartCount();
 
     displayCart();
+
+    updateCheckoutButton();
 
 });
