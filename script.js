@@ -2,9 +2,18 @@
    CHEMISTBOYS - MAIN SCRIPT
 ========================================================= */
 
+import {
+    auth,
+    authReady
+} from "./firebase.js";
+
+import {
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
 
 /* =========================================================
-   CART
+   GLOBAL CART
 ========================================================= */
 
 let cart =
@@ -47,95 +56,65 @@ const toastNotification =
 
 
 /* =========================================================
-   LOGIN CHECK
+   AUTH STATE
+========================================================= */
+
+let currentUser = null;
+
+onAuthStateChanged(auth, (user) => {
+
+    currentUser = user || null;
+
+    window.currentFirebaseUser =
+        currentUser;
+
+});
+
+
+/* =========================================================
+   REQUIRE LOGIN
 ========================================================= */
 
 async function requireLogin() {
 
-    try {
+    /*
+     * Wait until Firebase has finished
+     * restoring the authentication state.
+     */
 
-        /*
-         * account.js Firebase auth ready hone ka
-         * wait karega.
-         */
-
-        if (window.firebaseAuthReady) {
-
-            await window.firebaseAuthReady;
-
-        }
+    await authReady;
 
 
-        /*
-         * Firebase ka current logged-in user
-         */
+    /*
+     * Read the SAME Firebase auth instance.
+     */
 
-        const user =
-            window.firebaseAuth
-                ? window.firebaseAuth.currentUser
-                : null;
+    currentUser =
+        auth.currentUser || null;
 
 
-        console.log(
-            "Current Firebase User:",
-            user
-        );
+    window.currentFirebaseUser =
+        currentUser;
 
 
-        /*
-         * User logged in hai
-         */
+    if (currentUser) {
 
-        if (user) {
-
-            return true;
-
-        }
-
-
-        /*
-         * User logged in nahi hai
-         */
-
-        alert(
-            "🔒 Please login first."
-        );
-
-
-        window.location.href =
-            "login.html";
-
-
-        return false;
+        return true;
 
     }
 
-    catch (error) {
 
-        console.error(
-            "Authentication check error:",
-            error
-        );
+    alert("🔒 Please login first.");
 
+    window.location.href =
+        "login.html";
 
-        alert(
-            "🔒 Please login first."
-        );
-
-
-        window.location.href =
-            "login.html";
-
-
-        return false;
-
-    }
-
+    return false;
 }
 
 
 /* =========================================================
-   UPDATE CART COUNT
+   CART COUNT
 ========================================================= */
 
 function updateCartCount() {
@@ -172,7 +151,6 @@ function saveCart() {
         "chemistCart",
         JSON.stringify(cart)
     );
-
 
     updateCartCount();
 
@@ -220,33 +198,11 @@ function showToast(message) {
 
 async function addToCart(productId) {
 
-    /*
-     * LOGIN CHECK
-     */
-
     const loggedIn =
         await requireLogin();
 
 
     if (!loggedIn) {
-
-        return;
-
-    }
-
-
-    /*
-     * PRODUCT FIND
-     */
-
-    if (
-        typeof products ===
-        "undefined"
-    ) {
-
-        console.error(
-            "products.js not loaded."
-        );
 
         return;
 
@@ -272,10 +228,6 @@ async function addToCart(productId) {
 
     }
 
-
-    /*
-     * EXISTING PRODUCT CHECK
-     */
 
     const existing =
         cart.find(
@@ -290,17 +242,13 @@ async function addToCart(productId) {
         existing.quantity =
             Number(existing.quantity || 0) + 1;
 
-    }
-
-    else {
+    } else {
 
         cart.push({
 
-            id:
-                product.id,
+            id: product.id,
 
-            name:
-                product.name,
+            name: product.name,
 
             price:
                 Number(product.price) || 0,
@@ -309,26 +257,17 @@ async function addToCart(productId) {
                 product.category || "",
 
             rating:
-                Number(product.rating) || 0,
+                product.rating || 0,
 
-            quantity:
-                1
+            quantity: 1
 
         });
 
     }
 
 
-    /*
-     * SAVE
-     */
-
     saveCart();
 
-
-    /*
-     * SUCCESS MESSAGE
-     */
 
     showToast(
         `✅ ${product.name} added to cart`
@@ -343,33 +282,11 @@ async function addToCart(productId) {
 
 async function buyNow(productId) {
 
-    /*
-     * LOGIN CHECK
-     */
-
     const loggedIn =
         await requireLogin();
 
 
     if (!loggedIn) {
-
-        return;
-
-    }
-
-
-    /*
-     * PRODUCT CHECK
-     */
-
-    if (
-        typeof products ===
-        "undefined"
-    ) {
-
-        console.error(
-            "products.js not loaded."
-        );
 
         return;
 
@@ -396,17 +313,11 @@ async function buyNow(productId) {
     }
 
 
-    /*
-     * SELECTED PRODUCT
-     */
-
     cart = [{
 
-        id:
-            product.id,
+        id: product.id,
 
-        name:
-            product.name,
+        name: product.name,
 
         price:
             Number(product.price) || 0,
@@ -415,24 +326,15 @@ async function buyNow(productId) {
             product.category || "",
 
         rating:
-            Number(product.rating) || 0,
+            product.rating || 0,
 
-        quantity:
-            1
+        quantity: 1
 
     }];
 
 
-    /*
-     * SAVE
-     */
-
     saveCart();
 
-
-    /*
-     * CHECKOUT
-     */
 
     window.location.href =
         "checkout.html";
@@ -453,14 +355,10 @@ function displayProducts(list) {
     }
 
 
-    productsGrid.innerHTML =
-        "";
+    productsGrid.innerHTML = "";
 
 
-    if (
-        !list ||
-        list.length === 0
-    ) {
+    if (!list || list.length === 0) {
 
         productsGrid.innerHTML = `
 
@@ -507,12 +405,10 @@ function displayProducts(list) {
 
                 ${
                     product.image
-                        ? `
-                            <img
-                                src="${product.image}"
-                                alt="${product.name || "Medicine"}"
-                            >
-                          `
+                        ? `<img
+                            src="${product.image}"
+                            alt="${product.name || "Medicine"}"
+                          >`
                         : "💊"
                 }
 
@@ -520,7 +416,6 @@ function displayProducts(list) {
 
 
             <div class="product-details">
-
 
                 <h3 class="product-name">
                     ${product.name || "Medicine"}
@@ -541,11 +436,8 @@ function displayProducts(list) {
 
                 <div class="product-bottom">
 
-
                     <strong class="product-price">
-
                         ₹${price}
-
                     </strong>
 
 
@@ -554,11 +446,8 @@ function displayProducts(list) {
                         class="add-cart-btn"
                         data-id="${product.id}"
                     >
-
                         🛒 Add to Cart
-
                     </button>
-
 
                 </div>
 
@@ -568,20 +457,15 @@ function displayProducts(list) {
                     class="buy-now-btn"
                     data-buy-id="${product.id}"
                 >
-
                     ⚡ Buy Now
-
                 </button>
-
 
             </div>
 
         `;
 
 
-        productsGrid.appendChild(
-            card
-        );
+        productsGrid.appendChild(card);
 
     });
 
@@ -592,15 +476,10 @@ function displayProducts(list) {
 
 
 /* =========================================================
-   PRODUCT EVENTS
+   PRODUCT BUTTON EVENTS
 ========================================================= */
 
 function addProductEvents() {
-
-
-    /*
-     * ADD TO CART BUTTONS
-     */
 
     document
         .querySelectorAll(".add-cart-btn")
@@ -608,9 +487,9 @@ function addProductEvents() {
 
             button.addEventListener(
                 "click",
-                async () => {
+                () => {
 
-                    await addToCart(
+                    addToCart(
                         button.dataset.id
                     );
 
@@ -620,19 +499,15 @@ function addProductEvents() {
         });
 
 
-    /*
-     * BUY NOW BUTTONS
-     */
-
     document
         .querySelectorAll(".buy-now-btn")
         .forEach(button => {
 
             button.addEventListener(
                 "click",
-                async () => {
+                () => {
 
-                    await buyNow(
+                    buyNow(
                         button.dataset.buyId
                     );
 
@@ -645,7 +520,7 @@ function addProductEvents() {
 
 
 /* =========================================================
-   FILTER PRODUCTS
+   FILTER + SEARCH
 ========================================================= */
 
 function filterProducts() {
@@ -664,10 +539,6 @@ function filterProducts() {
         [...products];
 
 
-    /*
-     * SEARCH
-     */
-
     const search =
         searchInput
             ? searchInput.value
@@ -679,35 +550,29 @@ function filterProducts() {
     if (search) {
 
         filtered =
-            filtered.filter(
-                product => {
+            filtered.filter(product => {
 
-                    const name =
-                        String(
-                            product.name || ""
-                        ).toLowerCase();
-
-
-                    const category =
-                        String(
-                            product.category || ""
-                        ).toLowerCase();
+                const name =
+                    String(
+                        product.name || ""
+                    ).toLowerCase();
 
 
-                    return (
-                        name.includes(search) ||
-                        category.includes(search)
-                    );
+                const category =
+                    String(
+                        product.category || ""
+                    ).toLowerCase();
 
-                }
-            );
+
+                return (
+                    name.includes(search) ||
+                    category.includes(search)
+                );
+
+            });
 
     }
 
-
-    /*
-     * CATEGORY
-     */
 
     const category =
         categoryFilter
@@ -718,23 +583,17 @@ function filterProducts() {
     if (category) {
 
         filtered =
-            filtered.filter(
-                product => {
+            filtered.filter(product => {
 
-                    return String(
-                        product.category || ""
-                    ).toLowerCase() ===
-                    category.toLowerCase();
+                return String(
+                    product.category || ""
+                ).toLowerCase() ===
+                category.toLowerCase();
 
-                }
-            );
+            });
 
     }
 
-
-    /*
-     * PRICE
-     */
 
     const maxPrice =
         priceRange
@@ -743,20 +602,14 @@ function filterProducts() {
 
 
     filtered =
-        filtered.filter(
-            product => {
+        filtered.filter(product => {
 
-                return Number(
-                    product.price || 0
-                ) <= maxPrice;
+            return Number(
+                product.price || 0
+            ) <= maxPrice;
 
-            }
-        );
+        });
 
-
-    /*
-     * SORT
-     */
 
     const sort =
         sortFilter
@@ -804,9 +657,7 @@ function filterProducts() {
     }
 
 
-    displayProducts(
-        filtered
-    );
+    displayProducts(filtered);
 
 }
 
@@ -859,7 +710,7 @@ if (searchInput) {
 
 
 /* =========================================================
-   CATEGORY
+   CATEGORY FILTER
 ========================================================= */
 
 if (categoryFilter) {
@@ -873,7 +724,7 @@ if (categoryFilter) {
 
 
 /* =========================================================
-   SORT
+   SORT FILTER
 ========================================================= */
 
 if (sortFilter) {
@@ -887,7 +738,7 @@ if (sortFilter) {
 
 
 /* =========================================================
-   PRICE
+   PRICE FILTER
 ========================================================= */
 
 if (priceRange) {
@@ -954,9 +805,7 @@ if (
     "undefined"
 ) {
 
-    displayProducts(
-        products
-    );
+    displayProducts(products);
 
 }
 
