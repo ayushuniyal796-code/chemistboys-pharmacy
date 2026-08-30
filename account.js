@@ -1,58 +1,24 @@
 import {
-    initializeApp
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    auth,
+    authReady
+} from "./firebase.js";
 
 import {
-    getAuth,
     onAuthStateChanged,
     signOut
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-/* =========================================
-   FIREBASE CONFIG
-========================================= */
+/* =================================================
+   GLOBAL AUTH STATE
+================================================= */
 
-const firebaseConfig = {
-    apiKey: "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWk1TFLjcmQ",
-    authDomain: "chemistboys.firebaseapp.com",
-    projectId: "chemistboys",
-    storageBucket: "chemistboys.firebasestorage.app",
-    messagingSenderId: "696067008650",
-    appId: "1:696067008650:web:aba739ed1593d315002573",
-    measurementId: "G-G3BHP0PSB0"
-};
+let currentUser = null;
 
 
-/* =========================================
-   FIREBASE
-========================================= */
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-
-/* =========================================
-   MAKE AUTH AVAILABLE TO ALL SCRIPTS
-========================================= */
-
-window.firebaseAuth = auth;
-
-
-/* =========================================
-   AUTH READY PROMISE
-========================================= */
-
-let resolveAuthReady;
-
-window.firebaseAuthReady = new Promise((resolve) => {
-    resolveAuthReady = resolve;
-});
-
-
-/* =========================================
-   ELEMENTS
-========================================= */
+/* =================================================
+   HEADER ELEMENTS
+================================================= */
 
 const accountBtn =
     document.getElementById("accountBtn");
@@ -60,36 +26,31 @@ const accountBtn =
 const registerBtn =
     document.getElementById("registerBtn");
 
-const logoutBtn =
-    document.getElementById("logoutBtn");
-
 const ordersBtn =
     document.getElementById("ordersBtn");
 
-
-/* =========================================
-   AUTH STATE
-========================================= */
-
-onAuthStateChanged(auth, (user) => {
-
-    window.currentFirebaseUser = user || null;
-
-    resolveAuthReady(user || null);
+const logoutBtn =
+    document.getElementById("logoutBtn");
 
 
-    /* =====================================
-       LOGGED IN
-    ===================================== */
+/* =================================================
+   UPDATE HEADER
+================================================= */
 
-    if (user) {
+function updateHeader(user) {
+
+    currentUser = user || null;
+
+
+    if (currentUser) {
 
         const name =
-            user.displayName ||
-            user.email?.split("@")[0] ||
+            currentUser.displayName ||
+            currentUser.email ||
             "Account";
 
 
+        // Account button
         if (accountBtn) {
 
             accountBtn.textContent =
@@ -101,6 +62,7 @@ onAuthStateChanged(auth, (user) => {
         }
 
 
+        // Register hide
         if (registerBtn) {
 
             registerBtn.style.display =
@@ -109,14 +71,7 @@ onAuthStateChanged(auth, (user) => {
         }
 
 
-        if (logoutBtn) {
-
-            logoutBtn.style.display =
-                "inline-block";
-
-        }
-
-
+        // Orders show
         if (ordersBtn) {
 
             ordersBtn.style.display =
@@ -124,15 +79,18 @@ onAuthStateChanged(auth, (user) => {
 
         }
 
-    }
 
+        // Logout show
+        if (logoutBtn) {
 
-    /* =====================================
-       LOGGED OUT
-    ===================================== */
+            logoutBtn.style.display =
+                "inline-block";
 
-    else {
+        }
 
+    } else {
+
+        // Account → Login
         if (accountBtn) {
 
             accountBtn.textContent =
@@ -144,6 +102,7 @@ onAuthStateChanged(auth, (user) => {
         }
 
 
+        // Register show
         if (registerBtn) {
 
             registerBtn.style.display =
@@ -152,6 +111,16 @@ onAuthStateChanged(auth, (user) => {
         }
 
 
+        // Orders hide
+        if (ordersBtn) {
+
+            ordersBtn.style.display =
+                "none";
+
+        }
+
+
+        // Logout hide
         if (logoutBtn) {
 
             logoutBtn.style.display =
@@ -159,49 +128,71 @@ onAuthStateChanged(auth, (user) => {
 
         }
 
-
-        if (ordersBtn) {
-
-            ordersBtn.style.display =
-                "inline-block";
-
-        }
-
     }
 
-});
+}
 
 
-/* =========================================
+/* =================================================
+   FIREBASE AUTH STATE
+================================================= */
+
+onAuthStateChanged(
+    auth,
+    (user) => {
+
+        updateHeader(user);
+
+        // Other scripts can access current user
+        window.currentFirebaseUser =
+            user || null;
+
+    }
+);
+
+
+/* =================================================
    LOGOUT
-========================================= */
+================================================= */
 
 if (logoutBtn) {
 
-    logoutBtn.addEventListener("click", async () => {
+    logoutBtn.addEventListener(
+        "click",
+        async () => {
 
-        try {
+            try {
 
-            await signOut(auth);
+                await signOut(auth);
 
-            window.location.href =
-                "index.html";
+                window.currentFirebaseUser =
+                    null;
+
+                window.location.href =
+                    "index.html";
+
+            } catch (error) {
+
+                console.error(
+                    "Logout error:",
+                    error
+                );
+
+                alert(
+                    "❌ Logout failed. Please try again."
+                );
+
+            }
 
         }
-
-        catch (error) {
-
-            console.error(
-                "Logout error:",
-                error
-            );
-
-            alert(
-                "Logout failed. Please try again."
-            );
-
-        }
-
-    });
+    );
 
 }
+
+
+/* =================================================
+   AUTH READY
+================================================= */
+
+window.firebaseAuthReady =
+    authReady;
