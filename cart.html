@@ -2,39 +2,77 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Cart - ChemistBoys</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
 </head>
+
 
 <body>
 
-    <!-- HEADER -->
+
+    <!-- =================================================
+         HEADER
+    ================================================== -->
+
     <header class="header">
 
         <div class="container">
 
             <div class="header-top">
 
-                <a href="index.html" class="logo-link">
+
+                <!-- LOGO -->
+
+                <a
+                    href="index.html"
+                    class="logo-link"
+                >
 
                     <div class="logo">
-                        <span class="logo-icon">💊</span>
-                        <span class="logo-text">ChemistBoys</span>
+
+                        <span class="logo-icon">
+                            💊
+                        </span>
+
+                        <span class="logo-text">
+                            ChemistBoys
+                        </span>
+
                     </div>
 
                 </a>
 
+
+
+                <!-- HEADER ACTIONS -->
+
                 <div class="header-actions">
 
-                    <a href="index.html" class="account-btn">
+                    <a
+                        href="index.html"
+                        class="account-btn"
+                    >
                         🏠 Home
                     </a>
 
-                    <a href="orders.html" class="account-btn">
+
+                    <a
+                        href="orders.html"
+                        class="account-btn"
+                    >
                         📦 My Orders
                     </a>
 
@@ -42,26 +80,57 @@
 
             </div>
 
+
+
+            <!-- NAVIGATION -->
+
             <nav class="navbar">
 
-                <a href="index.html" class="nav-link">
+                <a
+                    href="index.html"
+                    class="nav-link"
+                >
                     Home
                 </a>
 
-                <a href="index.html" class="nav-link">
+
+                <a
+                    href="index.html#products"
+                    class="nav-link"
+                >
                     All Medicines
                 </a>
 
-                <a href="index.html" class="nav-link">
+
+                <a
+                    href="index.html#vitamins"
+                    class="nav-link"
+                >
                     Vitamins
                 </a>
 
-                <a href="index.html" class="nav-link">
+
+                <a
+                    href="index.html#firstaid"
+                    class="nav-link"
+                >
                     First Aid
                 </a>
 
-                <a href="index.html" class="nav-link">
+
+                <a
+                    href="index.html#offers"
+                    class="nav-link"
+                >
                     Offers
+                </a>
+
+
+                <a
+                    href="about.html"
+                    class="nav-link"
+                >
+                    About
                 </a>
 
             </nav>
@@ -71,20 +140,28 @@
     </header>
 
 
-    <!-- CART -->
+
+    <!-- =================================================
+         CART PAGE
+    ================================================== -->
+
     <main class="cart-page">
 
         <div class="container">
+
 
             <h1 class="cart-title">
                 🛒 Your Shopping Cart
             </h1>
 
 
+
             <div class="cart-layout">
 
 
-                <!-- CART ITEMS -->
+                <!-- =================================================
+                     CART ITEMS
+                ================================================== -->
 
                 <div class="cart-card">
 
@@ -92,14 +169,23 @@
                         Your Items
                     </h2>
 
+
                     <div id="cartItems">
-                        <!-- Products loaded by cart.js -->
+
+                        <!--
+                            Cart products are loaded
+                            automatically by cart.js.
+                        -->
+
                     </div>
 
                 </div>
 
 
-                <!-- ORDER SUMMARY -->
+
+                <!-- =================================================
+                     ORDER SUMMARY
+                ================================================== -->
 
                 <div class="cart-card">
 
@@ -107,6 +193,9 @@
                         Order Summary
                     </h2>
 
+
+
+                    <!-- ITEMS -->
 
                     <div class="summary-row">
 
@@ -121,6 +210,9 @@
                     </div>
 
 
+
+                    <!-- SUBTOTAL -->
+
                     <div class="summary-row">
 
                         <span>
@@ -133,6 +225,9 @@
 
                     </div>
 
+
+
+                    <!-- DELIVERY -->
 
                     <div class="summary-row">
 
@@ -147,6 +242,9 @@
                     </div>
 
 
+
+                    <!-- TOTAL -->
+
                     <div class="summary-total">
 
                         <span>
@@ -160,14 +258,22 @@
                     </div>
 
 
+
+                    <!-- =================================================
+                         BUY NOW
+                    ================================================== -->
+
                     <a
                         href="checkout.html"
                         class="checkout-btn"
                         id="checkoutBtn"
                     >
-                        🔒 Proceed to Checkout
+                        🛒 Buy Now
                     </a>
 
+
+
+                    <!-- CONTINUE SHOPPING -->
 
                     <a
                         href="index.html"
@@ -185,7 +291,10 @@
     </main>
 
 
-    <!-- FOOTER -->
+
+    <!-- =================================================
+         FOOTER
+    ================================================== -->
 
     <footer class="footer">
 
@@ -205,9 +314,16 @@
     </footer>
 
 
-    <!-- CART JS -->
 
-    <script type="module" src="cart.js"></script>
+    <!-- =================================================
+         CART JAVASCRIPT
+    ================================================== -->
+
+    <script
+        type="module"
+        src="cart.js"
+    ></script>
+
 
 </body>
 
