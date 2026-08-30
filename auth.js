@@ -6,71 +6,37 @@ import {
     getAuth,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
-    updateProfile,
-    onAuthStateChanged
+    updateProfile
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-/* ==========================================
-   FIREBASE CONFIG
-========================================== */
-
 const firebaseConfig = {
-
-    apiKey: "AIzaSyCiRX_njBfJAAgUzM1vHDTEYgWk1TFLjcmQ",
-
+    apiKey: "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWk1TFLjcmQ",
     authDomain: "chemistboys.firebaseapp.com",
-
     projectId: "chemistboys",
-
     storageBucket: "chemistboys.firebasestorage.app",
-
     messagingSenderId: "696067008650",
-
     appId: "1:696067008650:web:aba739ed1593d315002573",
-
     measurementId: "G-G3BHP0PSB0"
 };
 
 
-/* ==========================================
-   FIREBASE INITIALIZE
-========================================== */
-
 const app = initializeApp(firebaseConfig);
-
 const auth = getAuth(app);
 
 
-/* ==========================================
-   AUTH STATE
-========================================== */
-
-window.firebaseAuthReady = new Promise((resolve) => {
-
-    onAuthStateChanged(auth, (user) => {
-
-        window.currentFirebaseUser = user;
-
-        resolve(user);
-
-    });
-
-});
-
-
-/* ==========================================
+/* =========================
    REGISTER
-========================================== */
+========================= */
 
 const registerForm =
     document.getElementById("registerForm");
 
 if (registerForm) {
 
-    registerForm.addEventListener("submit", async (event) => {
+    registerForm.addEventListener("submit", async (e) => {
 
-        event.preventDefault();
+        e.preventDefault();
 
         const name =
             document.getElementById("name").value.trim();
@@ -88,38 +54,16 @@ if (registerForm) {
             document.getElementById("authMessage");
 
 
-        message.textContent = "";
-
-
-        if (name === "") {
-
-            message.textContent =
-                "❌ Please enter your name.";
-
-            message.style.color = "#e63b59";
-
-            return;
-        }
-
-
         if (password.length < 6) {
-
             message.textContent =
                 "❌ Password must be at least 6 characters.";
-
-            message.style.color = "#e63b59";
-
             return;
         }
 
 
         if (password !== confirmPassword) {
-
             message.textContent =
                 "❌ Passwords do not match.";
-
-            message.style.color = "#e63b59";
-
             return;
         }
 
@@ -127,12 +71,10 @@ if (registerForm) {
         try {
 
             message.textContent =
-                "Creating your account...";
-
-            message.style.color = "#087c6b";
+                "Creating account...";
 
 
-            const userCredential =
+            const result =
                 await createUserWithEmailAndPassword(
                     auth,
                     email,
@@ -140,146 +82,21 @@ if (registerForm) {
                 );
 
 
-            const user =
-                userCredential.user;
-
-
-            await updateProfile(user, {
-
+            await updateProfile(result.user, {
                 displayName: name
-
             });
 
 
-            window.currentFirebaseUser = user;
+            /*
+             * Force Firebase to refresh
+             * the user profile.
+             */
+
+            await result.user.reload();
 
 
             message.textContent =
-                "✅ Account created successfully!";
-
-            message.style.color = "#087c6b";
-
-
-            setTimeout(() => {
-
-                window.location.href =
-                    "index.html";
-
-            }, 800);
-
-
-        } catch (error) {
-
-            console.error(
-                "Registration error:",
-                error
-            );
-
-
-            message.style.color =
-                "#e63b59";
-
-
-            if (
-                error.code ===
-                "auth/email-already-in-use"
-            ) {
-
-                message.textContent =
-                    "❌ This email is already registered.";
-
-            }
-
-            else if (
-                error.code ===
-                "auth/weak-password"
-            ) {
-
-                message.textContent =
-                    "❌ Password is too weak.";
-
-            }
-
-            else if (
-                error.code ===
-                "auth/invalid-email"
-            ) {
-
-                message.textContent =
-                    "❌ Invalid email address.";
-
-            }
-
-            else {
-
-                message.textContent =
-                    "❌ Registration failed.";
-
-                console.error(error.message);
-
-            }
-
-        }
-
-    });
-
-}
-
-
-/* ==========================================
-   LOGIN
-========================================== */
-
-const loginForm =
-    document.getElementById("loginForm");
-
-if (loginForm) {
-
-    loginForm.addEventListener("submit", async (event) => {
-
-        event.preventDefault();
-
-
-        const email =
-            document.getElementById("loginEmail").value.trim();
-
-        const password =
-            document.getElementById("loginPassword").value;
-
-        const message =
-            document.getElementById("loginMessage");
-
-
-        message.textContent =
-            "Logging in...";
-
-        message.style.color =
-            "#087c6b";
-
-
-        try {
-
-            const userCredential =
-                await signInWithEmailAndPassword(
-                    auth,
-                    email,
-                    password
-                );
-
-
-            const user =
-                userCredential.user;
-
-
-            window.currentFirebaseUser =
-                user;
-
-
-            message.textContent =
-                "✅ Login successful!";
-
-            message.style.color =
-                "#087c6b";
+                "✅ Registration successful!";
 
 
             setTimeout(() => {
@@ -292,56 +109,11 @@ if (loginForm) {
 
         } catch (error) {
 
-            console.error(
-                "Login error:",
-                error
-            );
+            console.error(error);
 
-
-            message.style.color =
-                "#e63b59";
-
-
-            if (
-                error.code ===
-                    "auth/invalid-credential" ||
-                error.code ===
-                    "auth/wrong-password"
-            ) {
-
-                message.textContent =
-                    "❌ Incorrect email or password.";
-
-            }
-
-            else if (
-                error.code ===
-                "auth/user-not-found"
-            ) {
-
-                message.textContent =
-                    "❌ Account not found.";
-
-            }
-
-            else if (
-                error.code ===
-                "auth/invalid-email"
-            ) {
-
-                message.textContent =
-                    "❌ Invalid email address.";
-
-            }
-
-            else {
-
-                message.textContent =
-                    "❌ Login failed.";
-
-                console.error(error.message);
-
-            }
+            message.textContent =
+                "❌ Registration failed: " +
+                error.message;
 
         }
 
@@ -350,112 +122,66 @@ if (loginForm) {
 }
 
 
-/* ==========================================
-   REGISTER PASSWORD SHOW / HIDE
-========================================== */
+/* =========================
+   LOGIN
+========================= */
 
-const showPassword =
-    document.getElementById("showPassword");
+const loginForm =
+    document.getElementById("loginForm");
 
-if (showPassword) {
+if (loginForm) {
 
-    showPassword.addEventListener("click", () => {
+    loginForm.addEventListener("submit", async (e) => {
 
-        const input =
-            document.getElementById("password");
-
-
-        if (input.type === "password") {
-
-            input.type = "text";
-
-            showPassword.textContent =
-                "🙈";
-
-        }
-
-        else {
-
-            input.type = "password";
-
-            showPassword.textContent =
-                "👁️";
-
-        }
-
-    });
-
-}
+        e.preventDefault();
 
 
-/* ==========================================
-   CONFIRM PASSWORD SHOW / HIDE
-========================================== */
+        const email =
+            document.getElementById("loginEmail").value.trim();
 
-const showConfirmPassword =
-    document.getElementById("showConfirmPassword");
+        const password =
+            document.getElementById("loginPassword").value;
 
-if (showConfirmPassword) {
-
-    showConfirmPassword.addEventListener("click", () => {
-
-        const input =
-            document.getElementById("confirmPassword");
+        const message =
+            document.getElementById("loginMessage");
 
 
-        if (input.type === "password") {
+        try {
 
-            input.type = "text";
-
-            showConfirmPassword.textContent =
-                "🙈";
-
-        }
-
-        else {
-
-            input.type = "password";
-
-            showConfirmPassword.textContent =
-                "👁️";
-
-        }
-
-    });
-
-}
+            message.textContent =
+                "Logging in...";
 
 
-/* ==========================================
-   LOGIN PASSWORD SHOW / HIDE
-========================================== */
-
-const showLoginPassword =
-    document.getElementById("showLoginPassword");
-
-if (showLoginPassword) {
-
-    showLoginPassword.addEventListener("click", () => {
-
-        const input =
-            document.getElementById("loginPassword");
+            const result =
+                await signInWithEmailAndPassword(
+                    auth,
+                    email,
+                    password
+                );
 
 
-        if (input.type === "password") {
+            await result.user.reload();
 
-            input.type = "text";
 
-            showLoginPassword.textContent =
-                "🙈";
+            message.textContent =
+                "✅ Login successful!";
 
-        }
 
-        else {
+            setTimeout(() => {
 
-            input.type = "password";
+                window.location.href =
+                    "index.html";
 
-            showLoginPassword.textContent =
-                "👁️";
+            }, 500);
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            message.textContent =
+                "❌ Login failed: " +
+                error.message;
 
         }
 
