@@ -1,87 +1,71 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", function () {
 
-    let cart =
-        JSON.parse(localStorage.getItem("chemistCart")) || [];
-
-
-    const cartCount =
-        document.getElementById("cartCount");
-
-    const orderItems =
-        document.getElementById("orderItems");
+    const checkoutItems =
+        document.getElementById("checkoutItems");
 
     const subtotalElement =
         document.getElementById("subtotal");
 
-    const deliveryElement =
-        document.getElementById("delivery");
+    const deliveryChargeElement =
+        document.getElementById("deliveryCharge");
 
-    const totalElement =
-        document.getElementById("total");
+    const grandTotalElement =
+        document.getElementById("grandTotal");
+
+    const deliveryOptions =
+        document.getElementById("deliveryOptions");
 
     const checkoutForm =
         document.getElementById("checkoutForm");
 
-    const checkoutContent =
-        document.getElementById("checkoutContent");
 
-    const successScreen =
-        document.getElementById("successScreen");
+    /*
+        CART
 
-    const orderIdElement =
-        document.getElementById("orderId");
+        script.js usually stores cart data
+        in localStorage.
 
+        We check both common names.
+    */
 
-    /* ================= CART COUNT ================= */
-
-    function updateCartCount() {
-
-        const count = cart.reduce(
-            (total, item) =>
-                total + item.quantity,
-            0
-        );
-
-        cartCount.textContent = count;
-    }
+    let cart =
+        JSON.parse(localStorage.getItem("cart")) ||
+        JSON.parse(localStorage.getItem("cartItems")) ||
+        [];
 
 
-    /* ================= CHECK EMPTY CART ================= */
+    /*
+        If cart is empty
+    */
 
-    if (cart.length === 0) {
+    if (!Array.isArray(cart) || cart.length === 0) {
 
-        checkoutContent.innerHTML = `
+        document.querySelector(".checkout-page").innerHTML = `
 
-            <div style="
-                text-align:center;
-                padding:70px 20px;
-                background:white;
-                border-radius:25px;
-            ">
+            <div class="container">
 
-                <div style="font-size:70px;">
-                    🛒
+                <div class="empty-cart">
+
+                    <div class="empty-cart-icon">
+                        🛒
+                    </div>
+
+                    <h2>
+                        Your Cart is Empty
+                    </h2>
+
+                    <p>
+                        Add some products before checkout.
+                    </p>
+
+                    <a
+                        href="index.html"
+                        class="continue-shopping"
+                    >
+                        Continue Shopping
+                    </a>
+
                 </div>
-
-                <h2>
-                    Your cart is empty
-                </h2>
-
-                <p style="margin:10px 0 25px;">
-                    Add some products before checkout.
-                </p>
-
-                <a
-                    href="index.html"
-                    class="checkout-btn"
-                    style="
-                        display:inline-block;
-                        width:auto;
-                        text-decoration:none;
-                    "
-                >
-                    🛍️ Shop Now
-                </a>
 
             </div>
 
@@ -91,141 +75,367 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* ================= ORDER ITEMS ================= */
+    /*
+        GET PRODUCT PRICE
+    */
 
-    function displayOrderItems() {
+    function getPrice(item) {
 
-        orderItems.innerHTML = "";
-
-        cart.forEach(item => {
-
-            const div =
-                document.createElement("div");
-
-            div.className =
-                "summary-item";
-
-            div.innerHTML = `
-
-                <span>
-                    ${item.name}
-                    × ${item.quantity}
-                </span>
-
-                <strong>
-                    ₹${item.price * item.quantity}
-                </strong>
-
-            `;
-
-            orderItems.appendChild(div);
-
-        });
+        return Number(
+            item.price ||
+            item.productPrice ||
+            0
+        );
 
     }
 
 
-    /* ================= CALCULATE ================= */
+    /*
+        GET PRODUCT NAME
+    */
 
-    function calculateTotal() {
+    function getName(item) {
 
-        const subtotal =
-            cart.reduce(
-                (total, item) =>
-                    total +
-                    item.price *
-                    item.quantity,
-                0
+        return (
+            item.name ||
+            item.productName ||
+            "Medicine"
+        );
+
+    }
+
+
+    /*
+        GET QUANTITY
+    */
+
+    function getQuantity(item) {
+
+        return Number(
+            item.quantity ||
+            item.qty ||
+            1
+        );
+
+    }
+
+
+    /*
+        DISPLAY CART ITEMS
+    */
+
+    let subtotal = 0;
+
+    checkoutItems.innerHTML = "";
+
+
+    cart.forEach(function (item) {
+
+        const price = getPrice(item);
+
+        const quantity = getQuantity(item);
+
+        const name = getName(item);
+
+        const itemTotal =
+            price * quantity;
+
+        subtotal += itemTotal;
+
+
+        const itemElement =
+            document.createElement("div");
+
+        itemElement.className =
+            "cart-item";
+
+
+        itemElement.innerHTML = `
+
+            <div>
+
+                <div class="cart-item-name">
+                    ${name}
+                </div>
+
+                <small>
+                    Quantity: ${quantity}
+                </small>
+
+            </div>
+
+            <div class="cart-item-price">
+                ₹${itemTotal}
+            </div>
+
+        `;
+
+
+        checkoutItems.appendChild(
+            itemElement
+        );
+
+    });
+
+
+    /*
+        DELIVERY CHARGE
+
+        Free delivery above ₹500
+    */
+
+    const deliveryCharge =
+        subtotal >= 500 ? 0 : 40;
+
+
+    const grandTotal =
+        subtotal + deliveryCharge;
+
+
+    subtotalElement.textContent =
+        "₹" + subtotal;
+
+
+    deliveryChargeElement.textContent =
+        deliveryCharge === 0
+            ? "FREE"
+            : "₹" + deliveryCharge;
+
+
+    grandTotalElement.textContent =
+        "₹" + grandTotal;
+
+
+
+    /*
+        DELIVERY DATES
+
+        First available date = tomorrow.
+
+        Customer can choose one of
+        the next 5 available dates.
+    */
+
+    const today =
+        new Date();
+
+
+    for (let i = 1; i <= 5; i++) {
+
+        const deliveryDate =
+            new Date(today);
+
+
+        deliveryDate.setDate(
+            today.getDate() + i
+        );
+
+
+        const dateText =
+            deliveryDate.toLocaleDateString(
+                "en-IN",
+                {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric"
+                }
             );
 
 
-        const delivery =
-            subtotal >= 500
-                ? 0
-                : 50;
+        const dateValue =
+            deliveryDate
+                .toISOString()
+                .split("T")[0];
 
 
-        const total =
-            subtotal + delivery;
+        const label =
+            document.createElement("label");
 
 
-        subtotalElement.textContent =
-            `₹${subtotal}`;
+        label.className =
+            "delivery-option";
 
-        deliveryElement.textContent =
-            delivery === 0
-                ? "FREE"
-                : `₹${delivery}`;
 
-        totalElement.textContent =
-            `₹${total}`;
+        label.innerHTML = `
+
+            <input
+                type="radio"
+                name="deliveryDate"
+                value="${dateValue}"
+                required
+            >
+
+            <span>
+                📅 ${dateText}
+            </span>
+
+        `;
+
+
+        deliveryOptions.appendChild(
+            label
+        );
 
     }
 
 
-    /* ================= PLACE ORDER ================= */
+
+    /*
+        PLACE ORDER
+    */
 
     checkoutForm.addEventListener(
         "submit",
-        function(event) {
+        function (event) {
 
             event.preventDefault();
 
 
-            const name =
-                document.getElementById(
-                    "fullName"
-                ).value.trim();
+            /*
+                CUSTOMER DETAILS
+            */
+
+            const customerName =
+                document
+                    .getElementById("customerName")
+                    .value
+                    .trim();
 
 
-            const phone =
-                document.getElementById(
-                    "phone"
-                ).value.trim();
+            const customerPhone =
+                document
+                    .getElementById("customerPhone")
+                    .value
+                    .trim();
 
 
-            const email =
-                document.getElementById(
-                    "email"
-                ).value.trim();
+            const customerAddress =
+                document
+                    .getElementById("customerAddress")
+                    .value
+                    .trim();
 
 
-            const address =
-                document.getElementById(
-                    "address"
-                ).value.trim();
+            const customerCity =
+                document
+                    .getElementById("customerCity")
+                    .value
+                    .trim();
 
 
-            const city =
-                document.getElementById(
-                    "city"
-                ).value.trim();
+            const customerPincode =
+                document
+                    .getElementById("customerPincode")
+                    .value
+                    .trim();
 
 
-            const pincode =
-                document.getElementById(
-                    "pincode"
-                ).value.trim();
+            const paymentMethod =
+                document
+                    .getElementById("paymentMethod")
+                    .value;
 
 
-            if (
-                !name ||
-                !phone ||
-                !email ||
-                !address ||
-                !city ||
-                !pincode
-            ) {
+            const selectedDelivery =
+                document.querySelector(
+                    'input[name="deliveryDate"]:checked'
+                );
+
+
+            /*
+                BASIC VALIDATION
+            */
+
+            if (!/^\d{10}$/.test(customerPhone)) {
 
                 alert(
-                    "Please fill all details."
+                    "Please enter a valid 10-digit mobile number."
                 );
 
                 return;
             }
 
 
-            /* Generate Demo Order ID */
+            if (!/^\d{6}$/.test(customerPincode)) {
+
+                alert(
+                    "Please enter a valid 6-digit pincode."
+                );
+
+                return;
+            }
+
+
+            if (!selectedDelivery) {
+
+                alert(
+                    "Please select a delivery date."
+                );
+
+                return;
+            }
+
+
+
+            /*
+                CURRENT ORDER DATE
+
+                This is automatically generated
+                at the exact time the user places
+                the order.
+            */
+
+            const orderDate =
+                new Date();
+
+
+            const orderDateFormatted =
+                orderDate.toLocaleDateString(
+                    "en-IN",
+                    {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric"
+                    }
+                );
+
+
+            const orderTime =
+                orderDate.toLocaleTimeString(
+                    "en-IN",
+                    {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    }
+                );
+
+
+            /*
+                DELIVERY DATE
+            */
+
+            const deliveryDateObject =
+                new Date(
+                    selectedDelivery.value +
+                    "T00:00:00"
+                );
+
+
+            const deliveryDateFormatted =
+                deliveryDateObject.toLocaleDateString(
+                    "en-IN",
+                    {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric"
+                    }
+                );
+
+
+
+            /*
+                UNIQUE ORDER ID
+            */
 
             const orderId =
                 "CB" +
@@ -234,35 +444,136 @@ document.addEventListener("DOMContentLoaded", () => {
                     .slice(-8);
 
 
-            orderIdElement.textContent =
-                orderId;
 
-
-            /* Save demo order */
+            /*
+                ORDER OBJECT
+            */
 
             const order = {
 
-                orderId: orderId,
+                id: orderId,
+
+                orderDate:
+                    orderDateFormatted,
+
+                orderTime:
+                    orderTime,
+
+                deliveryDate:
+                    deliveryDateFormatted,
+
+                deliveryDateISO:
+                    selectedDelivery.value,
+
+                status:
+                    "Processing",
+
+                paymentMethod:
+                    paymentMethod,
+
+                paymentStatus:
+                    paymentMethod === "cod"
+                        ? "Pending"
+                        : "Pending",
 
                 customer: {
-                    name,
-                    phone,
-                    email,
-                    address,
-                    city,
-                    pincode
+
+                    name:
+                        customerName,
+
+                    phone:
+                        customerPhone,
+
+                    address:
+                        customerAddress,
+
+                    city:
+                        customerCity,
+
+                    pincode:
+                        customerPincode
+
                 },
 
-                products: cart,
+                items:
+                    cart.map(function (item) {
+
+                        return {
+
+                            name:
+                                getName(item),
+
+                            price:
+                                getPrice(item),
+
+                            quantity:
+                                getQuantity(item)
+
+                        };
+
+                    }),
+
+                subtotal:
+                    subtotal,
+
+                deliveryCharge:
+                    deliveryCharge,
 
                 total:
-                    totalElement.textContent,
-
-                date:
-                    new Date().toLocaleString()
+                    grandTotal
 
             };
 
+
+
+            /*
+                GET EXISTING ORDERS
+            */
+
+            let existingOrders =
+                JSON.parse(
+                    localStorage.getItem("orders")
+                ) || [];
+
+
+            if (!Array.isArray(existingOrders)) {
+
+                existingOrders = [];
+
+            }
+
+
+            /*
+                ADD NEW ORDER
+            */
+
+            existingOrders.push(order);
+
+
+            /*
+                SAVE ORDERS
+            */
+
+            localStorage.setItem(
+                "orders",
+                JSON.stringify(existingOrders)
+            );
+
+
+            /*
+                CLEAR CART
+            */
+
+            localStorage.removeItem("cart");
+
+            localStorage.removeItem(
+                "cartItems"
+            );
+
+
+            /*
+                SAVE LAST ORDER
+            */
 
             localStorage.setItem(
                 "lastOrder",
@@ -270,37 +581,28 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-            /* Empty cart */
+            /*
+                SUCCESS
+            */
 
-            localStorage.removeItem(
-                "chemistCart"
+            alert(
+                "Order placed successfully!\n\n" +
+                "Order ID: " + orderId +
+                "\nOrder Date: " +
+                orderDateFormatted +
+                "\nDelivery Date: " +
+                deliveryDateFormatted
             );
 
 
-            /* Show success */
+            /*
+                GO TO ORDERS
+            */
 
-            checkoutContent.style.display =
-                "none";
-
-            successScreen.style.display =
-                "block";
-
-
-            window.scrollTo({
-                top: 0,
-                behavior: "smooth"
-            });
+            window.location.href =
+                "orders.html";
 
         }
     );
-
-
-    /* ================= INITIAL ================= */
-
-    updateCartCount();
-
-    displayOrderItems();
-
-    calculateTotal();
 
 });
