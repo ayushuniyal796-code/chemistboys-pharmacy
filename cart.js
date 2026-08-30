@@ -1,613 +1,485 @@
-import {
-    initializeApp
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-
-import {
-    getAuth,
-    onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+/* =========================================================
+   CHEMISTBOYS - CART SCRIPT
+========================================================= */
 
 
 /* =========================================================
-   FIREBASE CONFIG
+   CART
 ========================================================= */
 
-const firebaseConfig = {
-    apiKey: "AIzaSyCiRX_njBfJAAgUzM1vHDTEYgWk1TFLjcmQ",
-    authDomain: "chemistboys.firebaseapp.com",
-    projectId: "chemistboys",
-    storageBucket: "chemistboys.firebasestorage.app",
-    messagingSenderId: "696067008650",
-    appId: "1:696067008650:web:aba739ed1593d315002573",
-    measurementId: "G-G3BHP0PSB0"
-};
+let cart =
+    JSON.parse(localStorage.getItem("chemistCart")) || [];
 
 
 /* =========================================================
-   FIREBASE INITIALIZE
+   ELEMENTS
 ========================================================= */
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+const cartItems =
+    document.getElementById("cartItems");
+
+const cartCount =
+    document.getElementById("cartCount");
+
+const totalItems =
+    document.getElementById("totalItems");
+
+const subtotalElement =
+    document.getElementById("subtotal");
+
+const deliveryElement =
+    document.getElementById("deliveryCharge");
+
+const grandTotalElement =
+    document.getElementById("grandTotal");
+
+const checkoutBtn =
+    document.getElementById("checkoutBtn");
 
 
 /* =========================================================
-   CART PAGE
+   CART COUNT
 ========================================================= */
 
-document.addEventListener("DOMContentLoaded", () => {
+function updateCartCount() {
 
-    let cart =
-        JSON.parse(localStorage.getItem("chemistCart")) || [];
+    const count =
+        cart.reduce(
+            (total, item) => {
 
+                return total +
+                    Number(item.quantity || 0);
 
-    /* =====================================================
-       ELEMENTS
-    ===================================================== */
-
-    const cartItems =
-        document.getElementById("cartItems");
-
-    const cartCount =
-        document.getElementById("cartCount");
-
-    const totalItems =
-        document.getElementById("totalItems");
-
-    const subtotalElement =
-        document.getElementById("subtotal");
-
-    const deliveryElement =
-        document.getElementById("deliveryCharge");
-
-    const grandTotalElement =
-        document.getElementById("grandTotal");
-
-    const checkoutBtn =
-        document.getElementById("checkoutBtn");
-
-
-    /* =====================================================
-       AUTH STATE
-
-       Firebase ko user state confirm karne do.
-    ===================================================== */
-
-    let currentUser = null;
-    let authChecked = false;
-
-
-    onAuthStateChanged(auth, (user) => {
-
-        currentUser = user;
-        authChecked = true;
-
-        console.log(
-            "Cart Firebase user:",
-            user
+            },
+            0
         );
 
-        updateCheckoutButton();
 
-    });
+    if (cartCount) {
 
+        cartCount.textContent = count;
 
-    /* =====================================================
-       CHECKOUT BUTTON
-    ===================================================== */
+    }
 
-    function updateCheckoutButton() {
-
-        if (!checkoutBtn) return;
+}
 
 
-        /*
-         * Jab tak Firebase check complete nahi karta,
-         * button ko temporarily disable rakho.
-         */
+/* =========================================================
+   SAVE CART
+========================================================= */
 
-        if (!authChecked) {
+function saveCart() {
 
-            checkoutBtn.textContent =
-                "Checking Login...";
+    localStorage.setItem(
+        "chemistCart",
+        JSON.stringify(cart)
+    );
 
-            checkoutBtn.style.pointerEvents =
-                "none";
+    updateCartCount();
 
-            checkoutBtn.style.opacity =
-                "0.7";
+    displayCart();
 
-            return;
-
-        }
+}
 
 
-        checkoutBtn.style.pointerEvents =
-            "auto";
+/* =========================================================
+   DISPLAY CART
+========================================================= */
 
-        checkoutBtn.style.opacity =
-            "1";
+function displayCart() {
+
+    if (!cartItems) return;
 
 
-        if (currentUser) {
+    cartItems.innerHTML = "";
 
-            checkoutBtn.textContent =
-                "🔒 Proceed to Checkout";
 
-        } else {
+    /* EMPTY CART */
 
-            checkoutBtn.textContent =
-                "🔐 Login to Checkout";
+    if (cart.length === 0) {
 
-        }
+        cartItems.innerHTML = `
+
+            <div class="empty-cart">
+
+                <div class="empty-cart-icon">
+                    🛒
+                </div>
+
+                <h2>
+                    Your Cart is Empty
+                </h2>
+
+                <p>
+                    Add some medicines to continue.
+                </p>
+
+                <a
+                    href="index.html"
+                    class="shop-btn"
+                >
+                    🛍️ Start Shopping
+                </a>
+
+            </div>
+
+        `;
+
+        updateSummary();
+
+        return;
 
     }
 
 
-    /* =====================================================
-       SAVE CART
-    ===================================================== */
+    /* CART PRODUCTS */
 
-    function saveCart() {
+    cart.forEach(item => {
 
-        localStorage.setItem(
-            "chemistCart",
-            JSON.stringify(cart)
-        );
+        const price =
+            Number(item.price) || 0;
 
-        updateCartCount();
-        displayCart();
+        const quantity =
+            Number(item.quantity) || 1;
 
-    }
+        const itemTotal =
+            price * quantity;
 
 
-    /* =====================================================
-       CART COUNT
-    ===================================================== */
-
-    function updateCartCount() {
-
-        const count =
-            cart.reduce(
-                (total, item) => {
-
-                    return total +
-                        Number(item.quantity || 0);
-
-                },
-                0
-            );
+        const div =
+            document.createElement("div");
 
 
-        if (cartCount) {
-
-            cartCount.textContent =
-                count;
-
-        }
-
-    }
+        div.className =
+            "cart-product";
 
 
-    /* =====================================================
-       DISPLAY CART
-    ===================================================== */
+        div.innerHTML = `
 
-    function displayCart() {
+            <div class="product-info">
 
-        if (!cartItems) return;
-
-
-        cartItems.innerHTML = "";
-
-
-        if (cart.length === 0) {
-
-            cartItems.innerHTML = `
-
-                <div class="empty-cart">
-
-                    <div class="empty-cart-icon">
-                        🛒
-                    </div>
-
-                    <h2>
-                        Your Cart is Empty
-                    </h2>
-
-                    <p>
-                        Add some medicines to continue.
-                    </p>
-
-                    <a
-                        href="index.html"
-                        class="shop-btn"
-                    >
-                        🛍️ Start Shopping
-                    </a>
-
+                <div class="product-name">
+                    ${item.name || "Medicine"}
                 </div>
 
-            `;
-
-            updateSummary();
-
-            return;
-
-        }
-
-
-        cart.forEach(item => {
-
-            const price =
-                Number(item.price) || 0;
-
-            const quantity =
-                Number(item.quantity) || 1;
-
-            const itemTotal =
-                price * quantity;
-
-
-            const div =
-                document.createElement("div");
-
-
-            div.className =
-                "cart-product";
-
-
-            div.innerHTML = `
-
-                <div class="product-info">
-
-                    <div class="product-name">
-                        ${item.name || "Medicine"}
-                    </div>
-
-                    <div class="product-price">
-                        ₹${price}
-                    </div>
-
+                <div class="product-price">
+                    ₹${price}
                 </div>
 
-
-                <div class="quantity-controls">
-
-                    <button
-                        type="button"
-                        class="quantity-btn decrease"
-                        data-id="${item.id}"
-                    >
-                        −
-                    </button>
+            </div>
 
 
-                    <span class="quantity-number">
-                        ${quantity}
-                    </span>
+            <div class="quantity-controls">
+
+                <button
+                    type="button"
+                    class="quantity-btn decrease"
+                    data-id="${item.id}"
+                >
+                    −
+                </button>
 
 
-                    <button
-                        type="button"
-                        class="quantity-btn increase"
-                        data-id="${item.id}"
-                    >
-                        +
-                    </button>
-
-                </div>
-
-
-                <strong>
-                    ₹${itemTotal}
-                </strong>
+                <span class="quantity-number">
+                    ${quantity}
+                </span>
 
 
                 <button
                     type="button"
-                    class="remove-btn"
+                    class="quantity-btn increase"
                     data-id="${item.id}"
                 >
-                    🗑 Remove
+                    +
                 </button>
 
-            `;
+            </div>
 
 
-            cartItems.appendChild(div);
+            <strong>
+                ₹${itemTotal}
+            </strong>
+
+
+            <button
+                type="button"
+                class="remove-btn"
+                data-id="${item.id}"
+            >
+                🗑 Remove
+            </button>
+
+        `;
+
+
+        cartItems.appendChild(div);
+
+    });
+
+
+    addEvents();
+
+    updateSummary();
+
+}
+
+
+/* =========================================================
+   CART BUTTON EVENTS
+========================================================= */
+
+function addEvents() {
+
+
+    /* INCREASE */
+
+    document
+        .querySelectorAll(".increase")
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    changeQuantity(
+                        button.dataset.id,
+                        1
+                    );
+
+                }
+            );
 
         });
 
 
-        addEvents();
-        updateSummary();
+    /* DECREASE */
 
-    }
+    document
+        .querySelectorAll(".decrease")
+        .forEach(button => {
 
+            button.addEventListener(
+                "click",
+                () => {
 
-    /* =====================================================
-       CART BUTTON EVENTS
-    ===================================================== */
+                    changeQuantity(
+                        button.dataset.id,
+                        -1
+                    );
 
-    function addEvents() {
-
-        document
-            .querySelectorAll(".increase")
-            .forEach(button => {
-
-                button.addEventListener(
-                    "click",
-                    () => {
-
-                        changeQuantity(
-                            button.dataset.id,
-                            1
-                        );
-
-                    }
-                );
-
-            });
-
-
-        document
-            .querySelectorAll(".decrease")
-            .forEach(button => {
-
-                button.addEventListener(
-                    "click",
-                    () => {
-
-                        changeQuantity(
-                            button.dataset.id,
-                            -1
-                        );
-
-                    }
-                );
-
-            });
-
-
-        document
-            .querySelectorAll(".remove-btn")
-            .forEach(button => {
-
-                button.addEventListener(
-                    "click",
-                    () => {
-
-                        removeItem(
-                            button.dataset.id
-                        );
-
-                    }
-                );
-
-            });
-
-    }
-
-
-    /* =====================================================
-       CHANGE QUANTITY
-    ===================================================== */
-
-    function changeQuantity(productId, change) {
-
-        const item =
-            cart.find(
-                product =>
-                    String(product.id) ===
-                    String(productId)
+                }
             );
 
-
-        if (!item) return;
-
-
-        item.quantity =
-            Number(item.quantity || 0) +
-            change;
+        });
 
 
-        if (item.quantity <= 0) {
+    /* REMOVE */
 
-            cart =
-                cart.filter(
-                    product =>
-                        String(product.id) !==
-                        String(productId)
-                );
+    document
+        .querySelectorAll(".remove-btn")
+        .forEach(button => {
 
-        }
+            button.addEventListener(
+                "click",
+                () => {
+
+                    removeItem(
+                        button.dataset.id
+                    );
+
+                }
+            );
+
+        });
+
+}
 
 
-        saveCart();
+/* =========================================================
+   CHANGE QUANTITY
+========================================================= */
 
-    }
+function changeQuantity(
+    productId,
+    change
+) {
+
+    const item =
+        cart.find(
+            product =>
+                String(product.id) ===
+                String(productId)
+        );
 
 
-    /* =====================================================
-       REMOVE ITEM
-    ===================================================== */
+    if (!item) return;
 
-    function removeItem(productId) {
+
+    item.quantity =
+        Number(item.quantity || 0) +
+        change;
+
+
+    if (item.quantity <= 0) {
 
         cart =
             cart.filter(
-                item =>
-                    String(item.id) !==
+                product =>
+                    String(product.id) !==
                     String(productId)
             );
 
-
-        saveCart();
-
     }
 
 
-    /* =====================================================
-       ORDER SUMMARY
-    ===================================================== */
+    saveCart();
 
-    function updateSummary() {
-
-        let subtotal = 0;
-        let items = 0;
+}
 
 
-        cart.forEach(item => {
+/* =========================================================
+   REMOVE ITEM
+========================================================= */
 
-            const price =
-                Number(item.price) || 0;
+function removeItem(productId) {
 
-            const quantity =
-                Number(item.quantity) || 0;
-
-
-            subtotal +=
-                price * quantity;
-
-            items +=
-                quantity;
-
-        });
-
-
-        const delivery =
-            subtotal === 0
-                ? 0
-                : subtotal >= 500
-                    ? 0
-                    : 50;
-
-
-        const grandTotal =
-            subtotal + delivery;
-
-
-        if (totalItems) {
-
-            totalItems.textContent =
-                items;
-
-        }
-
-
-        if (subtotalElement) {
-
-            subtotalElement.textContent =
-                `₹${subtotal}`;
-
-        }
-
-
-        if (deliveryElement) {
-
-            deliveryElement.textContent =
-                delivery === 0
-                    ? "FREE"
-                    : `₹${delivery}`;
-
-        }
-
-
-        if (grandTotalElement) {
-
-            grandTotalElement.textContent =
-                `₹${grandTotal}`;
-
-        }
-
-    }
-
-
-    /* =====================================================
-       CHECKOUT
-    ===================================================== */
-
-    if (checkoutBtn) {
-
-        checkoutBtn.addEventListener(
-            "click",
-            (event) => {
-
-                event.preventDefault();
-
-
-                /* EMPTY CART */
-
-                if (cart.length === 0) {
-
-                    alert(
-                        "🛒 Your cart is empty!"
-                    );
-
-                    return;
-
-                }
-
-
-                /*
-                 * Firebase state abhi confirm nahi hui.
-                 */
-
-                if (!authChecked) {
-
-                    alert(
-                        "Please wait, checking your login..."
-                    );
-
-                    return;
-
-                }
-
-
-                /*
-                 * USER NOT LOGGED IN
-                 */
-
-                if (!currentUser) {
-
-                    alert(
-                        "🔒 Please login first to continue checkout."
-                    );
-
-                    window.location.href =
-                        "login.html";
-
-                    return;
-
-                }
-
-
-                /*
-                 * USER IS LOGGED IN
-                 */
-
-                console.log(
-                    "Checkout user:",
-                    currentUser.email
-                );
-
-
-                window.location.href =
-                    "checkout.html";
-
-            }
+    cart =
+        cart.filter(
+            item =>
+                String(item.id) !==
+                String(productId)
         );
 
+
+    saveCart();
+
+}
+
+
+/* =========================================================
+   ORDER SUMMARY
+========================================================= */
+
+function updateSummary() {
+
+    let subtotal = 0;
+
+    let items = 0;
+
+
+    cart.forEach(item => {
+
+        const price =
+            Number(item.price) || 0;
+
+        const quantity =
+            Number(item.quantity) || 0;
+
+
+        subtotal +=
+            price * quantity;
+
+        items +=
+            quantity;
+
+    });
+
+
+    const delivery =
+        subtotal === 0
+            ? 0
+            : subtotal >= 500
+                ? 0
+                : 50;
+
+
+    const grandTotal =
+        subtotal + delivery;
+
+
+    if (totalItems) {
+
+        totalItems.textContent =
+            items;
+
     }
 
 
-    /* =====================================================
-       INITIAL LOAD
-    ===================================================== */
+    if (subtotalElement) {
 
-    updateCartCount();
-    displayCart();
-    updateCheckoutButton();
+        subtotalElement.textContent =
+            `₹${subtotal}`;
 
-});
+    }
+
+
+    if (deliveryElement) {
+
+        deliveryElement.textContent =
+            delivery === 0
+                ? "FREE"
+                : `₹${delivery}`;
+
+    }
+
+
+    if (grandTotalElement) {
+
+        grandTotalElement.textContent =
+            `₹${grandTotal}`;
+
+    }
+
+}
+
+
+/* =========================================================
+   BUY NOW / CHECKOUT
+========================================================= */
+
+if (checkoutBtn) {
+
+    /* Button text */
+
+    checkoutBtn.textContent =
+        "🛒 Buy Now";
+
+
+    checkoutBtn.addEventListener(
+        "click",
+        event => {
+
+            event.preventDefault();
+
+
+            /* CART EMPTY */
+
+            if (cart.length === 0) {
+
+                alert(
+                    "🛒 Your cart is empty!"
+                );
+
+                return;
+
+            }
+
+
+            /* DIRECT CHECKOUT */
+
+            window.location.href =
+                "checkout.html";
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   INITIAL LOAD
+========================================================= */
+
+updateCartCount();
+
+displayCart();
