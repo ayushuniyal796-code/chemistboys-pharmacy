@@ -1,7 +1,16 @@
 document.addEventListener("DOMContentLoaded", () => {
 
+    /* ============================
+       GET CART
+    ============================ */
+
     let cart =
         JSON.parse(localStorage.getItem("chemistCart")) || [];
+
+
+    /* ============================
+       ELEMENTS
+    ============================ */
 
     const cartItems =
         document.getElementById("cartItems");
@@ -9,38 +18,53 @@ document.addEventListener("DOMContentLoaded", () => {
     const cartCount =
         document.getElementById("cartCount");
 
+    const totalItems =
+        document.getElementById("totalItems");
+
     const subtotalElement =
         document.getElementById("subtotal");
 
     const deliveryElement =
-        document.getElementById("delivery");
+        document.getElementById("deliveryCharge");
 
     const totalElement =
-        document.getElementById("total");
+        document.getElementById("grandTotal");
 
     const checkoutBtn =
         document.getElementById("checkoutBtn");
 
 
-    /* ================= CART COUNT ================= */
+    /* ============================
+       CART COUNT
+    ============================ */
 
     function updateCartCount() {
 
         const count = cart.reduce(
-            (total, item) =>
-                total + item.quantity,
+            (total, item) => {
+                return total + Number(item.quantity || 0);
+            },
             0
         );
 
-        cartCount.textContent = count;
+        if (cartCount) {
+            cartCount.textContent = count;
+        }
     }
 
 
-    /* ================= DISPLAY CART ================= */
+    /* ============================
+       DISPLAY CART
+    ============================ */
 
     function displayCart() {
 
+        if (!cartItems) return;
+
         cartItems.innerHTML = "";
+
+
+        /* EMPTY CART */
 
         if (cart.length === 0) {
 
@@ -53,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
 
                     <h2>
-                        Your cart is empty
+                        Your Cart is Empty
                     </h2>
 
                     <p>
@@ -63,13 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     <a
                         href="index.html"
-                        class="checkout-btn"
-                        style="
-                            display:inline-block;
-                            width:auto;
-                            text-decoration:none;
-                            margin-top:25px;
-                        "
+                        class="shop-btn"
                     >
                         🛍️ Start Shopping
                     </a>
@@ -79,68 +97,80 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
 
             updateSummary();
+            updateCartCount();
 
             return;
         }
 
 
+        /* CART PRODUCTS */
+
         cart.forEach(item => {
+
+            const productPrice =
+                Number(item.price) || 0;
+
+            const quantity =
+                Number(item.quantity) || 1;
+
+            const itemTotal =
+                productPrice * quantity;
+
 
             const cartItem =
                 document.createElement("div");
 
             cartItem.className =
-                "cart-item";
+                "cart-product";
+
 
             cartItem.innerHTML = `
 
-                <div class="cart-item-image">
+                <div class="product-info">
 
-                    <img
-                        src="${item.image}"
-                        alt="${item.name}"
+                    <div class="product-name">
+                        ${item.name || "Medicine"}
+                    </div>
+
+                    <div class="product-price">
+                        ₹${productPrice}
+                    </div>
+
+                </div>
+
+
+                <div class="quantity-controls">
+
+                    <button
+                        type="button"
+                        class="quantity-btn decrease"
+                        data-id="${item.id}"
                     >
+                        −
+                    </button>
+
+                    <span class="quantity-number">
+                        ${quantity}
+                    </span>
+
+                    <button
+                        type="button"
+                        class="quantity-btn increase"
+                        data-id="${item.id}"
+                    >
+                        +
+                    </button>
 
                 </div>
 
 
-                <div class="cart-item-info">
-
-                    <h3>
-                        ${item.name}
-                    </h3>
-
-                    <div class="cart-price">
-                        ₹${item.price}
-                    </div>
-
-
-                    <div class="quantity-control">
-
-                        <button
-                            class="decrease"
-                            data-id="${item.id}"
-                        >
-                            −
-                        </button>
-
-                        <strong>
-                            ${item.quantity}
-                        </strong>
-
-                        <button
-                            class="increase"
-                            data-id="${item.id}"
-                        >
-                            +
-                        </button>
-
-                    </div>
-
-                </div>
+                <strong>
+                    ₹${itemTotal}
+                </strong>
 
 
                 <button
+                    type="button"
                     class="remove-btn"
                     data-id="${item.id}"
                 >
@@ -148,6 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </button>
 
             `;
+
 
             cartItems.appendChild(cartItem);
 
@@ -158,12 +189,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
         updateSummary();
 
+        updateCartCount();
+
     }
 
 
-    /* ================= CART EVENTS ================= */
+    /* ============================
+       CART BUTTON EVENTS
+    ============================ */
 
     function addCartEvents() {
+
+
+        /* INCREASE */
 
         document
             .querySelectorAll(".increase")
@@ -173,16 +211,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     "click",
                     () => {
 
-                        changeQuantity(
-                            Number(button.dataset.id),
-                            1
-                        );
+                        const id =
+                            button.dataset.id;
+
+                        changeQuantity(id, 1);
 
                     }
                 );
 
             });
 
+
+        /* DECREASE */
 
         document
             .querySelectorAll(".decrease")
@@ -192,16 +232,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     "click",
                     () => {
 
-                        changeQuantity(
-                            Number(button.dataset.id),
-                            -1
-                        );
+                        const id =
+                            button.dataset.id;
+
+                        changeQuantity(id, -1);
 
                     }
                 );
 
             });
 
+
+        /* REMOVE */
 
         document
             .querySelectorAll(".remove-btn")
@@ -211,9 +253,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     "click",
                     () => {
 
-                        removeItem(
-                            Number(button.dataset.id)
-                        );
+                        const id =
+                            button.dataset.id;
+
+                        removeItem(id);
 
                     }
                 );
@@ -223,7 +266,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* ================= QUANTITY ================= */
+    /* ============================
+       CHANGE QUANTITY
+    ============================ */
 
     function changeQuantity(
         productId,
@@ -232,21 +277,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const item =
             cart.find(
-                item => item.id === productId
+                product =>
+                    String(product.id) ===
+                    String(productId)
             );
+
 
         if (!item) return;
 
 
-        item.quantity += change;
+        item.quantity =
+            Number(item.quantity || 0) +
+            change;
 
+
+        /* REMOVE WHEN ZERO */
 
         if (item.quantity <= 0) {
 
             cart =
                 cart.filter(
-                    item =>
-                        item.id !== productId
+                    product =>
+                        String(product.id) !==
+                        String(productId)
                 );
 
         }
@@ -257,22 +310,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* ================= REMOVE ================= */
+    /* ============================
+       REMOVE ITEM
+    ============================ */
 
     function removeItem(productId) {
 
         cart =
             cart.filter(
                 item =>
-                    item.id !== productId
+                    String(item.id) !==
+                    String(productId)
             );
+
 
         saveCart();
 
     }
 
 
-    /* ================= SAVE ================= */
+    /* ============================
+       SAVE CART
+    ============================ */
 
     function saveCart() {
 
@@ -281,85 +340,134 @@ document.addEventListener("DOMContentLoaded", () => {
             JSON.stringify(cart)
         );
 
-        displayCart();
 
-        updateCartCount();
+        displayCart();
 
     }
 
 
-    /* ================= SUMMARY ================= */
+    /* ============================
+       UPDATE SUMMARY
+    ============================ */
 
     function updateSummary() {
 
-        const subtotal =
-            cart.reduce(
-                (total, item) =>
-                    total +
-                    item.price *
-                    item.quantity,
-                0
-            );
+        let subtotal = 0;
+
+        let itemCount = 0;
+
+
+        cart.forEach(item => {
+
+            const price =
+                Number(item.price) || 0;
+
+            const quantity =
+                Number(item.quantity) || 0;
+
+
+            subtotal +=
+                price * quantity;
+
+
+            itemCount += quantity;
+
+        });
 
 
         /*
-            Free delivery above ₹500
+
+            FREE DELIVERY
+            ABOVE ₹500
+
         */
 
-        const delivery =
-            subtotal === 0
-                ? 0
-                : subtotal >= 500
-                    ? 0
-                    : 50;
+        let delivery = 0;
 
 
-        const total =
+        if (subtotal > 0 && subtotal < 500) {
+
+            delivery = 50;
+
+        }
+
+
+        const grandTotal =
             subtotal + delivery;
 
 
-        subtotalElement.textContent =
-            `₹${subtotal}`;
+        if (totalItems) {
 
-        deliveryElement.textContent =
-            delivery === 0
-                ? "FREE"
-                : `₹${delivery}`;
+            totalItems.textContent =
+                itemCount;
 
-        totalElement.textContent =
-            `₹${total}`;
+        }
+
+
+        if (subtotalElement) {
+
+            subtotalElement.textContent =
+                `₹${subtotal}`;
+
+        }
+
+
+        if (deliveryElement) {
+
+            deliveryElement.textContent =
+                delivery === 0
+                    ? "FREE"
+                    : `₹${delivery}`;
+
+        }
+
+
+        if (totalElement) {
+
+            totalElement.textContent =
+                `₹${grandTotal}`;
+
+        }
 
     }
 
 
-    /* ================= CHECKOUT ================= */
+    /* ============================
+       CHECKOUT
+    ============================ */
 
-    checkoutBtn.addEventListener(
-        "click",
-        () => {
+    if (checkoutBtn) {
 
-            if (cart.length === 0) {
+        checkoutBtn.addEventListener(
+            "click",
+            function (event) {
 
-                alert(
-                    "Your cart is empty!"
-                );
+                event.preventDefault();
 
-                return;
+
+                if (cart.length === 0) {
+
+                    alert(
+                        "Your cart is empty!"
+                    );
+
+                    return;
+
+                }
+
+
+                window.location.href =
+                    "checkout.html";
+
             }
+        );
+
+    }
 
 
-            /*
-                Next page will be checkout.html
-            */
-
-            window.location.href =
-                "checkout.html";
-
-        }
-    );
-
-
-    /* ================= INITIAL ================= */
+    /* ============================
+       INITIAL LOAD
+    ============================ */
 
     updateCartCount();
 
