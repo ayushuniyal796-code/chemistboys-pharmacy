@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>My Account - ChemistBoys</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+
+        .account-page {
+
+            min-height: 75vh;
+
+            padding: 50px 20px;
+
+        }
+
+
+        .account-card {
+
+            max-width: 800px;
+
+            margin: auto;
+
+            background: rgba(255,255,255,.95);
+
+            padding: 35px;
+
+            border-radius: 25px;
+
+            box-shadow:
+                0 20px 60px
+                rgba(0,80,70,.12);
+
+        }
+
+
+        .profile {
+
+            text-align: center;
+
+            padding-bottom: 30px;
+
+            border-bottom:
+                1px solid #e3eeee;
+
+        }
+
+
+        .profile-icon {
+
+            width: 90px;
+
+            height: 90px;
+
+            margin: auto;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            border-radius: 50%;
+
+            background: #e9faf7;
+
+            font-size: 45px;
+
+        }
+
+
+        .profile h1 {
+
+            color: #075f55;
+
+            margin-top: 15px;
+
+        }
+
+
+        .profile p {
+
+            color: #718987;
+
+        }
+
+
+        .account-menu {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, 1fr);
+
+            gap: 15px;
+
+            margin-top: 30px;
+
+        }
+
+
+        .account-menu a {
+
+            padding: 20px;
+
+            background: #f4fbf9;
+
+            border-radius: 15px;
+
+            text-decoration: none;
+
+            color: #075f55;
+
+            font-weight: 600;
+
+            transition: .3s;
+
+        }
+
+
+        .account-menu a:hover {
+
+            transform:
+                translateY(-4px);
+
+            background: #e7f8f4;
+
+        }
+
+
+        @media(max-width:600px) {
+
+            .account-menu {
+
+                grid-template-columns: 1fr;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header class="header">
+
+    <div class="container">
+
+        <div class="header-top">
+
+            <a
+                href="index.html"
+                style="text-decoration:none;"
+            >
+
+                <div class="logo">
+
+                    <span class="logo-icon">
+                        💊
+                    </span>
+
+                    <span class="logo-text">
+                        ChemistBoys
+                    </span>
+
+                </div>
+
+            </a>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+<main class="account-page">
+
+    <div class="account-card">
+
+
+        <div class="profile">
+
+            <div class="profile-icon">
+                👤
+            </div>
+
+
+            <h1 id="userName">
+                Loading...
+            </h1>
+
+
+            <p id="userEmail">
+                Loading...
+            </p>
+
+        </div>
+
+
+        <div class="account-menu">
+
+            <a href="orders.html">
+                📦 My Orders
+            </a>
+
+
+            <a href="wishlist.html">
+                ❤️ Wishlist
+            </a>
+
+
+            <a href="cart.html">
+                🛒 My Cart
+            </a>
+
+
+            <a href="index.html">
+                🏠 Continue Shopping
+            </a>
+
+        </div>
+
+
+    </div>
+
+</main>
+
+
+<script type="module">
+
+import {
+    initializeApp
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+    getAuth,
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+
+const firebaseConfig = {
+
+    apiKey: "YOUR_API_KEY",
+
+    authDomain:
+        "YOUR_PROJECT.firebaseapp.com",
+
+    projectId:
+        "YOUR_PROJECT_ID",
+
+    storageBucket:
+        "YOUR_PROJECT.firebasestorage.app",
+
+    messagingSenderId:
+        "YOUR_MESSAGING_SENDER_ID",
+
+    appId:
+        "YOUR_APP_ID"
+};
+
+
+const app =
+    initializeApp(firebaseConfig);
+
+const auth =
+    getAuth(app);
+
+
+onAuthStateChanged(auth, (user) => {
+
+    if (!user) {
+
+        window.location.href =
+            "login.html";
+
+        return;
+
+    }
+
+
+    document.getElementById(
+        "userName"
+    ).textContent =
+        user.displayName ||
+        "ChemistBoys User";
+
+
+    document.getElementById(
+        "userEmail"
+    ).textContent =
+        user.email;
+
+});
+
+</script>
+
+
+</body>
+
+</html>
