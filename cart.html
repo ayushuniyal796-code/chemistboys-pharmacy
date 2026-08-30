@@ -2,288 +2,39 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Cart - ChemistBoys</title>
 
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
-
-    <style>
-
-        .cart-page {
-            min-height: 70vh;
-            padding: 50px 0;
-            background: #f5fbfa;
-        }
-
-        .cart-title {
-            text-align: center;
-            color: #075f55;
-            font-size: 36px;
-            margin-bottom: 35px;
-        }
-
-        .cart-layout {
-            max-width: 1100px;
-            margin: auto;
-            display: grid;
-            grid-template-columns: 1.5fr 1fr;
-            gap: 25px;
-        }
-
-        .cart-card {
-            background: white;
-            border-radius: 18px;
-            padding: 25px;
-            box-shadow: 0 8px 25px rgba(0, 80, 70, 0.08);
-        }
-
-        .cart-card h2 {
-            color: #075f55;
-            margin-bottom: 20px;
-        }
-
-        .cart-product {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 15px;
-            padding: 18px 0;
-            border-bottom: 1px solid #e7efed;
-        }
-
-        .product-info {
-            flex: 1;
-        }
-
-        .product-name {
-            font-size: 17px;
-            font-weight: 700;
-            color: #244d48;
-            margin-bottom: 6px;
-        }
-
-        .product-price {
-            color: #087c6b;
-            font-weight: 700;
-        }
-
-        .quantity-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .quantity-btn {
-            width: 32px;
-            height: 32px;
-            border: none;
-            border-radius: 8px;
-            background: #e4f5f1;
-            color: #075f55;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .quantity-btn:hover {
-            background: #0ca88f;
-            color: white;
-        }
-
-        .quantity-number {
-            min-width: 25px;
-            text-align: center;
-            font-weight: 700;
-        }
-
-        .remove-btn {
-            border: none;
-            background: #fff0f0;
-            color: #d33;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .remove-btn:hover {
-            background: #ffdede;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            color: #526d69;
-        }
-
-        .summary-total {
-            display: flex;
-            justify-content: space-between;
-            border-top: 1px solid #dceae7;
-            margin-top: 12px;
-            padding-top: 17px;
-            font-size: 22px;
-            font-weight: 800;
-            color: #075f55;
-        }
-
-        .checkout-btn {
-            display: block;
-            width: 100%;
-            margin-top: 22px;
-            padding: 15px;
-            border: none;
-            border-radius: 12px;
-            background: #0ca88f;
-            color: white;
-            text-align: center;
-            text-decoration: none;
-            font-size: 17px;
-            font-weight: 700;
-            cursor: pointer;
-            box-sizing: border-box;
-        }
-
-        .checkout-btn:hover {
-            background: #087c6b;
-            transform: translateY(-2px);
-        }
-
-        .continue-btn {
-            display: block;
-            text-align: center;
-            margin-top: 15px;
-            color: #087c6b;
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .empty-cart {
-            max-width: 650px;
-            margin: 50px auto;
-            background: white;
-            padding: 60px 25px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 8px 25px rgba(0, 80, 70, 0.08);
-        }
-
-        .empty-cart-icon {
-            font-size: 70px;
-            margin-bottom: 20px;
-        }
-
-        .empty-cart h2 {
-            color: #075f55;
-            margin-bottom: 10px;
-        }
-
-        .empty-cart p {
-            color: #718987;
-            margin-bottom: 25px;
-        }
-
-        .shop-btn {
-            display: inline-block;
-            background: #0ca88f;
-            color: white;
-            text-decoration: none;
-            padding: 13px 25px;
-            border-radius: 11px;
-            font-weight: 700;
-        }
-
-        .shop-btn:hover {
-            background: #087c6b;
-        }
-
-        @media (max-width: 750px) {
-
-            .cart-page {
-                padding: 35px 0;
-            }
-
-            .cart-title {
-                font-size: 30px;
-            }
-
-            .cart-layout {
-                grid-template-columns: 1fr;
-            }
-
-            .cart-product {
-                flex-wrap: wrap;
-            }
-
-        }
-
-    </style>
-
+    <link rel="stylesheet" href="style.css">
 </head>
-
 
 <body>
 
-
-    <!-- ================================
-         HEADER
-    ================================= -->
-
+    <!-- HEADER -->
     <header class="header">
 
         <div class="container">
 
             <div class="header-top">
 
-
-                <!-- LOGO -->
-
-                <a
-                    href="index.html"
-                    class="logo-link"
-                >
+                <a href="index.html" class="logo-link">
 
                     <div class="logo">
-
-                        <span class="logo-icon">
-                            💊
-                        </span>
-
-                        <span class="logo-text">
-                            ChemistBoys
-                        </span>
-
+                        <span class="logo-icon">💊</span>
+                        <span class="logo-text">ChemistBoys</span>
                     </div>
 
                 </a>
 
-
-                <!-- HEADER BUTTONS -->
-
                 <div class="header-actions">
 
-                    <a
-                        href="index.html"
-                        class="account-btn"
-                    >
+                    <a href="index.html" class="account-btn">
                         🏠 Home
                     </a>
 
-                    <a
-                        href="orders.html"
-                        class="account-btn"
-                    >
+                    <a href="orders.html" class="account-btn">
                         📦 My Orders
                     </a>
 
@@ -291,43 +42,25 @@
 
             </div>
 
-
-            <!-- NAVBAR -->
-
             <nav class="navbar">
 
-                <a
-                    href="index.html"
-                    class="nav-link"
-                >
+                <a href="index.html" class="nav-link">
                     Home
                 </a>
 
-                <a
-                    href="index.html#products"
-                    class="nav-link"
-                >
+                <a href="index.html" class="nav-link">
                     All Medicines
                 </a>
 
-                <a
-                    href="index.html#vitamins"
-                    class="nav-link"
-                >
+                <a href="index.html" class="nav-link">
                     Vitamins
                 </a>
 
-                <a
-                    href="index.html#firstaid"
-                    class="nav-link"
-                >
+                <a href="index.html" class="nav-link">
                     First Aid
                 </a>
 
-                <a
-                    href="index.html#offers"
-                    class="nav-link"
-                >
+                <a href="index.html" class="nav-link">
                     Offers
                 </a>
 
@@ -338,11 +71,7 @@
     </header>
 
 
-
-    <!-- ================================
-         CART PAGE
-    ================================= -->
-
+    <!-- CART -->
     <main class="cart-page">
 
         <div class="container">
@@ -352,13 +81,10 @@
             </h1>
 
 
-            <div
-                class="cart-layout"
-                id="cartLayout"
-            >
+            <div class="cart-layout">
 
 
-                <!-- CART PRODUCTS -->
+                <!-- CART ITEMS -->
 
                 <div class="cart-card">
 
@@ -366,14 +92,11 @@
                         Your Items
                     </h2>
 
-                    <div
-                        id="cartItems"
-                    >
+                    <div id="cartItems">
                         <!-- Products loaded by cart.js -->
                     </div>
 
                 </div>
-
 
 
                 <!-- ORDER SUMMARY -->
@@ -418,7 +141,7 @@
                         </span>
 
                         <strong id="deliveryCharge">
-                            ₹0
+                            FREE
                         </strong>
 
                     </div>
@@ -436,8 +159,6 @@
 
                     </div>
 
-
-                    <!-- CHECKOUT -->
 
                     <a
                         href="checkout.html"
@@ -464,10 +185,7 @@
     </main>
 
 
-
-    <!-- ================================
-         FOOTER
-    ================================= -->
+    <!-- FOOTER -->
 
     <footer class="footer">
 
@@ -487,11 +205,9 @@
     </footer>
 
 
-
-    <!-- CART JAVASCRIPT -->
+    <!-- CART JS -->
 
     <script src="cart.js"></script>
-
 
 </body>
 
