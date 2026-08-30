@@ -1,5 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
 
+    /* ==========================================
+       ELEMENTS
+    ========================================== */
+
     const productsGrid =
         document.getElementById("productsGrid");
 
@@ -41,12 +45,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 localStorage.getItem("chemistCart")
             ) || [];
 
+        if (!Array.isArray(cart)) {
+            cart = [];
+        }
+
     } catch (error) {
+
+        console.error("Cart loading error:", error);
 
         cart = [];
 
     }
 
+
+    /* ==========================================
+       CART COUNT
+    ========================================== */
 
     function updateCartCount() {
 
@@ -54,12 +68,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const count =
             cart.reduce(
-                (total, item) =>
-                    total + Number(item.quantity || 0),
+                (total, item) => {
+
+                    return total +
+                        Number(item.quantity || 0);
+
+                },
                 0
             );
 
         cartCount.textContent = count;
+
     }
 
 
@@ -70,8 +89,8 @@ document.addEventListener("DOMContentLoaded", () => {
     function requireLogin() {
 
         /*
-         * Firebase login state account.js/auth.js
-         * se aayegi.
+         * account.js Firebase user ko
+         * window.currentFirebaseUser mein rakhta hai.
          */
 
         if (window.currentFirebaseUser) {
@@ -95,11 +114,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         return false;
+
     }
 
 
     /* ==========================================
-       PRODUCTS DISPLAY
+       DISPLAY PRODUCTS
     ========================================== */
 
     function displayProducts(productList) {
@@ -131,110 +151,120 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
 
             return;
+
         }
 
 
-        productList.forEach((product, index) => {
+        productList.forEach(
+            (product, index) => {
 
-            const card =
-                document.createElement("div");
-
-
-            card.className =
-                "product-card";
+                const card =
+                    document.createElement("div");
 
 
-            card.style.animationDelay =
-                `${index * 0.05}s`;
+                card.className =
+                    "product-card";
 
 
-            card.innerHTML = `
-
-                <div class="product-image">
-
-                    <img
-                        src="${product.image}"
-                        alt="${product.name}"
-                        loading="lazy"
-                    >
-
-                </div>
+                card.style.animationDelay =
+                    `${index * 0.05}s`;
 
 
-                <span class="discount">
+                card.innerHTML = `
 
-                    ${product.discount || ""}
+                    <div class="product-image">
 
-                </span>
+                        <img
+                            src="${product.image}"
+                            alt="${product.name}"
+                            loading="lazy"
+                        >
 
-
-                <span class="product-category">
-
-                    ${getCategoryName(product.category)}
-
-                </span>
-
-
-                <h3 class="product-name">
-
-                    ${product.name}
-
-                </h3>
+                    </div>
 
 
-                <div class="product-rating">
+                    <span class="discount">
 
-                    ⭐ ${product.rating || 0}
-
-                </div>
-
-
-                <div class="product-price">
-
-                    ₹${product.price}
-
-                    <span class="old-price">
-
-                        ₹${product.oldPrice || ""}
+                        ${product.discount || ""}
 
                     </span>
 
-                </div>
+
+                    <span class="product-category">
+
+                        ${getCategoryName(
+                            product.category
+                        )}
+
+                    </span>
 
 
-                <button
-                    type="button"
-                    class="add-cart-btn"
-                    data-id="${product.id}"
-                >
+                    <h3 class="product-name">
 
-                    🛒 Add to Cart
+                        ${product.name}
 
-                </button>
-
-            `;
+                    </h3>
 
 
-            productsGrid.appendChild(card);
+                    <div class="product-rating">
 
-        });
+                        ⭐ ${product.rating || 0}
+
+                    </div>
+
+
+                    <div class="product-price">
+
+                        ₹${product.price}
+
+                        <span class="old-price">
+
+                            ${
+                                product.oldPrice
+                                    ? "₹" + product.oldPrice
+                                    : ""
+                            }
+
+                        </span>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        class="add-cart-btn"
+                        data-id="${product.id}"
+                    >
+
+                        🛒 Add to Cart
+
+                    </button>
+
+                `;
+
+
+                productsGrid.appendChild(card);
+
+            }
+        );
 
 
         /* ==========================================
-           ADD TO CART BUTTON EVENTS
+           ADD TO CART EVENTS
         ========================================== */
 
         document
             .querySelectorAll(".add-cart-btn")
             .forEach(button => {
 
-
                 button.addEventListener(
                     "click",
                     () => {
 
                         const productId =
-                            Number(button.dataset.id);
+                            Number(
+                                button.dataset.id
+                            );
 
 
                         addToCart(productId);
@@ -303,7 +333,11 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
 
-        return names[category] || category || "";
+        return (
+            names[category] ||
+            category ||
+            ""
+        );
 
     }
 
@@ -341,10 +375,11 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             return;
+
         }
 
 
-        /* FIND EXISTING */
+        /* FIND EXISTING PRODUCT */
 
         const existing =
             cart.find(
@@ -357,7 +392,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (existing) {
 
             existing.quantity =
-                Number(existing.quantity || 0) + 1;
+                Number(
+                    existing.quantity || 0
+                ) + 1;
 
         } else {
 
@@ -372,7 +409,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        /* SAVE */
+        /* SAVE CART */
 
         localStorage.setItem(
             "chemistCart",
@@ -438,6 +475,7 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             return;
+
         }
 
 
@@ -462,37 +500,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         let filtered =
-            products.filter(product => {
+            products.filter(
+                product => {
+
+                    const productName =
+                        String(
+                            product.name || ""
+                        ).toLowerCase();
 
 
-                const productName =
-                    String(product.name || "")
-                        .toLowerCase();
+                    const matchesSearch =
+                        productName.includes(
+                            searchText
+                        );
 
 
-                const matchesSearch =
-                    productName.includes(
-                        searchText
+                    const matchesCategory =
+                        !category ||
+                        product.category ===
+                            category;
+
+
+                    const matchesPrice =
+                        Number(
+                            product.price
+                        ) <= maxPrice;
+
+
+                    return (
+                        matchesSearch &&
+                        matchesCategory &&
+                        matchesPrice
                     );
 
-
-                const matchesCategory =
-                    !category ||
-                    product.category === category;
-
-
-                const matchesPrice =
-                    Number(product.price) <=
-                    maxPrice;
-
-
-                return (
-                    matchesSearch &&
-                    matchesCategory &&
-                    matchesPrice
-                );
-
-            });
+                }
+            );
 
 
         /* ==========================================
@@ -506,7 +548,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         switch (sort) {
-
 
             case "price-low":
 
@@ -534,8 +575,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 filtered.sort(
                     (a, b) =>
-                        Number(b.rating || 0) -
-                        Number(a.rating || 0)
+                        Number(
+                            b.rating || 0
+                        ) -
+                        Number(
+                            a.rating || 0
+                        )
                 );
 
                 break;
@@ -545,8 +590,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 filtered.sort(
                     (a, b) =>
-                        Number(b.newest || 0) -
-                        Number(a.newest || 0)
+                        Number(
+                            b.newest || 0
+                        ) -
+                        Number(
+                            a.newest || 0
+                        )
                 );
 
                 break;
@@ -611,7 +660,6 @@ document.addEventListener("DOMContentLoaded", () => {
             "input",
             () => {
 
-
                 if (priceLabel) {
 
                     priceLabel.textContent =
@@ -665,7 +713,10 @@ document.addEventListener("DOMContentLoaded", () => {
     updateCartCount();
 
 
-    if (typeof products !== "undefined") {
+    if (
+        typeof products !==
+        "undefined"
+    ) {
 
         displayProducts(products);
 
