@@ -9,58 +9,101 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
+/* =================================================
+   FIREBASE CONFIG
+================================================= */
+
 const firebaseConfig = {
-    apiKey: "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWk1TFLjcmQ",
-    authDomain: "chemistboys.firebaseapp.com",
-    projectId: "chemistboys",
-    storageBucket: "chemistboys.firebasestorage.app",
-    messagingSenderId: "696067008650",
-    appId: "1:696067008650:web:aba739ed1593d315002573",
-    measurementId: "G-G3BHP0PSB0"
+
+    apiKey: "AIzaSyCiRX_njBfJAAgUzM1vHDTEYgWk1TFLjcmQ",
+
+    authDomain:
+        "chemistboys.firebaseapp.com",
+
+    projectId:
+        "chemistboys",
+
+    storageBucket:
+        "chemistboys.firebasestorage.app",
+
+    messagingSenderId:
+        "696067008650",
+
+    appId:
+        "1:696067008650:web:aba739ed1593d315002573",
+
+    measurementId:
+        "G-G3BHP0PSB0"
 };
 
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+/* =================================================
+   INITIALIZE
+================================================= */
+
+const app =
+    initializeApp(firebaseConfig);
+
+const auth =
+    getAuth(app);
 
 
-/*
-========================================
-GLOBAL AUTH STATE
-========================================
-*/
+/* =================================================
+   AUTH READY PROMISE
+================================================= */
 
-window.currentFirebaseUser = null;
+window.firebaseAuthReady =
+    new Promise((resolve) => {
 
-window.firebaseAuthReady = new Promise((resolve) => {
+        onAuthStateChanged(
+            auth,
+            (user) => {
 
-    onAuthStateChanged(auth, (user) => {
+                window.currentFirebaseUser =
+                    user;
 
-        window.currentFirebaseUser = user;
+                resolve(user);
 
-        resolve(user);
+            }
+        );
+
+    });
 
 
-        /*
-        ================================
-        LOGGED IN
-        ================================
-        */
+/* =================================================
+   ELEMENTS
+================================================= */
+
+const accountBtn =
+    document.getElementById("accountBtn");
+
+const registerBtn =
+    document.getElementById("registerBtn");
+
+const logoutBtn =
+    document.getElementById("logoutBtn");
+
+const ordersBtn =
+    document.getElementById("ordersBtn");
+
+
+/* =================================================
+   LOGIN STATE
+================================================= */
+
+onAuthStateChanged(
+    auth,
+    (user) => {
+
+        window.currentFirebaseUser =
+            user;
+
+
+        /* =========================================
+           LOGGED IN
+        ========================================= */
 
         if (user) {
-
-            const accountBtn =
-                document.getElementById("accountBtn");
-
-            const registerBtn =
-                document.getElementById("registerBtn");
-
-            const logoutBtn =
-                document.getElementById("logoutBtn");
-
-            const ordersBtn =
-                document.getElementById("ordersBtn");
-
 
             const name =
                 user.displayName ||
@@ -70,6 +113,8 @@ window.firebaseAuthReady = new Promise((resolve) => {
                         : "Account"
                 );
 
+
+            /* ACCOUNT */
 
             if (accountBtn) {
 
@@ -82,6 +127,8 @@ window.firebaseAuthReady = new Promise((resolve) => {
             }
 
 
+            /* REGISTER HIDE */
+
             if (registerBtn) {
 
                 registerBtn.style.display =
@@ -90,6 +137,8 @@ window.firebaseAuthReady = new Promise((resolve) => {
             }
 
 
+            /* LOGOUT SHOW */
+
             if (logoutBtn) {
 
                 logoutBtn.style.display =
@@ -97,6 +146,8 @@ window.firebaseAuthReady = new Promise((resolve) => {
 
             }
 
+
+            /* ORDERS SHOW */
 
             if (ordersBtn) {
 
@@ -108,26 +159,11 @@ window.firebaseAuthReady = new Promise((resolve) => {
         }
 
 
-        /*
-        ================================
-        LOGGED OUT
-        ================================
-        */
+        /* =========================================
+           LOGGED OUT
+        ========================================= */
 
         else {
-
-            const accountBtn =
-                document.getElementById("accountBtn");
-
-            const registerBtn =
-                document.getElementById("registerBtn");
-
-            const logoutBtn =
-                document.getElementById("logoutBtn");
-
-            const ordersBtn =
-                document.getElementById("ordersBtn");
-
 
             if (accountBtn) {
 
@@ -165,20 +201,13 @@ window.firebaseAuthReady = new Promise((resolve) => {
 
         }
 
-    });
+    }
+);
 
-});
 
-
-/*
-========================================
-LOGOUT
-========================================
-*/
-
-const logoutBtn =
-    document.getElementById("logoutBtn");
-
+/* =================================================
+   LOGOUT
+================================================= */
 
 if (logoutBtn) {
 
@@ -196,7 +225,9 @@ if (logoutBtn) {
                 window.location.href =
                     "index.html";
 
-            } catch (error) {
+            }
+
+            catch (error) {
 
                 console.error(
                     "Logout error:",
