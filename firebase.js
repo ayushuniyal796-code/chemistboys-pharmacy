@@ -1,5 +1,10 @@
+// firebase.js
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {
+    getAuth,
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWk1TFLjcmQ",
@@ -14,3 +19,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
+
+// Firebase ka auth state ready hone ka wait
+export const authReady = new Promise((resolve) => {
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+
+        resolve(user);
+
+        unsubscribe();
+
+    });
+
+});
