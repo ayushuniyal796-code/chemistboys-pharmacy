@@ -1,52 +1,11 @@
-import {
-    initializeApp
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-
-import {
-    getAuth
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
-
 /* ==========================================
-   FIREBASE CONFIG
-========================================== */
-
-const firebaseConfig = {
-
-    apiKey: "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWkT1FLjcmQ",
-
-    authDomain: "chemistboys.firebaseapp.com",
-
-    projectId: "chemistboys",
-
-    storageBucket: "chemistboys.firebasestorage.app",
-
-    messagingSenderId: "696067008650",
-
-    appId: "1:696067008650:web:aba739ed1593d315002573",
-
-    measurementId: "G-G3BHP0PSB0"
-};
-
-
-/* ==========================================
-   FIREBASE
-========================================== */
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-
-/* ==========================================
-   CART
+   CHEMISTBOYS - CART.JS
 ========================================== */
 
 document.addEventListener("DOMContentLoaded", function () {
 
     let cart =
-        JSON.parse(
-            localStorage.getItem("chemistCart")
-        ) || [];
+        JSON.parse(localStorage.getItem("chemistCart")) || [];
 
 
     /* ==========================================
@@ -81,24 +40,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function updateCartCount() {
 
-        const count =
-            cart.reduce(
-                function (total, item) {
-
-                    return total +
-                        Number(item.quantity || 0);
-
-                },
-                0
-            );
-
+        const count = cart.reduce(
+            (total, item) =>
+                total + Number(item.quantity || 0),
+            0
+        );
 
         if (cartCount) {
-
             cartCount.textContent = count;
-
         }
-
     }
 
 
@@ -114,9 +64,7 @@ document.addEventListener("DOMContentLoaded", function () {
         );
 
         updateCartCount();
-
         displayCart();
-
     }
 
 
@@ -127,7 +75,6 @@ document.addEventListener("DOMContentLoaded", function () {
     function displayCart() {
 
         if (!cartItems) return;
-
 
         cartItems.innerHTML = "";
 
@@ -164,13 +111,11 @@ document.addEventListener("DOMContentLoaded", function () {
             `;
 
             updateSummary();
-
             return;
-
         }
 
 
-        /* CART PRODUCTS */
+        /* PRODUCTS */
 
         cart.forEach(function (item) {
 
@@ -186,7 +131,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const div =
                 document.createElement("div");
-
 
             div.className =
                 "cart-product";
@@ -217,11 +161,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         −
                     </button>
 
-
                     <span class="quantity-number">
                         ${quantity}
                     </span>
-
 
                     <button
                         type="button"
@@ -256,9 +198,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         addEvents();
-
         updateSummary();
-
     }
 
 
@@ -267,9 +207,6 @@ document.addEventListener("DOMContentLoaded", function () {
     ========================================== */
 
     function addEvents() {
-
-
-        /* INCREASE */
 
         document
             .querySelectorAll(".increase")
@@ -290,8 +227,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
 
 
-        /* DECREASE */
-
         document
             .querySelectorAll(".decrease")
             .forEach(function (button) {
@@ -310,8 +245,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             });
 
-
-        /* REMOVE */
 
         document
             .querySelectorAll(".remove-btn")
@@ -337,10 +270,7 @@ document.addEventListener("DOMContentLoaded", function () {
        CHANGE QUANTITY
     ========================================== */
 
-    function changeQuantity(
-        productId,
-        change
-    ) {
+    function changeQuantity(productId, change) {
 
         const item =
             cart.find(function (product) {
@@ -355,8 +285,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         item.quantity =
-            Number(item.quantity || 0) +
-            change;
+            Number(item.quantity || 0) + change;
 
 
         if (item.quantity <= 0) {
@@ -373,7 +302,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         saveCart();
-
     }
 
 
@@ -393,7 +321,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         saveCart();
-
     }
 
 
@@ -416,11 +343,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 Number(item.quantity) || 0;
 
 
-            subtotal +=
-                price * quantity;
-
-            items +=
-                quantity;
+            subtotal += price * quantity;
+            items += quantity;
 
         });
 
@@ -438,18 +362,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         if (totalItems) {
-
-            totalItems.textContent =
-                items;
-
+            totalItems.textContent = items;
         }
 
 
         if (subtotalElement) {
-
             subtotalElement.textContent =
                 `₹${subtotal}`;
-
         }
 
 
@@ -480,8 +399,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (checkoutBtn) {
 
         /*
-         * Cart page par button hamesha
-         * Buy Now rahega.
+         * ALWAYS SHOW BUY NOW
          */
 
         checkoutBtn.textContent =
@@ -509,9 +427,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
                 /*
-                 * Direct checkout.
-                 *
-                 * Yahan login check nahi hai.
+                 * DIRECT CHECKOUT
                  */
 
                 window.location.href =
@@ -524,7 +440,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* ==========================================
-       START
+       INITIAL LOAD
     ========================================== */
 
     updateCartCount();
