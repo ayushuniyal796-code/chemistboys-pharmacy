@@ -8,46 +8,52 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-/* =========================================================
+/* ==========================================
    FIREBASE CONFIG
-========================================================= */
+========================================== */
 
 const firebaseConfig = {
+
     apiKey: "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWkT1FLjcmQ",
+
     authDomain: "chemistboys.firebaseapp.com",
+
     projectId: "chemistboys",
+
     storageBucket: "chemistboys.firebasestorage.app",
+
     messagingSenderId: "696067008650",
+
     appId: "1:696067008650:web:aba739ed1593d315002573",
+
     measurementId: "G-G3BHP0PSB0"
 };
 
 
-/* =========================================================
+/* ==========================================
    FIREBASE INITIALIZE
-========================================================= */
+========================================== */
 
 const app = initializeApp(firebaseConfig);
+
 const auth = getAuth(app);
 
 
-/* =========================================================
-   DOM READY
-========================================================= */
+/* ==========================================
+   CART
+========================================== */
 
-document.addEventListener("DOMContentLoaded", () => {
-
-    /* =====================================================
-       CART
-    ===================================================== */
+document.addEventListener("DOMContentLoaded", function () {
 
     let cart =
-        JSON.parse(localStorage.getItem("chemistCart")) || [];
+        JSON.parse(
+            localStorage.getItem("chemistCart")
+        ) || [];
 
 
-    /* =====================================================
+    /* ==========================================
        ELEMENTS
-    ===================================================== */
+    ========================================== */
 
     const cartItems =
         document.getElementById("cartItems");
@@ -71,129 +77,44 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("checkoutBtn");
 
 
-    /* =====================================================
-       AUTH STATE
-
-       IMPORTANT:
-       null = Firebase abhi check kar raha hai
-       false = definitely logged out
-       object = logged in
-    ===================================================== */
+    /* ==========================================
+       FIREBASE USER
+    ========================================== */
 
     let currentUser = null;
-    let authChecked = false;
 
 
-    /* =====================================================
-       FIREBASE AUTH LISTENER
-    ===================================================== */
-
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, function (user) {
 
         currentUser = user;
-        authChecked = true;
 
-        console.log(
-            "Firebase auth state:",
-            user
-                ? `Logged in: ${user.email}`
-                : "Logged out"
-        );
+        /*
+         * IMPORTANT:
+         * Button ka text yahan change nahi karna.
+         *
+         * Cart page par hamesha:
+         * 🛒 Buy Now
+         */
 
-        updateCheckoutButton();
+        if (checkoutBtn) {
+
+            checkoutBtn.textContent =
+                "🛒 Buy Now";
+
+        }
 
     });
 
 
-    /* =====================================================
-       CHECKOUT BUTTON TEXT
-    ===================================================== */
-
-    function updateCheckoutButton() {
-
-        if (!checkoutBtn) {
-            return;
-        }
-
-
-        /*
-         * Firebase ne abhi state check nahi ki
-         */
-
-        if (!authChecked) {
-
-            checkoutBtn.textContent =
-                "⏳ Checking Login...";
-
-            return;
-
-        }
-
-
-        /*
-         * USER LOGGED IN
-         */
-
-        if (currentUser) {
-
-            checkoutBtn.textContent =
-                "🛒 Proceed to Checkout";
-
-            checkoutBtn.href =
-                "checkout.html";
-
-            checkoutBtn.classList.remove(
-                "login-required"
-            );
-
-            return;
-
-        }
-
-
-        /*
-         * USER NOT LOGGED IN
-         */
-
-        checkoutBtn.textContent =
-            "🔐 Login to Checkout";
-
-        checkoutBtn.href =
-            "login.html";
-
-        checkoutBtn.classList.add(
-            "login-required"
-        );
-
-    }
-
-
-    /* =====================================================
-       SAVE CART
-    ===================================================== */
-
-    function saveCart() {
-
-        localStorage.setItem(
-            "chemistCart",
-            JSON.stringify(cart)
-        );
-
-        updateCartCount();
-        displayCart();
-
-    }
-
-
-    /* =====================================================
+    /* ==========================================
        CART COUNT
-    ===================================================== */
+    ========================================== */
 
     function updateCartCount() {
 
         const count =
             cart.reduce(
-                (total, item) => {
+                function (total, item) {
 
                     return total +
                         Number(item.quantity || 0);
@@ -205,31 +126,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (cartCount) {
 
-            cartCount.textContent =
-                count;
+            cartCount.textContent = count;
 
         }
 
     }
 
 
-    /* =====================================================
+    /* ==========================================
+       SAVE CART
+    ========================================== */
+
+    function saveCart() {
+
+        localStorage.setItem(
+            "chemistCart",
+            JSON.stringify(cart)
+        );
+
+        updateCartCount();
+
+        displayCart();
+
+    }
+
+
+    /* ==========================================
        DISPLAY CART
-    ===================================================== */
+    ========================================== */
 
     function displayCart() {
 
-        if (!cartItems) {
-            return;
-        }
+        if (!cartItems) return;
 
 
         cartItems.innerHTML = "";
 
 
-        /*
-         * EMPTY CART
-         */
+        /* EMPTY CART */
 
         if (cart.length === 0) {
 
@@ -267,11 +201,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        /*
-         * CART PRODUCTS
-         */
+        /* CART PRODUCTS */
 
-        cart.forEach((item) => {
+        cart.forEach(function (item) {
 
             const price =
                 Number(item.price) || 0;
@@ -285,7 +217,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const div =
                 document.createElement("div");
-
 
             div.className =
                 "cart-product";
@@ -355,24 +286,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         addEvents();
+
         updateSummary();
 
     }
 
 
-    /* =====================================================
-       CART BUTTON EVENTS
-    ===================================================== */
+    /* ==========================================
+       BUTTON EVENTS
+    ========================================== */
 
     function addEvents() {
 
+
+        /* INCREASE */
+
         document
             .querySelectorAll(".increase")
-            .forEach((button) => {
+            .forEach(function (button) {
 
                 button.addEventListener(
                     "click",
-                    () => {
+                    function () {
 
                         changeQuantity(
                             button.dataset.id,
@@ -385,13 +320,15 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
 
+        /* DECREASE */
+
         document
             .querySelectorAll(".decrease")
-            .forEach((button) => {
+            .forEach(function (button) {
 
                 button.addEventListener(
                     "click",
-                    () => {
+                    function () {
 
                         changeQuantity(
                             button.dataset.id,
@@ -404,13 +341,15 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
 
+        /* REMOVE */
+
         document
             .querySelectorAll(".remove-btn")
-            .forEach((button) => {
+            .forEach(function (button) {
 
                 button.addEventListener(
                     "click",
-                    () => {
+                    function () {
 
                         removeItem(
                             button.dataset.id
@@ -424,9 +363,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* =====================================================
+    /* ==========================================
        CHANGE QUANTITY
-    ===================================================== */
+    ========================================== */
 
     function changeQuantity(
         productId,
@@ -434,7 +373,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ) {
 
         const item =
-            cart.find((product) => {
+            cart.find(function (product) {
 
                 return String(product.id) ===
                     String(productId);
@@ -442,9 +381,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
 
-        if (!item) {
-            return;
-        }
+        if (!item) return;
 
 
         item.quantity =
@@ -455,7 +392,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (item.quantity <= 0) {
 
             cart =
-                cart.filter((product) => {
+                cart.filter(function (product) {
 
                     return String(product.id) !==
                         String(productId);
@@ -470,14 +407,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* =====================================================
+    /* ==========================================
        REMOVE ITEM
-    ===================================================== */
+    ========================================== */
 
     function removeItem(productId) {
 
         cart =
-            cart.filter((item) => {
+            cart.filter(function (item) {
 
                 return String(item.id) !==
                     String(productId);
@@ -490,17 +427,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* =====================================================
+    /* ==========================================
        ORDER SUMMARY
-    ===================================================== */
+    ========================================== */
 
     function updateSummary() {
 
         let subtotal = 0;
+
         let items = 0;
 
 
-        cart.forEach((item) => {
+        cart.forEach(function (item) {
 
             const price =
                 Number(item.price) || 0;
@@ -566,27 +504,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* =====================================================
-       CHECKOUT BUTTON
-    ===================================================== */
+    /* ==========================================
+       BUY NOW / CHECKOUT
+    ========================================== */
 
     if (checkoutBtn) {
 
+        checkoutBtn.textContent =
+            "🛒 Buy Now";
+
+
         checkoutBtn.addEventListener(
             "click",
-            (event) => {
+            function (event) {
 
                 event.preventDefault();
 
 
-                /*
-                 * EMPTY CART
-                 */
+                /* EMPTY CART */
 
                 if (cart.length === 0) {
 
                     alert(
-                        "🛒 Your cart is empty!"
+                        "Your cart is empty!"
                     );
 
                     return;
@@ -595,32 +535,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                 /*
-                 * Firebase abhi check kar raha hai
+                 * Agar Firebase user logged in hai
+                 * to direct checkout.
                  */
 
-                if (!authChecked) {
-
-                    alert(
-                        "⏳ Please wait, checking your login..."
-                    );
-
-                    return;
-
-                }
-
-
-                /*
-                 * NOT LOGGED IN
-                 */
-
-                if (!currentUser) {
-
-                    alert(
-                        "🔐 Please login first to continue."
-                    );
+                if (currentUser) {
 
                     window.location.href =
-                        "login.html";
+                        "checkout.html";
 
                     return;
 
@@ -628,17 +550,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                 /*
-                 * LOGGED IN
+                 * Agar logged in nahi hai
+                 * to login page.
                  */
 
-                console.log(
-                    "Checkout allowed for:",
-                    currentUser.email
+                alert(
+                    "🔒 Please login first to continue."
                 );
 
-
                 window.location.href =
-                    "checkout.html";
+                    "login.html";
 
             }
         );
@@ -646,19 +567,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* =====================================================
+    /* ==========================================
        INITIAL LOAD
-    ===================================================== */
+    ========================================== */
 
     updateCartCount();
 
     displayCart();
-
-    /*
-     * Initial button state
-     * Firebase listener baad mein correct karega.
-     */
-
-    updateCheckoutButton();
 
 });
