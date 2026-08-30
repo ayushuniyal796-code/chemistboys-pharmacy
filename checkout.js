@@ -1,5 +1,12 @@
 document.addEventListener("DOMContentLoaded", function () {
 
+    /* =========================================
+       GET ELEMENTS
+    ========================================= */
+
+    const checkoutForm =
+        document.getElementById("checkoutForm");
+
     const checkoutItems =
         document.getElementById("checkoutItems");
 
@@ -15,30 +22,28 @@ document.addEventListener("DOMContentLoaded", function () {
     const deliveryOptions =
         document.getElementById("deliveryOptions");
 
-    const checkoutForm =
-        document.getElementById("checkoutForm");
 
+    /* =========================================
+       LOAD CART
 
-    /*
-        CART
-
-        script.js usually stores cart data
-        in localStorage.
-
-        We check both common names.
-    */
+       IMPORTANT:
+       cart.js saves data as "chemistCart"
+    ========================================= */
 
     let cart =
-        JSON.parse(localStorage.getItem("cart")) ||
-        JSON.parse(localStorage.getItem("cartItems")) ||
-        [];
+        JSON.parse(
+            localStorage.getItem("chemistCart")
+        ) || [];
 
 
-    /*
-        If cart is empty
-    */
+    /* =========================================
+       EMPTY CART CHECK
+    ========================================= */
 
-    if (!Array.isArray(cart) || cart.length === 0) {
+    if (
+        !Array.isArray(cart) ||
+        cart.length === 0
+    ) {
 
         document.querySelector(".checkout-page").innerHTML = `
 
@@ -55,14 +60,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     </h2>
 
                     <p>
-                        Add some products before checkout.
+                        Please add products to your cart
+                        before proceeding to checkout.
                     </p>
 
                     <a
                         href="index.html"
                         class="continue-shopping"
                     >
-                        Continue Shopping
+                        🛍️ Continue Shopping
                     </a>
 
                 </div>
@@ -75,214 +81,247 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
-    /*
-        GET PRODUCT PRICE
-    */
+    /* =========================================
+       PRODUCT NAME
+    ========================================= */
 
-    function getPrice(item) {
+    function getProductName(item) {
 
-        return Number(
-            item.price ||
-            item.productPrice ||
-            0
-        );
+        return item.name || "Medicine";
 
     }
 
 
-    /*
-        GET PRODUCT NAME
-    */
+    /* =========================================
+       PRODUCT PRICE
+    ========================================= */
 
-    function getName(item) {
+    function getProductPrice(item) {
 
-        return (
-            item.name ||
-            item.productName ||
-            "Medicine"
-        );
+        return Number(item.price) || 0;
 
     }
 
 
-    /*
-        GET QUANTITY
-    */
+    /* =========================================
+       PRODUCT QUANTITY
+    ========================================= */
 
-    function getQuantity(item) {
+    function getProductQuantity(item) {
 
-        return Number(
-            item.quantity ||
-            item.qty ||
-            1
-        );
+        return Number(item.quantity) || 1;
 
     }
 
 
-    /*
-        DISPLAY CART ITEMS
-    */
+    /* =========================================
+       DISPLAY CART ITEMS
+    ========================================= */
 
-    let subtotal = 0;
+    function displayCheckoutItems() {
 
-    checkoutItems.innerHTML = "";
+        checkoutItems.innerHTML = "";
 
-
-    cart.forEach(function (item) {
-
-        const price = getPrice(item);
-
-        const quantity = getQuantity(item);
-
-        const name = getName(item);
-
-        const itemTotal =
-            price * quantity;
-
-        subtotal += itemTotal;
+        let subtotal = 0;
 
 
-        const itemElement =
-            document.createElement("div");
+        cart.forEach(function (item) {
 
-        itemElement.className =
-            "cart-item";
+            const name =
+                getProductName(item);
+
+            const price =
+                getProductPrice(item);
+
+            const quantity =
+                getProductQuantity(item);
 
 
-        itemElement.innerHTML = `
+            const itemTotal =
+                price * quantity;
 
-            <div>
 
-                <div class="cart-item-name">
-                    ${name}
+            subtotal += itemTotal;
+
+
+            const itemElement =
+                document.createElement("div");
+
+            itemElement.className =
+                "cart-item";
+
+
+            itemElement.innerHTML = `
+
+                <div>
+
+                    <div class="cart-item-name">
+                        ${name}
+                    </div>
+
+                    <small>
+                        Quantity: ${quantity}
+                    </small>
+
                 </div>
 
-                <small>
-                    Quantity: ${quantity}
-                </small>
+                <div class="cart-item-price">
+                    ₹${itemTotal}
+                </div>
 
-            </div>
-
-            <div class="cart-item-price">
-                ₹${itemTotal}
-            </div>
-
-        `;
+            `;
 
 
-        checkoutItems.appendChild(
-            itemElement
-        );
+            checkoutItems.appendChild(
+                itemElement
+            );
 
-    });
-
-
-    /*
-        DELIVERY CHARGE
-
-        Free delivery above ₹500
-    */
-
-    const deliveryCharge =
-        subtotal >= 500 ? 0 : 40;
+        });
 
 
-    const grandTotal =
-        subtotal + deliveryCharge;
+        /* =====================================
+           DELIVERY CHARGE
+        ===================================== */
+
+        let deliveryCharge = 0;
 
 
-    subtotalElement.textContent =
-        "₹" + subtotal;
+        if (
+            subtotal > 0 &&
+            subtotal < 500
+        ) {
+
+            deliveryCharge = 50;
+
+        }
 
 
-    deliveryChargeElement.textContent =
-        deliveryCharge === 0
-            ? "FREE"
-            : "₹" + deliveryCharge;
+        const grandTotal =
+            subtotal + deliveryCharge;
 
 
-    grandTotalElement.textContent =
-        "₹" + grandTotal;
+        /* =====================================
+           SHOW TOTALS
+        ===================================== */
+
+        subtotalElement.textContent =
+            `₹${subtotal}`;
 
 
-
-    /*
-        DELIVERY DATES
-
-        First available date = tomorrow.
-
-        Customer can choose one of
-        the next 5 available dates.
-    */
-
-    const today =
-        new Date();
+        deliveryChargeElement.textContent =
+            deliveryCharge === 0
+                ? "FREE"
+                : `₹${deliveryCharge}`;
 
 
-    for (let i = 1; i <= 5; i++) {
-
-        const deliveryDate =
-            new Date(today);
+        grandTotalElement.textContent =
+            `₹${grandTotal}`;
 
 
-        deliveryDate.setDate(
-            today.getDate() + i
-        );
+        return {
+            subtotal,
+            deliveryCharge,
+            grandTotal
+        };
+
+    }
 
 
-        const dateText =
-            deliveryDate.toLocaleDateString(
-                "en-IN",
-                {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric"
-                }
+    /* =========================================
+       DELIVERY DATE OPTIONS
+       
+       Tomorrow + next 4 days
+    ========================================= */
+
+    function createDeliveryDates() {
+
+        deliveryOptions.innerHTML = "";
+
+
+        const today =
+            new Date();
+
+
+        for (
+            let i = 1;
+            i <= 5;
+            i++
+        ) {
+
+            const deliveryDate =
+                new Date(today);
+
+
+            deliveryDate.setDate(
+                today.getDate() + i
             );
 
 
-        const dateValue =
-            deliveryDate
-                .toISOString()
-                .split("T")[0];
+            const dateValue =
+                deliveryDate
+                    .toISOString()
+                    .split("T")[0];
 
 
-        const label =
-            document.createElement("label");
+            const readableDate =
+                deliveryDate.toLocaleDateString(
+                    "en-IN",
+                    {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric"
+                    }
+                );
 
 
-        label.className =
-            "delivery-option";
+            const label =
+                document.createElement("label");
 
 
-        label.innerHTML = `
-
-            <input
-                type="radio"
-                name="deliveryDate"
-                value="${dateValue}"
-                required
-            >
-
-            <span>
-                📅 ${dateText}
-            </span>
-
-        `;
+            label.className =
+                "delivery-option";
 
 
-        deliveryOptions.appendChild(
-            label
-        );
+            label.innerHTML = `
+
+                <input
+                    type="radio"
+                    name="deliveryDate"
+                    value="${dateValue}"
+                    required
+                >
+
+                <span>
+                    📅 ${readableDate}
+                </span>
+
+            `;
+
+
+            deliveryOptions.appendChild(
+                label
+            );
+
+        }
 
     }
 
 
+    /* =========================================
+       INITIAL DISPLAY
+    ========================================= */
 
-    /*
-        PLACE ORDER
-    */
+    const totals =
+        displayCheckoutItems();
+
+
+    createDeliveryDates();
+
+
+    /* =========================================
+       PLACE ORDER
+    ========================================= */
 
     checkoutForm.addEventListener(
         "submit",
@@ -291,9 +330,9 @@ document.addEventListener("DOMContentLoaded", function () {
             event.preventDefault();
 
 
-            /*
-                CUSTOMER DETAILS
-            */
+            /* =====================================
+               CUSTOMER DETAILS
+            ===================================== */
 
             const customerName =
                 document
@@ -342,11 +381,25 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
 
 
-            /*
-                BASIC VALIDATION
-            */
+            /* =====================================
+               VALIDATION
+            ===================================== */
 
-            if (!/^\d{10}$/.test(customerPhone)) {
+            if (customerName === "") {
+
+                alert(
+                    "Please enter your name."
+                );
+
+                return;
+            }
+
+
+            if (
+                !/^\d{10}$/.test(
+                    customerPhone
+                )
+            ) {
 
                 alert(
                     "Please enter a valid 10-digit mobile number."
@@ -356,7 +409,31 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
 
-            if (!/^\d{6}$/.test(customerPincode)) {
+            if (customerAddress === "") {
+
+                alert(
+                    "Please enter your delivery address."
+                );
+
+                return;
+            }
+
+
+            if (customerCity === "") {
+
+                alert(
+                    "Please enter your city."
+                );
+
+                return;
+            }
+
+
+            if (
+                !/^\d{6}$/.test(
+                    customerPincode
+                )
+            ) {
 
                 alert(
                     "Please enter a valid 6-digit pincode."
@@ -376,21 +453,28 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
 
+            if (paymentMethod === "") {
 
-            /*
-                CURRENT ORDER DATE
+                alert(
+                    "Please select a payment method."
+                );
 
-                This is automatically generated
-                at the exact time the user places
-                the order.
-            */
+                return;
+            }
 
-            const orderDate =
+
+            /* =====================================
+               ORDER DATE
+
+               Automatically today's date
+            ===================================== */
+
+            const now =
                 new Date();
 
 
-            const orderDateFormatted =
-                orderDate.toLocaleDateString(
+            const orderDate =
+                now.toLocaleDateString(
                     "en-IN",
                     {
                         day: "numeric",
@@ -401,7 +485,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
             const orderTime =
-                orderDate.toLocaleTimeString(
+                now.toLocaleTimeString(
                     "en-IN",
                     {
                         hour: "2-digit",
@@ -410,9 +494,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
 
 
-            /*
-                DELIVERY DATE
-            */
+            const orderDateISO =
+                now.toISOString();
+
+
+            /* =====================================
+               DELIVERY DATE
+            ===================================== */
 
             const deliveryDateObject =
                 new Date(
@@ -421,21 +509,21 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
 
 
-            const deliveryDateFormatted =
-                deliveryDateObject.toLocaleDateString(
-                    "en-IN",
-                    {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric"
-                    }
-                );
+            const deliveryDate =
+                deliveryDateObject
+                    .toLocaleDateString(
+                        "en-IN",
+                        {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric"
+                        }
+                    );
 
 
-
-            /*
-                UNIQUE ORDER ID
-            */
+            /* =====================================
+               CREATE ORDER ID
+            ===================================== */
 
             const orderId =
                 "CB" +
@@ -444,23 +532,26 @@ document.addEventListener("DOMContentLoaded", function () {
                     .slice(-8);
 
 
+            /* =====================================
+               CREATE ORDER OBJECT
+            ===================================== */
 
-            /*
-                ORDER OBJECT
-            */
+            const newOrder = {
 
-            const order = {
-
-                id: orderId,
+                id:
+                    orderId,
 
                 orderDate:
-                    orderDateFormatted,
+                    orderDate,
+
+                orderDateISO:
+                    orderDateISO,
 
                 orderTime:
                     orderTime,
 
                 deliveryDate:
-                    deliveryDateFormatted,
+                    deliveryDate,
 
                 deliveryDateISO:
                     selectedDelivery.value,
@@ -472,9 +563,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     paymentMethod,
 
                 paymentStatus:
-                    paymentMethod === "cod"
-                        ? "Pending"
-                        : "Pending",
+                    "Pending",
 
                 customer: {
 
@@ -500,104 +589,106 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         return {
 
+                            id:
+                                item.id,
+
                             name:
-                                getName(item),
+                                getProductName(item),
 
                             price:
-                                getPrice(item),
+                                getProductPrice(item),
 
                             quantity:
-                                getQuantity(item)
+                                getProductQuantity(item)
 
                         };
 
                     }),
 
                 subtotal:
-                    subtotal,
+                    totals.subtotal,
 
                 deliveryCharge:
-                    deliveryCharge,
+                    totals.deliveryCharge,
 
                 total:
-                    grandTotal
+                    totals.grandTotal
 
             };
 
 
+            /* =====================================
+               GET OLD ORDERS
+            ===================================== */
 
-            /*
-                GET EXISTING ORDERS
-            */
-
-            let existingOrders =
+            let orders =
                 JSON.parse(
                     localStorage.getItem("orders")
                 ) || [];
 
 
-            if (!Array.isArray(existingOrders)) {
+            if (!Array.isArray(orders)) {
 
-                existingOrders = [];
+                orders = [];
 
             }
 
 
-            /*
-                ADD NEW ORDER
-            */
+            /* =====================================
+               SAVE NEW ORDER
+            ===================================== */
 
-            existingOrders.push(order);
+            orders.push(newOrder);
 
-
-            /*
-                SAVE ORDERS
-            */
 
             localStorage.setItem(
                 "orders",
-                JSON.stringify(existingOrders)
+                JSON.stringify(orders)
             );
 
 
-            /*
-                CLEAR CART
-            */
-
-            localStorage.removeItem("cart");
+            /* =====================================
+               CLEAR CART AFTER ORDER
+            ===================================== */
 
             localStorage.removeItem(
-                "cartItems"
+                "chemistCart"
             );
 
 
-            /*
-                SAVE LAST ORDER
-            */
+            /* =====================================
+               SAVE LAST ORDER
+            ===================================== */
 
             localStorage.setItem(
                 "lastOrder",
-                JSON.stringify(order)
+                JSON.stringify(newOrder)
             );
 
 
-            /*
-                SUCCESS
-            */
+            /* =====================================
+               SUCCESS MESSAGE
+            ===================================== */
 
             alert(
-                "Order placed successfully!\n\n" +
-                "Order ID: " + orderId +
-                "\nOrder Date: " +
-                orderDateFormatted +
+
+                "🎉 Order Placed Successfully!\n\n" +
+
+                "Order ID: " +
+                orderId +
+
+                "\n\nOrder Date: " +
+                orderDate +
+
                 "\nDelivery Date: " +
-                deliveryDateFormatted
+                deliveryDate
+
             );
 
 
-            /*
-                GO TO ORDERS
-            */
+            /* =====================================
+               GO TO MY ORDERS
+            ===================================== */
 
             window.location.href =
                 "orders.html";
