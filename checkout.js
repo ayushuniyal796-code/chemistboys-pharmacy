@@ -1,4 +1,3 @@
-
 import {
     initializeApp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
@@ -9,89 +8,63 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-/* =========================================
+/* =================================================
    FIREBASE CONFIG
-========================================= */
+================================================= */
 
 const firebaseConfig = {
 
-    apiKey:
-        "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWkT1FLjcmQ",
+    apiKey: "AIzaSyCiRX_njBfJAAgUzM1vHDTEYgWk1TFLjcmQ",
 
-    authDomain:
-        "chemistboys.firebaseapp.com",
+    authDomain: "chemistboys.firebaseapp.com",
 
-    projectId:
-        "chemistboys",
+    projectId: "chemistboys",
 
-    storageBucket:
-        "chemistboys.firebasestorage.app",
+    storageBucket: "chemistboys.firebasestorage.app",
 
-    messagingSenderId:
-        "696067008650",
+    messagingSenderId: "696067008650",
 
-    appId:
-        "1:696067008650:web:aba739ed1593d315002573",
+    appId: "1:696067008650:web:aba739ed1593d315002573",
 
-    measurementId:
-        "G-G3BHP0PSB0"
+    measurementId: "G-G3BHP0PSB0"
 };
 
 
-/* =========================================
-   FIREBASE INITIALIZE
-========================================= */
+/* =================================================
+   FIREBASE
+================================================= */
 
-const app =
-    initializeApp(firebaseConfig);
-
-const auth =
-    getAuth(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 
-/* =========================================
-   WAIT FOR FIREBASE LOGIN STATUS
-========================================= */
+/* =================================================
+   WAIT FOR AUTH
+================================================= */
 
-onAuthStateChanged(auth, function (user) {
+onAuthStateChanged(auth, (user) => {
 
-    /* =====================================
-       NOT LOGGED IN
-    ===================================== */
+    console.log("Checkout Firebase User:", user);
 
     if (!user) {
 
-        alert(
-            "🔒 Please login first to continue checkout."
-        );
+        alert("🔒 Please login first to continue checkout.");
 
-        window.location.href =
-            "login.html";
+        window.location.href = "login.html";
 
         return;
     }
-
-
-    /* =====================================
-       LOGGED IN
-       START CHECKOUT
-    ===================================== */
 
     startCheckout(user);
 
 });
 
 
-/* =========================================
-   CHECKOUT FUNCTION
-========================================= */
+/* =================================================
+   START CHECKOUT
+================================================= */
 
 function startCheckout(user) {
-
-
-    /* =====================================
-       ELEMENTS
-    ===================================== */
 
     const checkoutForm =
         document.getElementById("checkoutForm");
@@ -112,9 +85,9 @@ function startCheckout(user) {
         document.getElementById("deliveryOptions");
 
 
-    /* =====================================
+    /* =================================================
        LOAD CART
-    ===================================== */
+    ================================================= */
 
     let cart = [];
 
@@ -127,70 +100,83 @@ function startCheckout(user) {
 
     } catch (error) {
 
+        console.error("Cart error:", error);
+
         cart = [];
 
     }
 
 
-    /* =====================================
-       CHECK CART
-    ===================================== */
+    /* =================================================
+       EMPTY CART
+    ================================================= */
 
-    if (
-        !Array.isArray(cart) ||
-        cart.length === 0
-    ) {
+    if (!Array.isArray(cart) || cart.length === 0) {
 
-        document.querySelector(
-            ".checkout-page"
-        ).innerHTML = `
+        const page =
+            document.querySelector(".checkout-page");
 
-            <div class="container">
+        if (page) {
 
-                <div class="empty-cart">
+            page.innerHTML = `
 
-                    <div class="empty-cart-icon">
-                        🛒
+                <div class="container">
+
+                    <div class="empty-cart">
+
+                        <div class="empty-cart-icon">
+                            🛒
+                        </div>
+
+                        <h2>
+                            Your Cart is Empty
+                        </h2>
+
+                        <p>
+                            Please add products to your cart
+                            before checkout.
+                        </p>
+
+                        <a
+                            href="index.html"
+                            class="continue-shopping"
+                        >
+                            🛍️ Continue Shopping
+                        </a>
+
                     </div>
-
-                    <h2>
-                        Your Cart is Empty
-                    </h2>
-
-                    <p>
-                        Please add products to your cart
-                        before checkout.
-                    </p>
-
-                    <a
-                        href="index.html"
-                        class="continue-shopping"
-                    >
-                        🛍️ Continue Shopping
-                    </a>
 
                 </div>
 
-            </div>
+            `;
 
-        `;
+        }
 
         return;
     }
 
 
-    /* =====================================
-       DISPLAY CART
-    ===================================== */
+    /* =================================================
+       DISPLAY CART ITEMS
+    ================================================= */
 
     function displayCheckoutItems() {
+
+        if (!checkoutItems) {
+            return {
+                subtotal: 0,
+                deliveryCharge: 0,
+                grandTotal: 0
+            };
+        }
+
 
         checkoutItems.innerHTML = "";
 
         let subtotal = 0;
 
 
-        cart.forEach(function (item) {
+        cart.forEach((item) => {
 
             const price =
                 Number(item.price) || 0;
@@ -200,7 +186,6 @@ function startCheckout(user) {
 
             const itemTotal =
                 price * quantity;
-
 
             subtotal += itemTotal;
 
@@ -240,8 +225,6 @@ function startCheckout(user) {
         });
 
 
-        /* DELIVERY */
-
         const deliveryCharge =
             subtotal >= 500
                 ? 0
@@ -252,18 +235,30 @@ function startCheckout(user) {
             subtotal + deliveryCharge;
 
 
-        subtotalElement.textContent =
-            `₹${subtotal}`;
+        if (subtotalElement) {
+
+            subtotalElement.textContent =
+                `₹${subtotal}`;
+
+        }
 
 
-        deliveryChargeElement.textContent =
-            deliveryCharge === 0
-                ? "FREE"
-                : `₹${deliveryCharge}`;
+        if (deliveryChargeElement) {
+
+            deliveryChargeElement.textContent =
+                deliveryCharge === 0
+                    ? "FREE"
+                    : `₹${deliveryCharge}`;
+
+        }
 
 
-        grandTotalElement.textContent =
-            `₹${grandTotal}`;
+        if (grandTotalElement) {
+
+            grandTotalElement.textContent =
+                `₹${grandTotal}`;
+
+        }
 
 
         return {
@@ -282,11 +277,16 @@ function startCheckout(user) {
     }
 
 
-    /* =====================================
+    /* =================================================
        DELIVERY DATES
-    ===================================== */
+    ================================================= */
 
     function createDeliveryDates() {
+
+        if (!deliveryOptions) {
+            return;
+        }
+
 
         deliveryOptions.innerHTML = "";
 
@@ -295,15 +295,10 @@ function startCheckout(user) {
             new Date();
 
 
-        for (
-            let i = 1;
-            i <= 5;
-            i++
-        ) {
+        for (let i = 1; i <= 5; i++) {
 
             const date =
                 new Date(today);
-
 
             date.setDate(
                 today.getDate() + i
@@ -331,7 +326,6 @@ function startCheckout(user) {
             const label =
                 document.createElement("label");
 
-
             label.className =
                 "delivery-option";
 
@@ -352,38 +346,43 @@ function startCheckout(user) {
             `;
 
 
-            deliveryOptions.appendChild(
-                label
-            );
+            deliveryOptions.appendChild(label);
 
         }
 
     }
 
 
-    /* =====================================
+    /* =================================================
        INITIAL LOAD
-    ===================================== */
+    ================================================= */
 
     const totals =
         displayCheckoutItems();
 
-
     createDeliveryDates();
 
 
-    /* =====================================
+    /* =================================================
        PLACE ORDER
-    ===================================== */
+    ================================================= */
+
+    if (!checkoutForm) {
+
+        console.error(
+            "checkoutForm not found."
+        );
+
+        return;
+    }
+
 
     checkoutForm.addEventListener(
         "submit",
-        function (event) {
+        (event) => {
 
             event.preventDefault();
 
-
-            /* CUSTOMER DETAILS */
 
             const name =
                 document
@@ -432,9 +431,11 @@ function startCheckout(user) {
                 );
 
 
-            /* VALIDATION */
+            /* =================================================
+               VALIDATION
+            ================================================= */
 
-            if (name === "") {
+            if (!name) {
 
                 alert(
                     "Please enter your full name."
@@ -454,7 +455,7 @@ function startCheckout(user) {
             }
 
 
-            if (address === "") {
+            if (!address) {
 
                 alert(
                     "Please enter your delivery address."
@@ -464,7 +465,7 @@ function startCheckout(user) {
             }
 
 
-            if (city === "") {
+            if (!city) {
 
                 alert(
                     "Please enter your city."
@@ -494,7 +495,7 @@ function startCheckout(user) {
             }
 
 
-            if (paymentMethod === "") {
+            if (!paymentMethod) {
 
                 alert(
                     "Please select a payment method."
@@ -504,9 +505,9 @@ function startCheckout(user) {
             }
 
 
-            /* =================================
+            /* =================================================
                ORDER DATE
-            ================================= */
+            ================================================= */
 
             const now =
                 new Date();
@@ -533,14 +534,13 @@ function startCheckout(user) {
                 );
 
 
-            /* =================================
+            /* =================================================
                DELIVERY DATE
-            ================================= */
+            ================================================= */
 
             const deliveryDateObject =
                 new Date(
-                    deliveryInput.value +
-                    "T00:00:00"
+                    deliveryInput.value + "T00:00:00"
                 );
 
 
@@ -555,9 +555,9 @@ function startCheckout(user) {
                 );
 
 
-            /* =================================
+            /* =================================================
                ORDER ID
-            ================================= */
+            ================================================= */
 
             const orderId =
                 "CB" +
@@ -566,9 +566,9 @@ function startCheckout(user) {
                     .slice(-8);
 
 
-            /* =================================
+            /* =================================================
                CREATE ORDER
-            ================================= */
+            ================================================= */
 
             const newOrder = {
 
@@ -579,7 +579,7 @@ function startCheckout(user) {
                     user.uid,
 
                 userEmail:
-                    user.email,
+                    user.email || "",
 
                 orderDate:
                     orderDate,
@@ -625,7 +625,7 @@ function startCheckout(user) {
                 },
 
                 items:
-                    cart.map(function (item) {
+                    cart.map((item) => {
 
                         return {
 
@@ -657,9 +657,9 @@ function startCheckout(user) {
             };
 
 
-            /* =================================
-               LOAD OLD ORDERS
-            ================================= */
+            /* =================================================
+               OLD ORDERS
+            ================================================= */
 
             let orders = [];
 
@@ -684,9 +684,9 @@ function startCheckout(user) {
             }
 
 
-            /* =================================
+            /* =================================================
                SAVE ORDER
-            ================================= */
+            ================================================= */
 
             orders.push(newOrder);
 
@@ -703,18 +703,18 @@ function startCheckout(user) {
             );
 
 
-            /* =================================
+            /* =================================================
                CLEAR CART
-            ================================= */
+            ================================================= */
 
             localStorage.removeItem(
                 "chemistCart"
             );
 
 
-            /* =================================
+            /* =================================================
                SUCCESS
-            ================================= */
+            ================================================= */
 
             alert(
 
