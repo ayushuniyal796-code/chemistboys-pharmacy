@@ -9,70 +9,59 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-/* =================================================
+/* ==========================================
    FIREBASE CONFIG
-================================================= */
+========================================== */
 
 const firebaseConfig = {
 
-    apiKey: "AIzaSyCiRX_njBfJAAgUzM1vHDTEYgWk1TFLjcmQ",
+    apiKey: "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWk1TFLjcmQ",
 
-    authDomain:
-        "chemistboys.firebaseapp.com",
+    authDomain: "chemistboys.firebaseapp.com",
 
-    projectId:
-        "chemistboys",
+    projectId: "chemistboys",
 
-    storageBucket:
-        "chemistboys.firebasestorage.app",
+    storageBucket: "chemistboys.firebasestorage.app",
 
-    messagingSenderId:
-        "696067008650",
+    messagingSenderId: "696067008650",
 
-    appId:
-        "1:696067008650:web:aba739ed1593d315002573",
+    appId: "1:696067008650:web:aba739ed1593d315002573",
 
-    measurementId:
-        "G-G3BHP0PSB0"
+    measurementId: "G-G3BHP0PSB0"
 };
 
 
-/* =================================================
-   INITIALIZE
-================================================= */
+/* ==========================================
+   FIREBASE
+========================================== */
 
-const app =
-    initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
 
-const auth =
-    getAuth(app);
+const auth = getAuth(app);
 
 
-/* =================================================
-   AUTH READY PROMISE
-================================================= */
+/* ==========================================
+   AUTH STATE
+========================================== */
 
-window.firebaseAuthReady =
-    new Promise((resolve) => {
+window.firebaseAuthReady = new Promise((resolve) => {
 
-        onAuthStateChanged(
-            auth,
-            (user) => {
+    onAuthStateChanged(auth, (user) => {
 
-                window.currentFirebaseUser =
-                    user;
+        window.currentFirebaseUser = user;
 
-                resolve(user);
+        updateAccountUI(user);
 
-            }
-        );
+        resolve(user);
 
     });
 
+});
 
-/* =================================================
+
+/* ==========================================
    ELEMENTS
-================================================= */
+========================================== */
 
 const accountBtn =
     document.getElementById("accountBtn");
@@ -87,160 +76,146 @@ const ordersBtn =
     document.getElementById("ordersBtn");
 
 
-/* =================================================
-   LOGIN STATE
-================================================= */
+/* ==========================================
+   UPDATE ACCOUNT UI
+========================================== */
 
-onAuthStateChanged(
-    auth,
-    (user) => {
+function updateAccountUI(user) {
 
-        window.currentFirebaseUser =
-            user;
+    if (user) {
 
-
-        /* =========================================
-           LOGGED IN
-        ========================================= */
-
-        if (user) {
-
-            const name =
-                user.displayName ||
-                (
-                    user.email
-                        ? user.email.split("@")[0]
-                        : "Account"
-                );
+        const name =
+            user.displayName ||
+            user.email?.split("@")[0] ||
+            "Account";
 
 
-            /* ACCOUNT */
+        /* ACCOUNT */
 
-            if (accountBtn) {
+        if (accountBtn) {
 
-                accountBtn.textContent =
-                    `👤 ${name}`;
+            accountBtn.textContent =
+                `👤 ${name}`;
 
-                accountBtn.href =
-                    "account.html";
-
-            }
-
-
-            /* REGISTER HIDE */
-
-            if (registerBtn) {
-
-                registerBtn.style.display =
-                    "none";
-
-            }
-
-
-            /* LOGOUT SHOW */
-
-            if (logoutBtn) {
-
-                logoutBtn.style.display =
-                    "inline-block";
-
-            }
-
-
-            /* ORDERS SHOW */
-
-            if (ordersBtn) {
-
-                ordersBtn.style.display =
-                    "inline-block";
-
-            }
+            accountBtn.href =
+                "account.html";
 
         }
 
 
-        /* =========================================
-           LOGGED OUT
-        ========================================= */
+        /* REGISTER HIDE */
 
-        else {
+        if (registerBtn) {
 
-            if (accountBtn) {
+            registerBtn.style.display =
+                "none";
 
-                accountBtn.textContent =
-                    "👤 Login";
-
-                accountBtn.href =
-                    "login.html";
-
-            }
+        }
 
 
-            if (registerBtn) {
+        /* LOGOUT SHOW */
 
-                registerBtn.style.display =
-                    "inline-block";
+        if (logoutBtn) {
 
-            }
+            logoutBtn.style.display =
+                "inline-block";
 
-
-            if (logoutBtn) {
-
-                logoutBtn.style.display =
-                    "none";
-
-            }
+        }
 
 
-            if (ordersBtn) {
+        /* ORDERS */
 
-                ordersBtn.style.display =
-                    "inline-block";
+        if (ordersBtn) {
 
-            }
+            ordersBtn.style.display =
+                "inline-block";
 
         }
 
     }
-);
+
+    else {
+
+        /* LOGIN */
+
+        if (accountBtn) {
+
+            accountBtn.textContent =
+                "👤 Login";
+
+            accountBtn.href =
+                "login.html";
+
+        }
 
 
-/* =================================================
+        /* REGISTER SHOW */
+
+        if (registerBtn) {
+
+            registerBtn.style.display =
+                "inline-block";
+
+        }
+
+
+        /* LOGOUT HIDE */
+
+        if (logoutBtn) {
+
+            logoutBtn.style.display =
+                "none";
+
+        }
+
+
+        /* ORDERS */
+
+        if (ordersBtn) {
+
+            ordersBtn.style.display =
+                "inline-block";
+
+        }
+
+    }
+
+}
+
+
+/* ==========================================
    LOGOUT
-================================================= */
+========================================== */
 
 if (logoutBtn) {
 
-    logoutBtn.addEventListener(
-        "click",
-        async () => {
+    logoutBtn.addEventListener("click", async () => {
 
-            try {
+        try {
 
-                await signOut(auth);
+            await signOut(auth);
 
-                window.currentFirebaseUser =
-                    null;
+            window.currentFirebaseUser =
+                null;
 
-                window.location.href =
-                    "index.html";
-
-            }
-
-            catch (error) {
-
-                console.error(
-                    "Logout error:",
-                    error
-                );
-
-                alert(
-                    "Logout failed. Please try again."
-                );
-
-            }
+            window.location.href =
+                "index.html";
 
         }
-    );
+
+        catch (error) {
+
+            console.error(
+                "Logout error:",
+                error
+            );
+
+            alert(
+                "Logout failed. Please try again."
+            );
+
+        }
+
+    });
 
 }
