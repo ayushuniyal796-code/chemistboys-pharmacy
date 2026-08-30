@@ -1,233 +1,476 @@
-document.addEventListener("DOMContentLoaded", () => {
-
-    /* ==========================================
-       ELEMENTS
-    ========================================== */
-
-    const productsGrid =
-        document.getElementById("productsGrid");
-
-    const searchInput =
-        document.getElementById("searchInput");
-
-    const categoryFilter =
-        document.getElementById("categoryFilter");
-
-    const sortFilter =
-        document.getElementById("sortFilter");
-
-    const priceRange =
-        document.getElementById("priceRange");
-
-    const priceLabel =
-        document.getElementById("priceLabel");
-
-    const cartCount =
-        document.getElementById("cartCount");
-
-    const toast =
-        document.getElementById("toastNotification");
-
-    const shopNow =
-        document.getElementById("shopNowBtn");
+/* =========================================================
+   CHEMISTBOYS - MAIN SCRIPT
+========================================================= */
 
 
-    /* ==========================================
-       CART
-    ========================================== */
+/* =========================================================
+   GLOBAL CART
+========================================================= */
 
-    let cart = [];
+let cart =
+    JSON.parse(localStorage.getItem("chemistCart")) || [];
+
+
+/* =========================================================
+   ELEMENTS
+========================================================= */
+
+const productsGrid =
+    document.getElementById("productsGrid");
+
+const searchInput =
+    document.getElementById("searchInput");
+
+const searchBtn =
+    document.getElementById("searchBtn");
+
+const categoryFilter =
+    document.getElementById("categoryFilter");
+
+const sortFilter =
+    document.getElementById("sortFilter");
+
+const priceRange =
+    document.getElementById("priceRange");
+
+const priceLabel =
+    document.getElementById("priceLabel");
+
+const cartCount =
+    document.getElementById("cartCount");
+
+const shopNowBtn =
+    document.getElementById("shopNowBtn");
+
+const toastNotification =
+    document.getElementById("toastNotification");
+
+
+/* =========================================================
+   LOGIN CHECK
+========================================================= */
+
+async function requireLogin() {
 
     try {
 
-        cart =
-            JSON.parse(
-                localStorage.getItem("chemistCart")
-            ) || [];
+        /*
+         * account.js Firebase authentication
+         * ready hone ka wait karega.
+         */
 
-        if (!Array.isArray(cart)) {
-            cart = [];
+        if (window.firebaseAuthReady) {
+
+            const user =
+                await window.firebaseAuthReady;
+
+            if (user) {
+
+                return true;
+
+            }
+
+        } else {
+
+            /*
+             * Safety fallback
+             */
+
+            await new Promise(resolve => {
+                setTimeout(resolve, 500);
+            });
+
+            if (window.currentFirebaseUser) {
+
+                return true;
+
+            }
+
         }
 
     } catch (error) {
 
-        console.error("Cart loading error:", error);
-
-        cart = [];
-
-    }
-
-
-    /* ==========================================
-       CART COUNT
-    ========================================== */
-
-    function updateCartCount() {
-
-        if (!cartCount) return;
-
-        const count =
-            cart.reduce(
-                (total, item) => {
-
-                    return total +
-                        Number(item.quantity || 0);
-
-                },
-                0
-            );
-
-        cartCount.textContent = count;
+        console.error(
+            "Authentication check error:",
+            error
+        );
 
     }
 
 
-    /* ==========================================
-       LOGIN CHECK
-    ========================================== */
-
-    function requireLogin() {
-
-        /*
-         * account.js Firebase user ko
-         * window.currentFirebaseUser mein rakhta hai.
-         */
-
-        if (window.currentFirebaseUser) {
-
-            return true;
-
-        }
+    alert(
+        "🔒 Please login first."
+    );
 
 
-        showToast(
-            "🔒 Please login first to add products."
+    window.location.href =
+        "login.html";
+
+
+    return false;
+}
+
+
+/* =========================================================
+   CART COUNT
+========================================================= */
+
+function updateCartCount() {
+
+    const count =
+        cart.reduce(
+            (total, item) => {
+
+                return total +
+                    Number(item.quantity || 0);
+
+            },
+            0
         );
 
 
-        setTimeout(() => {
+    if (cartCount) {
 
-            window.location.href =
-                "login.html";
+        cartCount.textContent =
+            count;
 
-        }, 900);
+    }
+
+}
 
 
-        return false;
+/* =========================================================
+   SAVE CART
+========================================================= */
+
+function saveCart() {
+
+    localStorage.setItem(
+        "chemistCart",
+        JSON.stringify(cart)
+    );
+
+
+    updateCartCount();
+
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+function showToast(message) {
+
+    if (!toastNotification) {
+
+        alert(message);
+
+        return;
 
     }
 
 
-    /* ==========================================
-       DISPLAY PRODUCTS
-    ========================================== */
-
-    function displayProducts(productList) {
-
-        if (!productsGrid) return;
+    toastNotification.textContent =
+        message;
 
 
-        productsGrid.innerHTML = "";
+    toastNotification.classList.add(
+        "show"
+    );
 
 
-        if (
-            !Array.isArray(productList) ||
-            productList.length === 0
-        ) {
+    setTimeout(() => {
 
-            productsGrid.innerHTML = `
+        toastNotification.classList.remove(
+            "show"
+        );
 
-                <div style="
-                    grid-column:1/-1;
-                    text-align:center;
-                    padding:60px 20px;
-                    font-size:20px;
-                ">
+    }, 2500);
 
-                    😔 No products found
+}
+
+
+/* =========================================================
+   ADD TO CART
+========================================================= */
+
+async function addToCart(productId) {
+
+    /*
+     * IMPORTANT:
+     * Pehle Firebase login check.
+     */
+
+    const loggedIn =
+        await requireLogin();
+
+
+    if (!loggedIn) {
+
+        return;
+
+    }
+
+
+    /*
+     * Product find karo.
+     */
+
+    const product =
+        products.find(
+            product =>
+                String(product.id) ===
+                String(productId)
+        );
+
+
+    if (!product) {
+
+        console.error(
+            "Product not found:",
+            productId
+        );
+
+        return;
+
+    }
+
+
+    /*
+     * Check existing product.
+     */
+
+    const existing =
+        cart.find(
+            item =>
+                String(item.id) ===
+                String(productId)
+        );
+
+
+    if (existing) {
+
+        existing.quantity =
+            Number(existing.quantity || 0) + 1;
+
+    } else {
+
+        cart.push({
+
+            id: product.id,
+
+            name: product.name,
+
+            price:
+                Number(product.price) || 0,
+
+            category:
+                product.category || "",
+
+            rating:
+                product.rating || 0,
+
+            quantity: 1
+
+        });
+
+    }
+
+
+    /*
+     * Save cart.
+     */
+
+    saveCart();
+
+
+    /*
+     * Notification.
+     */
+
+    showToast(
+        `✅ ${product.name} added to cart`
+    );
+
+}
+
+
+/* =========================================================
+   BUY NOW
+========================================================= */
+
+async function buyNow(productId) {
+
+    /*
+     * Login check
+     */
+
+    const loggedIn =
+        await requireLogin();
+
+
+    if (!loggedIn) {
+
+        return;
+
+    }
+
+
+    /*
+     * Product find
+     */
+
+    const product =
+        products.find(
+            product =>
+                String(product.id) ===
+                String(productId)
+        );
+
+
+    if (!product) {
+
+        return;
+
+    }
+
+
+    /*
+     * Buy Now:
+     * cart ko selected product se set karo.
+     */
+
+    cart = [{
+
+        id: product.id,
+
+        name: product.name,
+
+        price:
+            Number(product.price) || 0,
+
+        category:
+            product.category || "",
+
+        rating:
+            product.rating || 0,
+
+        quantity: 1
+
+    }];
+
+
+    saveCart();
+
+
+    /*
+     * Checkout page
+     */
+
+    window.location.href =
+        "checkout.html";
+
+}
+
+
+/* =========================================================
+   DISPLAY PRODUCTS
+========================================================= */
+
+function displayProducts(list) {
+
+    if (!productsGrid) {
+
+        return;
+
+    }
+
+
+    productsGrid.innerHTML = "";
+
+
+    if (!list || list.length === 0) {
+
+        productsGrid.innerHTML = `
+
+            <div class="no-products">
+
+                <h2>
+                    😕 No Products Found
+                </h2>
+
+                <p>
+                    Try another search or category.
+                </p>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    list.forEach(product => {
+
+        const card =
+            document.createElement("div");
+
+
+        card.className =
+            "product-card";
+
+
+        const price =
+            Number(product.price) || 0;
+
+
+        const rating =
+            Number(product.rating) || 0;
+
+
+        card.innerHTML = `
+
+            <div class="product-image">
+
+                ${
+                    product.image
+                        ? `<img
+                            src="${product.image}"
+                            alt="${product.name || "Medicine"}"
+                          >`
+                        : "💊"
+                }
+
+            </div>
+
+
+            <div class="product-details">
+
+                <h3 class="product-name">
+                    ${product.name || "Medicine"}
+                </h3>
+
+
+                <p class="product-category">
+                    ${product.category || ""}
+                </p>
+
+
+                <div class="product-rating">
+
+                    ⭐ ${rating}
 
                 </div>
 
-            `;
 
-            return;
+                <div class="product-bottom">
 
-        }
-
-
-        productList.forEach(
-            (product, index) => {
-
-                const card =
-                    document.createElement("div");
-
-
-                card.className =
-                    "product-card";
-
-
-                card.style.animationDelay =
-                    `${index * 0.05}s`;
-
-
-                card.innerHTML = `
-
-                    <div class="product-image">
-
-                        <img
-                            src="${product.image}"
-                            alt="${product.name}"
-                            loading="lazy"
-                        >
-
-                    </div>
-
-
-                    <span class="discount">
-
-                        ${product.discount || ""}
-
-                    </span>
-
-
-                    <span class="product-category">
-
-                        ${getCategoryName(
-                            product.category
-                        )}
-
-                    </span>
-
-
-                    <h3 class="product-name">
-
-                        ${product.name}
-
-                    </h3>
-
-
-                    <div class="product-rating">
-
-                        ⭐ ${product.rating || 0}
-
-                    </div>
-
-
-                    <div class="product-price">
-
-                        ₹${product.price}
-
-                        <span class="old-price">
-
-                            ${
-                                product.oldPrice
-                                    ? "₹" + product.oldPrice
-                                    : ""
-                            }
-
-                        </span>
-
-                    </div>
+                    <strong class="product-price">
+                        ₹${price}
+                    </strong>
 
 
                     <button
@@ -235,497 +478,399 @@ document.addEventListener("DOMContentLoaded", () => {
                         class="add-cart-btn"
                         data-id="${product.id}"
                     >
-
                         🛒 Add to Cart
-
                     </button>
 
-                `;
+                </div>
 
 
-                productsGrid.appendChild(card);
+                <button
+                    type="button"
+                    class="buy-now-btn"
+                    data-buy-id="${product.id}"
+                >
+                    ⚡ Buy Now
+                </button>
 
-            }
-        );
+            </div>
 
+        `;
 
-        /* ==========================================
-           ADD TO CART EVENTS
-        ========================================== */
 
-        document
-            .querySelectorAll(".add-cart-btn")
-            .forEach(button => {
+        productsGrid.appendChild(card);
 
-                button.addEventListener(
-                    "click",
-                    () => {
+    });
 
-                        const productId =
-                            Number(
-                                button.dataset.id
-                            );
 
+    addProductEvents();
 
-                        addToCart(productId);
+}
 
-                    }
-                );
 
+/* =========================================================
+   PRODUCT BUTTON EVENTS
+========================================================= */
 
-                /* HOVER */
+function addProductEvents() {
 
-                button.addEventListener(
-                    "mouseenter",
-                    () => {
 
-                        button.style.background =
-                            "#087c6b";
+    document
+        .querySelectorAll(".add-cart-btn")
+        .forEach(button => {
 
-                        button.style.transform =
-                            "translateY(-2px)";
+            button.addEventListener(
+                "click",
+                () => {
 
-                    }
-                );
-
-
-                button.addEventListener(
-                    "mouseleave",
-                    () => {
-
-                        button.style.background =
-                            "#0ca88f";
-
-                        button.style.transform =
-                            "translateY(0)";
-
-                    }
-                );
-
-            });
-
-    }
-
-
-    /* ==========================================
-       CATEGORY NAME
-    ========================================== */
-
-    function getCategoryName(category) {
-
-        const names = {
-
-            painrelief:
-                "Pain Relief",
-
-            vitamins:
-                "Vitamins",
-
-            cough:
-                "Cough & Cold",
-
-            firstaid:
-                "First Aid",
-
-            skincare:
-                "Skin Care"
-
-        };
-
-
-        return (
-            names[category] ||
-            category ||
-            ""
-        );
-
-    }
-
-
-    /* ==========================================
-       ADD TO CART
-    ========================================== */
-
-    function addToCart(productId) {
-
-        /* LOGIN REQUIRED */
-
-        if (!requireLogin()) {
-
-            return;
-
-        }
-
-
-        /* FIND PRODUCT */
-
-        const product =
-            products.find(
-                p =>
-                    Number(p.id) ===
-                    Number(productId)
-            );
-
-
-        if (!product) {
-
-            console.error(
-                "Product not found:",
-                productId
-            );
-
-            return;
-
-        }
-
-
-        /* FIND EXISTING PRODUCT */
-
-        const existing =
-            cart.find(
-                item =>
-                    Number(item.id) ===
-                    Number(productId)
-            );
-
-
-        if (existing) {
-
-            existing.quantity =
-                Number(
-                    existing.quantity || 0
-                ) + 1;
-
-        } else {
-
-            cart.push({
-
-                ...product,
-
-                quantity: 1
-
-            });
-
-        }
-
-
-        /* SAVE CART */
-
-        localStorage.setItem(
-            "chemistCart",
-            JSON.stringify(cart)
-        );
-
-
-        updateCartCount();
-
-
-        showToast(
-            `✅ ${product.name} added to cart`
-        );
-
-    }
-
-
-    /* ==========================================
-       TOAST
-    ========================================== */
-
-    function showToast(message) {
-
-        if (!toast) {
-
-            alert(message);
-
-            return;
-
-        }
-
-
-        toast.textContent =
-            message;
-
-
-        toast.classList.add(
-            "show"
-        );
-
-
-        setTimeout(() => {
-
-            toast.classList.remove(
-                "show"
-            );
-
-        }, 2500);
-
-    }
-
-
-    /* ==========================================
-       FILTER PRODUCTS
-    ========================================== */
-
-    function filterProducts() {
-
-        if (!Array.isArray(products)) {
-
-            console.error(
-                "Products array not found."
-            );
-
-            return;
-
-        }
-
-
-        const searchText =
-            searchInput
-                ? searchInput.value
-                    .toLowerCase()
-                    .trim()
-                : "";
-
-
-        const category =
-            categoryFilter
-                ? categoryFilter.value
-                : "";
-
-
-        const maxPrice =
-            priceRange
-                ? Number(priceRange.value)
-                : Infinity;
-
-
-        let filtered =
-            products.filter(
-                product => {
-
-                    const productName =
-                        String(
-                            product.name || ""
-                        ).toLowerCase();
-
-
-                    const matchesSearch =
-                        productName.includes(
-                            searchText
-                        );
-
-
-                    const matchesCategory =
-                        !category ||
-                        product.category ===
-                            category;
-
-
-                    const matchesPrice =
-                        Number(
-                            product.price
-                        ) <= maxPrice;
-
-
-                    return (
-                        matchesSearch &&
-                        matchesCategory &&
-                        matchesPrice
+                    addToCart(
+                        button.dataset.id
                     );
 
                 }
             );
 
-
-        /* ==========================================
-           SORT
-        ========================================== */
-
-        const sort =
-            sortFilter
-                ? sortFilter.value
-                : "";
+        });
 
 
-        switch (sort) {
+    document
+        .querySelectorAll(".buy-now-btn")
+        .forEach(button => {
 
-            case "price-low":
+            button.addEventListener(
+                "click",
+                () => {
 
-                filtered.sort(
-                    (a, b) =>
-                        Number(a.price) -
-                        Number(b.price)
-                );
-
-                break;
-
-
-            case "price-high":
-
-                filtered.sort(
-                    (a, b) =>
-                        Number(b.price) -
-                        Number(a.price)
-                );
-
-                break;
-
-
-            case "rating":
-
-                filtered.sort(
-                    (a, b) =>
-                        Number(
-                            b.rating || 0
-                        ) -
-                        Number(
-                            a.rating || 0
-                        )
-                );
-
-                break;
-
-
-            case "newest":
-
-                filtered.sort(
-                    (a, b) =>
-                        Number(
-                            b.newest || 0
-                        ) -
-                        Number(
-                            a.newest || 0
-                        )
-                );
-
-                break;
-
-        }
-
-
-        displayProducts(filtered);
-
-    }
-
-
-    /* ==========================================
-       SEARCH
-    ========================================== */
-
-    if (searchInput) {
-
-        searchInput.addEventListener(
-            "input",
-            filterProducts
-        );
-
-    }
-
-
-    /* ==========================================
-       CATEGORY
-    ========================================== */
-
-    if (categoryFilter) {
-
-        categoryFilter.addEventListener(
-            "change",
-            filterProducts
-        );
-
-    }
-
-
-    /* ==========================================
-       SORT
-    ========================================== */
-
-    if (sortFilter) {
-
-        sortFilter.addEventListener(
-            "change",
-            filterProducts
-        );
-
-    }
-
-
-    /* ==========================================
-       PRICE RANGE
-    ========================================== */
-
-    if (priceRange) {
-
-        priceRange.addEventListener(
-            "input",
-            () => {
-
-                if (priceLabel) {
-
-                    priceLabel.textContent =
-                        `Max Price: ₹${priceRange.value}`;
+                    buyNow(
+                        button.dataset.buyId
+                    );
 
                 }
+            );
 
+        });
+
+}
+
+
+/* =========================================================
+   FILTER + SEARCH
+========================================================= */
+
+function filterProducts() {
+
+    if (
+        typeof products ===
+        "undefined"
+    ) {
+
+        return;
+
+    }
+
+
+    let filtered =
+        [...products];
+
+
+    /*
+     * SEARCH
+     */
+
+    const search =
+        searchInput
+            ? searchInput.value
+                .trim()
+                .toLowerCase()
+            : "";
+
+
+    if (search) {
+
+        filtered =
+            filtered.filter(product => {
+
+                const name =
+                    String(
+                        product.name || ""
+                    ).toLowerCase();
+
+
+                const category =
+                    String(
+                        product.category || ""
+                    ).toLowerCase();
+
+
+                return (
+                    name.includes(search) ||
+                    category.includes(search)
+                );
+
+            });
+
+    }
+
+
+    /*
+     * CATEGORY
+     */
+
+    const category =
+        categoryFilter
+            ? categoryFilter.value
+            : "";
+
+
+    if (category) {
+
+        filtered =
+            filtered.filter(product => {
+
+                return String(
+                    product.category || ""
+                ).toLowerCase() ===
+                category.toLowerCase();
+
+            });
+
+    }
+
+
+    /*
+     * PRICE
+     */
+
+    const maxPrice =
+        priceRange
+            ? Number(priceRange.value)
+            : 5000;
+
+
+    filtered =
+        filtered.filter(product => {
+
+            return Number(
+                product.price || 0
+            ) <= maxPrice;
+
+        });
+
+
+    /*
+     * SORT
+     */
+
+    const sort =
+        sortFilter
+            ? sortFilter.value
+            : "";
+
+
+    if (sort === "price-low") {
+
+        filtered.sort(
+            (a, b) =>
+                Number(a.price || 0) -
+                Number(b.price || 0)
+        );
+
+    }
+
+
+    if (sort === "price-high") {
+
+        filtered.sort(
+            (a, b) =>
+                Number(b.price || 0) -
+                Number(a.price || 0)
+        );
+
+    }
+
+
+    if (sort === "rating") {
+
+        filtered.sort(
+            (a, b) =>
+                Number(b.rating || 0) -
+                Number(a.rating || 0)
+        );
+
+    }
+
+
+    if (sort === "newest") {
+
+        filtered.reverse();
+
+    }
+
+
+    displayProducts(filtered);
+
+}
+
+
+/* =========================================================
+   SEARCH BUTTON
+========================================================= */
+
+if (searchBtn) {
+
+    searchBtn.addEventListener(
+        "click",
+        filterProducts
+    );
+
+}
+
+
+/* =========================================================
+   SEARCH ENTER
+========================================================= */
+
+if (searchInput) {
+
+    searchInput.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key ===
+                "Enter"
+            ) {
+
+                event.preventDefault();
 
                 filterProducts();
 
             }
-        );
 
-    }
-
-
-    /* ==========================================
-       SHOP NOW
-    ========================================== */
-
-    if (shopNow) {
-
-        shopNow.addEventListener(
-            "click",
-            () => {
-
-                const productsSection =
-                    document.getElementById(
-                        "products"
-                    );
+        }
+    );
 
 
-                if (productsSection) {
+    searchInput.addEventListener(
+        "input",
+        filterProducts
+    );
 
-                    productsSection.scrollIntoView({
-                        behavior: "smooth"
-                    });
+}
 
-                }
+
+/* =========================================================
+   CATEGORY FILTER
+========================================================= */
+
+if (categoryFilter) {
+
+    categoryFilter.addEventListener(
+        "change",
+        filterProducts
+    );
+
+}
+
+
+/* =========================================================
+   SORT FILTER
+========================================================= */
+
+if (sortFilter) {
+
+    sortFilter.addEventListener(
+        "change",
+        filterProducts
+    );
+
+}
+
+
+/* =========================================================
+   PRICE FILTER
+========================================================= */
+
+if (priceRange) {
+
+    priceRange.addEventListener(
+        "input",
+        () => {
+
+            if (priceLabel) {
+
+                priceLabel.textContent =
+                    `Max Price: ₹${priceRange.value}`;
 
             }
-        );
-
-    }
 
 
-    /* ==========================================
-       INITIAL LOAD
-    ========================================== */
+            filterProducts();
 
-    updateCartCount();
+        }
+    );
+
+}
 
 
-    if (
-        typeof products !==
-        "undefined"
-    ) {
+/* =========================================================
+   SHOP NOW
+========================================================= */
 
-        displayProducts(products);
+if (shopNowBtn) {
 
-    } else {
+    shopNowBtn.addEventListener(
+        "click",
+        () => {
 
-        console.error(
-            "products.js is not loaded."
-        );
+            const productsSection =
+                document.getElementById(
+                    "products"
+                );
 
-    }
 
-});
+            if (productsSection) {
+
+                productsSection.scrollIntoView({
+                    behavior: "smooth"
+                });
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   INITIAL LOAD
+========================================================= */
+
+updateCartCount();
+
+
+if (
+    typeof products !==
+    "undefined"
+) {
+
+    displayProducts(products);
+
+}
+
+
+/* =========================================================
+   MAKE FUNCTIONS AVAILABLE
+========================================================= */
+
+window.addToCart =
+    addToCart;
+
+window.buyNow =
+    buyNow;
+
+window.requireLogin =
+    requireLogin;
+
+window.updateCartCount =
+    updateCartCount;
