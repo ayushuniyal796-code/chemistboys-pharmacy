@@ -9,195 +9,176 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-/* ==========================================
-   FIREBASE CONFIG
-========================================== */
-
 const firebaseConfig = {
-
-    apiKey: "AIzaSyCiRX-njBfJAAgUzM1vHDTEYgWk1TFLjcmQ",
-
-    authDomain:
-        "chemistboys.firebaseapp.com",
-
-    projectId:
-        "chemistboys",
-
-    storageBucket:
-        "chemistboys.firebasestorage.app",
-
-    messagingSenderId:
-        "696067008650",
-
-    appId:
-        "1:696067008650:web:aba739ed1593d315002573",
-
-    measurementId:
-        "G-G3BHP0PSB0"
+    apiKey: "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWk1TFLjcmQ",
+    authDomain: "chemistboys.firebaseapp.com",
+    projectId: "chemistboys",
+    storageBucket: "chemistboys.firebasestorage.app",
+    messagingSenderId: "696067008650",
+    appId: "1:696067008650:web:aba739ed1593d315002573",
+    measurementId: "G-G3BHP0PSB0"
 };
 
 
-/* ==========================================
-   FIREBASE INITIALIZE
-========================================== */
-
 const app = initializeApp(firebaseConfig);
-
 const auth = getAuth(app);
 
 
-/* ==========================================
-   ELEMENTS
-========================================== */
+/*
+========================================
+GLOBAL AUTH STATE
+========================================
+*/
 
-const accountBtn =
-    document.getElementById("accountBtn");
+window.currentFirebaseUser = null;
 
-const registerBtn =
-    document.getElementById("registerBtn");
+window.firebaseAuthReady = new Promise((resolve) => {
 
-const logoutBtn =
-    document.getElementById("logoutBtn");
+    onAuthStateChanged(auth, (user) => {
 
-const ordersBtn =
-    document.getElementById("ordersBtn");
+        window.currentFirebaseUser = user;
 
+        resolve(user);
 
-/* ==========================================
-   CHECK LOGIN STATUS
-========================================== */
-
-onAuthStateChanged(auth, (user) => {
-
-    /*
-     * VERY IMPORTANT
-     * script.js isi variable ko check karega.
-     */
-
-    window.currentFirebaseUser = user;
-
-
-    /* ======================================
-       USER LOGGED IN
-    ====================================== */
-
-    if (user) {
-
-        const name =
-            user.displayName ||
-            (user.email
-                ? user.email.split("@")[0]
-                : "Account");
-
-
-        /* ACCOUNT BUTTON */
-
-        if (accountBtn) {
-
-            accountBtn.textContent =
-                `👤 ${name}`;
-
-            accountBtn.href =
-                "account.html";
-
-        }
-
-
-        /* REGISTER BUTTON HIDE */
-
-        if (registerBtn) {
-
-            registerBtn.style.display =
-                "none";
-
-        }
-
-
-        /* LOGOUT SHOW */
-
-        if (logoutBtn) {
-
-            logoutBtn.style.display =
-                "inline-block";
-
-        }
-
-
-        /* ORDERS SHOW */
-
-        if (ordersBtn) {
-
-            ordersBtn.style.display =
-                "inline-block";
-
-        }
-
-    }
-
-
-    /* ======================================
-       USER LOGGED OUT
-    ====================================== */
-
-    else {
 
         /*
-         * Firebase user nahi hai
-         */
+        ================================
+        LOGGED IN
+        ================================
+        */
 
-        window.currentFirebaseUser = null;
+        if (user) {
+
+            const accountBtn =
+                document.getElementById("accountBtn");
+
+            const registerBtn =
+                document.getElementById("registerBtn");
+
+            const logoutBtn =
+                document.getElementById("logoutBtn");
+
+            const ordersBtn =
+                document.getElementById("ordersBtn");
 
 
-        /* ACCOUNT BUTTON */
+            const name =
+                user.displayName ||
+                (
+                    user.email
+                        ? user.email.split("@")[0]
+                        : "Account"
+                );
 
-        if (accountBtn) {
 
-            accountBtn.textContent =
-                "👤 Login";
+            if (accountBtn) {
 
-            accountBtn.href =
-                "login.html";
+                accountBtn.textContent =
+                    `👤 ${name}`;
+
+                accountBtn.href =
+                    "account.html";
+
+            }
+
+
+            if (registerBtn) {
+
+                registerBtn.style.display =
+                    "none";
+
+            }
+
+
+            if (logoutBtn) {
+
+                logoutBtn.style.display =
+                    "inline-block";
+
+            }
+
+
+            if (ordersBtn) {
+
+                ordersBtn.style.display =
+                    "inline-block";
+
+            }
 
         }
 
 
-        /* REGISTER SHOW */
+        /*
+        ================================
+        LOGGED OUT
+        ================================
+        */
 
-        if (registerBtn) {
+        else {
 
-            registerBtn.style.display =
-                "inline-block";
+            const accountBtn =
+                document.getElementById("accountBtn");
+
+            const registerBtn =
+                document.getElementById("registerBtn");
+
+            const logoutBtn =
+                document.getElementById("logoutBtn");
+
+            const ordersBtn =
+                document.getElementById("ordersBtn");
+
+
+            if (accountBtn) {
+
+                accountBtn.textContent =
+                    "👤 Login";
+
+                accountBtn.href =
+                    "login.html";
+
+            }
+
+
+            if (registerBtn) {
+
+                registerBtn.style.display =
+                    "inline-block";
+
+            }
+
+
+            if (logoutBtn) {
+
+                logoutBtn.style.display =
+                    "none";
+
+            }
+
+
+            if (ordersBtn) {
+
+                ordersBtn.style.display =
+                    "inline-block";
+
+            }
 
         }
 
-
-        /* LOGOUT HIDE */
-
-        if (logoutBtn) {
-
-            logoutBtn.style.display =
-                "none";
-
-        }
-
-
-        /* ORDERS */
-
-        if (ordersBtn) {
-
-            ordersBtn.style.display =
-                "inline-block";
-
-        }
-
-    }
+    });
 
 });
 
 
-/* ==========================================
-   LOGOUT
-========================================== */
+/*
+========================================
+LOGOUT
+========================================
+*/
+
+const logoutBtn =
+    document.getElementById("logoutBtn");
+
 
 if (logoutBtn) {
 
@@ -212,16 +193,10 @@ if (logoutBtn) {
                 window.currentFirebaseUser =
                     null;
 
-                alert(
-                    "You have been logged out."
-                );
-
                 window.location.href =
                     "index.html";
 
-            }
-
-            catch (error) {
+            } catch (error) {
 
                 console.error(
                     "Logout error:",
