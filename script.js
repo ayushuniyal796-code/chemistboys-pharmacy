@@ -25,46 +25,109 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("toastNotification");
 
     const shopNow =
-        document.querySelector(".hero-btn");
+        document.getElementById("shopNowBtn");
 
 
-    /* ================= CART ================= */
+    /* ==========================================
+       CART
+    ========================================== */
 
-    let cart =
-        JSON.parse(localStorage.getItem("chemistCart")) || [];
+    let cart = [];
+
+    try {
+
+        cart =
+            JSON.parse(
+                localStorage.getItem("chemistCart")
+            ) || [];
+
+    } catch (error) {
+
+        cart = [];
+
+    }
 
 
     function updateCartCount() {
 
         if (!cartCount) return;
 
-        cartCount.textContent =
+        const count =
             cart.reduce(
                 (total, item) =>
-                    total + item.quantity,
+                    total + Number(item.quantity || 0),
                 0
             );
+
+        cartCount.textContent = count;
     }
 
 
-    /* ================= PRODUCTS ================= */
+    /* ==========================================
+       LOGIN CHECK
+    ========================================== */
+
+    function requireLogin() {
+
+        /*
+         * Firebase login state account.js/auth.js
+         * se aayegi.
+         */
+
+        if (window.currentFirebaseUser) {
+
+            return true;
+
+        }
+
+
+        showToast(
+            "🔒 Please login first to add products."
+        );
+
+
+        setTimeout(() => {
+
+            window.location.href =
+                "login.html";
+
+        }, 900);
+
+
+        return false;
+    }
+
+
+    /* ==========================================
+       PRODUCTS DISPLAY
+    ========================================== */
 
     function displayProducts(productList) {
+
+        if (!productsGrid) return;
+
 
         productsGrid.innerHTML = "";
 
 
-        if (productList.length === 0) {
+        if (
+            !Array.isArray(productList) ||
+            productList.length === 0
+        ) {
 
             productsGrid.innerHTML = `
+
                 <div style="
                     grid-column:1/-1;
                     text-align:center;
-                    padding:60px;
+                    padding:60px 20px;
                     font-size:20px;
                 ">
+
                     😔 No products found
+
                 </div>
+
             `;
 
             return;
@@ -76,8 +139,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const card =
                 document.createElement("div");
 
+
             card.className =
                 "product-card";
+
 
             card.style.animationDelay =
                 `${index * 0.05}s`;
@@ -97,73 +162,54 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                 <span class="discount">
-                    ${product.discount}
+
+                    ${product.discount || ""}
+
                 </span>
 
 
                 <span class="product-category">
+
                     ${getCategoryName(product.category)}
+
                 </span>
 
 
                 <h3 class="product-name">
+
                     ${product.name}
+
                 </h3>
 
 
                 <div class="product-rating">
-                    ⭐ ${product.rating}
+
+                    ⭐ ${product.rating || 0}
+
                 </div>
 
 
                 <div class="product-price">
+
                     ₹${product.price}
 
                     <span class="old-price">
-                        ₹${product.oldPrice}
+
+                        ₹${product.oldPrice || ""}
+
                     </span>
+
                 </div>
 
 
-                <!-- ADD TO CART BUTTON -->
-
                 <button
+                    type="button"
                     class="add-cart-btn"
                     data-id="${product.id}"
-
-                    style="
-                        display:flex;
-                        width:100%;
-                        min-height:48px;
-                        align-items:center;
-                        justify-content:center;
-                        gap:8px;
-
-                        margin-top:16px;
-                        padding:13px 16px;
-
-                        border:none;
-                        border-radius:12px;
-
-                        background:#0ca88f;
-                        color:#ffffff;
-
-                        font-family:Arial,Helvetica,sans-serif;
-                        font-size:16px;
-                        font-weight:700;
-
-                        line-height:1.2;
-                        text-align:center;
-
-                        cursor:pointer;
-
-                        box-shadow:0 6px 16px rgba(12,168,143,0.20);
-
-                        appearance:none;
-                        -webkit-appearance:none;
-                    "
                 >
+
                     🛒 Add to Cart
+
                 </button>
 
             `;
@@ -174,26 +220,30 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
 
-        /* ================= BUTTON EVENTS ================= */
+        /* ==========================================
+           ADD TO CART BUTTON EVENTS
+        ========================================== */
 
         document
             .querySelectorAll(".add-cart-btn")
             .forEach(button => {
 
+
                 button.addEventListener(
                     "click",
                     () => {
 
-                        const id =
+                        const productId =
                             Number(button.dataset.id);
 
-                        addToCart(id);
+
+                        addToCart(productId);
 
                     }
                 );
 
 
-                /* HOVER EFFECT */
+                /* HOVER */
 
                 button.addEventListener(
                     "mouseenter",
@@ -227,7 +277,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* ================= CATEGORY ================= */
+    /* ==========================================
+       CATEGORY NAME
+    ========================================== */
 
     function getCategoryName(category) {
 
@@ -250,34 +302,62 @@ document.addEventListener("DOMContentLoaded", () => {
 
         };
 
-        return names[category] || category;
+
+        return names[category] || category || "";
 
     }
 
 
-    /* ================= ADD TO CART ================= */
+    /* ==========================================
+       ADD TO CART
+    ========================================== */
 
     function addToCart(productId) {
 
+        /* LOGIN REQUIRED */
+
+        if (!requireLogin()) {
+
+            return;
+
+        }
+
+
+        /* FIND PRODUCT */
+
         const product =
             products.find(
-                p => p.id === productId
+                p =>
+                    Number(p.id) ===
+                    Number(productId)
             );
 
 
-        if (!product) return;
+        if (!product) {
 
+            console.error(
+                "Product not found:",
+                productId
+            );
+
+            return;
+        }
+
+
+        /* FIND EXISTING */
 
         const existing =
             cart.find(
                 item =>
-                    item.id === productId
+                    Number(item.id) ===
+                    Number(productId)
             );
 
 
         if (existing) {
 
-            existing.quantity++;
+            existing.quantity =
+                Number(existing.quantity || 0) + 1;
 
         } else {
 
@@ -291,6 +371,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
 
+
+        /* SAVE */
 
         localStorage.setItem(
             "chemistCart",
@@ -308,11 +390,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* ================= TOAST ================= */
+    /* ==========================================
+       TOAST
+    ========================================== */
 
     function showToast(message) {
 
-        if (!toast) return;
+        if (!toast) {
+
+            alert(message);
+
+            return;
+
+        }
 
 
         toast.textContent =
@@ -335,31 +425,55 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* ================= FILTER ================= */
+    /* ==========================================
+       FILTER PRODUCTS
+    ========================================== */
 
     function filterProducts() {
 
+        if (!Array.isArray(products)) {
+
+            console.error(
+                "Products array not found."
+            );
+
+            return;
+        }
+
+
         const searchText =
-            searchInput.value
-                .toLowerCase()
-                .trim();
+            searchInput
+                ? searchInput.value
+                    .toLowerCase()
+                    .trim()
+                : "";
 
 
         const category =
-            categoryFilter.value;
+            categoryFilter
+                ? categoryFilter.value
+                : "";
 
 
         const maxPrice =
-            Number(priceRange.value);
+            priceRange
+                ? Number(priceRange.value)
+                : Infinity;
 
 
         let filtered =
             products.filter(product => {
 
+
+                const productName =
+                    String(product.name || "")
+                        .toLowerCase();
+
+
                 const matchesSearch =
-                    product.name
-                        .toLowerCase()
-                        .includes(searchText);
+                    productName.includes(
+                        searchText
+                    );
 
 
                 const matchesCategory =
@@ -368,7 +482,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                 const matchesPrice =
-                    product.price <= maxPrice;
+                    Number(product.price) <=
+                    maxPrice;
 
 
                 return (
@@ -380,15 +495,25 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
 
-        /* ================= SORT ================= */
+        /* ==========================================
+           SORT
+        ========================================== */
 
-        switch (sortFilter.value) {
+        const sort =
+            sortFilter
+                ? sortFilter.value
+                : "";
+
+
+        switch (sort) {
+
 
             case "price-low":
 
                 filtered.sort(
                     (a, b) =>
-                        a.price - b.price
+                        Number(a.price) -
+                        Number(b.price)
                 );
 
                 break;
@@ -398,7 +523,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 filtered.sort(
                     (a, b) =>
-                        b.price - a.price
+                        Number(b.price) -
+                        Number(a.price)
                 );
 
                 break;
@@ -408,7 +534,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 filtered.sort(
                     (a, b) =>
-                        b.rating - a.rating
+                        Number(b.rating || 0) -
+                        Number(a.rating || 0)
                 );
 
                 break;
@@ -418,8 +545,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 filtered.sort(
                     (a, b) =>
-                        Number(b.newest) -
-                        Number(a.newest)
+                        Number(b.newest || 0) -
+                        Number(a.newest || 0)
                 );
 
                 break;
@@ -432,7 +559,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* ================= EVENTS ================= */
+    /* ==========================================
+       SEARCH
+    ========================================== */
 
     if (searchInput) {
 
@@ -444,6 +573,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
+    /* ==========================================
+       CATEGORY
+    ========================================== */
+
     if (categoryFilter) {
 
         categoryFilter.addEventListener(
@@ -453,6 +586,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     }
 
+
+    /* ==========================================
+       SORT
+    ========================================== */
 
     if (sortFilter) {
 
@@ -464,11 +601,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
+    /* ==========================================
+       PRICE RANGE
+    ========================================== */
+
     if (priceRange) {
 
         priceRange.addEventListener(
             "input",
             () => {
+
 
                 if (priceLabel) {
 
@@ -476,6 +618,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         `Max Price: ₹${priceRange.value}`;
 
                 }
+
 
                 filterProducts();
 
@@ -485,7 +628,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* ================= SHOP NOW ================= */
+    /* ==========================================
+       SHOP NOW
+    ========================================== */
 
     if (shopNow) {
 
@@ -494,8 +639,8 @@ document.addEventListener("DOMContentLoaded", () => {
             () => {
 
                 const productsSection =
-                    document.querySelector(
-                        ".products-section"
+                    document.getElementById(
+                        "products"
                     );
 
 
@@ -513,10 +658,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* ================= INITIAL LOAD ================= */
+    /* ==========================================
+       INITIAL LOAD
+    ========================================== */
 
     updateCartCount();
 
-    displayProducts(products);
+
+    if (typeof products !== "undefined") {
+
+        displayProducts(products);
+
+    } else {
+
+        console.error(
+            "products.js is not loaded."
+        );
+
+    }
 
 });
