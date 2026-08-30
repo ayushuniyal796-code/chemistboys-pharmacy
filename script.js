@@ -47,67 +47,69 @@ const toastNotification =
 
 
 /* =========================================================
-   LOGIN CHECK
+   FIREBASE LOGIN CHECK
 ========================================================= */
 
-async function requireLogin() {
+function requireLogin() {
 
-    try {
+    return new Promise((resolve) => {
 
         /*
-         * account.js Firebase authentication
-         * ready hone ka wait karega.
+         * account.js Firebase user ko
+         * window.currentFirebaseUser mein rakhega.
          */
 
-        if (window.firebaseAuthReady) {
+        if (window.currentFirebaseUser) {
 
-            const user =
-                await window.firebaseAuthReady;
+            resolve(true);
 
-            if (user) {
+            return;
+        }
 
-                return true;
 
-            }
+        /*
+         * Firebase ko thoda time do.
+         */
 
-        } else {
+        let checkCount = 0;
 
-            /*
-             * Safety fallback
-             */
 
-            await new Promise(resolve => {
-                setTimeout(resolve, 500);
-            });
+        const checkLogin = setInterval(() => {
+
+            checkCount++;
+
 
             if (window.currentFirebaseUser) {
 
-                return true;
+                clearInterval(checkLogin);
+
+                resolve(true);
+
+                return;
+            }
+
+
+            /*
+             * Maximum 5 seconds wait
+             */
+
+            if (checkCount >= 50) {
+
+                clearInterval(checkLogin);
+
+                alert("🔒 Please login first.");
+
+                window.location.href =
+                    "login.html";
+
+                resolve(false);
 
             }
 
-        }
+        }, 100);
 
-    } catch (error) {
+    });
 
-        console.error(
-            "Authentication check error:",
-            error
-        );
-
-    }
-
-
-    alert(
-        "🔒 Please login first."
-    );
-
-
-    window.location.href =
-        "login.html";
-
-
-    return false;
 }
 
 
@@ -149,7 +151,6 @@ function saveCart() {
         "chemistCart",
         JSON.stringify(cart)
     );
-
 
     updateCartCount();
 
@@ -197,11 +198,6 @@ function showToast(message) {
 
 async function addToCart(productId) {
 
-    /*
-     * IMPORTANT:
-     * Pehle Firebase login check.
-     */
-
     const loggedIn =
         await requireLogin();
 
@@ -212,10 +208,6 @@ async function addToCart(productId) {
 
     }
 
-
-    /*
-     * Product find karo.
-     */
 
     const product =
         products.find(
@@ -236,10 +228,6 @@ async function addToCart(productId) {
 
     }
 
-
-    /*
-     * Check existing product.
-     */
 
     const existing =
         cart.find(
@@ -278,16 +266,8 @@ async function addToCart(productId) {
     }
 
 
-    /*
-     * Save cart.
-     */
-
     saveCart();
 
-
-    /*
-     * Notification.
-     */
 
     showToast(
         `✅ ${product.name} added to cart`
@@ -302,10 +282,6 @@ async function addToCart(productId) {
 
 async function buyNow(productId) {
 
-    /*
-     * Login check
-     */
-
     const loggedIn =
         await requireLogin();
 
@@ -317,10 +293,6 @@ async function buyNow(productId) {
     }
 
 
-    /*
-     * Product find
-     */
-
     const product =
         products.find(
             product =>
@@ -331,15 +303,15 @@ async function buyNow(productId) {
 
     if (!product) {
 
+        console.error(
+            "Product not found:",
+            productId
+        );
+
         return;
 
     }
 
-
-    /*
-     * Buy Now:
-     * cart ko selected product se set karo.
-     */
 
     cart = [{
 
@@ -363,10 +335,6 @@ async function buyNow(productId) {
 
     saveCart();
 
-
-    /*
-     * Checkout page
-     */
 
     window.location.href =
         "checkout.html";
@@ -460,9 +428,7 @@ function displayProducts(list) {
 
 
                 <div class="product-rating">
-
                     ⭐ ${rating}
-
                 </div>
 
 
@@ -513,17 +479,16 @@ function displayProducts(list) {
 
 function addProductEvents() {
 
-
     document
         .querySelectorAll(".add-cart-btn")
         .forEach(button => {
 
             button.addEventListener(
                 "click",
-                () => {
+                function () {
 
                     addToCart(
-                        button.dataset.id
+                        this.dataset.id
                     );
 
                 }
@@ -538,10 +503,10 @@ function addProductEvents() {
 
             button.addEventListener(
                 "click",
-                () => {
+                function () {
 
                     buyNow(
-                        button.dataset.buyId
+                        this.dataset.buyId
                     );
 
                 }
@@ -571,10 +536,6 @@ function filterProducts() {
     let filtered =
         [...products];
 
-
-    /*
-     * SEARCH
-     */
 
     const search =
         searchInput
@@ -611,10 +572,6 @@ function filterProducts() {
     }
 
 
-    /*
-     * CATEGORY
-     */
-
     const category =
         categoryFilter
             ? categoryFilter.value
@@ -636,10 +593,6 @@ function filterProducts() {
     }
 
 
-    /*
-     * PRICE
-     */
-
     const maxPrice =
         priceRange
             ? Number(priceRange.value)
@@ -655,10 +608,6 @@ function filterProducts() {
 
         });
 
-
-    /*
-     * SORT
-     */
 
     const sort =
         sortFilter
@@ -712,7 +661,7 @@ function filterProducts() {
 
 
 /* =========================================================
-   SEARCH BUTTON
+   SEARCH
 ========================================================= */
 
 if (searchBtn) {
@@ -725,20 +674,13 @@ if (searchBtn) {
 }
 
 
-/* =========================================================
-   SEARCH ENTER
-========================================================= */
-
 if (searchInput) {
 
     searchInput.addEventListener(
         "keydown",
-        event => {
+        function (event) {
 
-            if (
-                event.key ===
-                "Enter"
-            ) {
+            if (event.key === "Enter") {
 
                 event.preventDefault();
 
@@ -759,7 +701,7 @@ if (searchInput) {
 
 
 /* =========================================================
-   CATEGORY FILTER
+   FILTERS
 ========================================================= */
 
 if (categoryFilter) {
@@ -772,10 +714,6 @@ if (categoryFilter) {
 }
 
 
-/* =========================================================
-   SORT FILTER
-========================================================= */
-
 if (sortFilter) {
 
     sortFilter.addEventListener(
@@ -786,15 +724,11 @@ if (sortFilter) {
 }
 
 
-/* =========================================================
-   PRICE FILTER
-========================================================= */
-
 if (priceRange) {
 
     priceRange.addEventListener(
         "input",
-        () => {
+        function () {
 
             if (priceLabel) {
 
@@ -820,12 +754,10 @@ if (shopNowBtn) {
 
     shopNowBtn.addEventListener(
         "click",
-        () => {
+        function () {
 
             const productsSection =
-                document.getElementById(
-                    "products"
-                );
+                document.getElementById("products");
 
 
             if (productsSection) {
@@ -860,7 +792,7 @@ if (
 
 
 /* =========================================================
-   MAKE FUNCTIONS AVAILABLE
+   GLOBAL FUNCTIONS
 ========================================================= */
 
 window.addToCart =
