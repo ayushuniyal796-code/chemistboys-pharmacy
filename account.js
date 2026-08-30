@@ -15,8 +15,7 @@ import {
 
 const firebaseConfig = {
 
-    apiKey:
-        "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWk1TFLjcmQ",
+    apiKey: "AIzaSyCiRX-njBfJAAgUzM1vHDTEYgWk1TFLjcmQ",
 
     authDomain:
         "chemistboys.firebaseapp.com",
@@ -35,7 +34,6 @@ const firebaseConfig = {
 
     measurementId:
         "G-G3BHP0PSB0"
-
 };
 
 
@@ -43,11 +41,9 @@ const firebaseConfig = {
    FIREBASE INITIALIZE
 ========================================== */
 
-const app =
-    initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
 
-const auth =
-    getAuth(app);
+const auth = getAuth(app);
 
 
 /* ==========================================
@@ -73,12 +69,10 @@ const ordersBtn =
 
 onAuthStateChanged(auth, (user) => {
 
-
-    /* ======================================
-       IMPORTANT
-       Make Firebase user available to
-       script.js
-    ====================================== */
+    /*
+     * VERY IMPORTANT
+     * script.js isi variable ko check karega.
+     */
 
     window.currentFirebaseUser = user;
 
@@ -91,11 +85,9 @@ onAuthStateChanged(auth, (user) => {
 
         const name =
             user.displayName ||
-            (
-                user.email
-                    ? user.email.split("@")[0]
-                    : "User"
-            );
+            (user.email
+                ? user.email.split("@")[0]
+                : "Account");
 
 
         /* ACCOUNT BUTTON */
@@ -111,7 +103,7 @@ onAuthStateChanged(auth, (user) => {
         }
 
 
-        /* REGISTER HIDE */
+        /* REGISTER BUTTON HIDE */
 
         if (registerBtn) {
 
@@ -149,6 +141,13 @@ onAuthStateChanged(auth, (user) => {
 
     else {
 
+        /*
+         * Firebase user nahi hai
+         */
+
+        window.currentFirebaseUser = null;
+
+
         /* ACCOUNT BUTTON */
 
         if (accountBtn) {
@@ -182,7 +181,7 @@ onAuthStateChanged(auth, (user) => {
         }
 
 
-        /* ORDERS SHOW */
+        /* ORDERS */
 
         if (ordersBtn) {
 
@@ -210,17 +209,12 @@ if (logoutBtn) {
 
                 await signOut(auth);
 
-
-                /* CLEAR CURRENT USER */
-
                 window.currentFirebaseUser =
                     null;
-
 
                 alert(
                     "You have been logged out."
                 );
-
 
                 window.location.href =
                     "index.html";
@@ -233,7 +227,6 @@ if (logoutBtn) {
                     "Logout error:",
                     error
                 );
-
 
                 alert(
                     "Logout failed. Please try again."
