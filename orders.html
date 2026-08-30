@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>My Orders - ChemistBoys</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <style>
+
+        .orders-page {
+            min-height: 70vh;
+            padding: 60px 0;
+            background: #f5fbfa;
+        }
+
+        .orders-title {
+            text-align: center;
+            color: #075f55;
+            font-size: 38px;
+            margin-bottom: 10px;
+        }
+
+        .orders-subtitle {
+            text-align: center;
+            color: #718987;
+            margin-bottom: 40px;
+        }
+
+        .orders-container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .order-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid #e1efec;
+            box-shadow: 0 8px 25px rgba(0, 80, 70, 0.07);
+            transition: 0.3s;
+        }
+
+        .order-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 35px rgba(0, 80, 70, 0.12);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid #e5efed;
+            padding-bottom: 15px;
+            margin-bottom: 18px;
+        }
+
+        .order-id {
+            font-weight: 800;
+            color: #075f55;
+            font-size: 18px;
+        }
+
+        .order-status {
+            padding: 8px 14px;
+            border-radius: 30px;
+            background: #dff8f3;
+            color: #087c6b;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .order-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .order-info p {
+            color: #526d69;
+        }
+
+        .order-items {
+            background: #f7fcfb;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            color: #365853;
+        }
+
+        .order-total {
+            text-align: right;
+            font-size: 20px;
+            font-weight: 800;
+            color: #075f55;
+        }
+
+        .empty-orders {
+            text-align: center;
+            background: white;
+            padding: 60px 20px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0, 80, 70, 0.06);
+        }
+
+        .empty-orders-icon {
+            font-size: 65px;
+            margin-bottom: 20px;
+        }
+
+        .empty-orders h2 {
+            color: #075f55;
+            margin-bottom: 10px;
+        }
+
+        .empty-orders p {
+            color: #718987;
+            margin-bottom: 25px;
+        }
+
+        .shop-btn {
+            display: inline-block;
+            background: #0ca88f;
+            color: white;
+            padding: 13px 25px;
+            border-radius: 12px;
+            font-weight: 700;
+        }
+
+        .shop-btn:hover {
+            background: #087c6b;
+        }
+
+        @media (max-width: 600px) {
+
+            .orders-page {
+                padding: 40px 0;
+            }
+
+            .orders-title {
+                font-size: 30px;
+            }
+
+            .order-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .order-info {
+                grid-template-columns: 1fr;
+            }
+
+            .order-item {
+                gap: 15px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <!-- HEADER -->
+
+    <header class="header">
+
+        <div class="container">
+
+            <div class="header-top">
+
+                <a
+                    href="index.html"
+                    class="logo-link"
+                >
+
+                    <div class="logo">
+
+                        <span class="logo-icon">
+                            💊
+                        </span>
+
+                        <span class="logo-text">
+                            ChemistBoys
+                        </span>
+
+                    </div>
+
+                </a>
+
+
+                <div class="header-actions">
+
+                    <a
+                        href="index.html"
+                        class="account-btn"
+                    >
+                        🏠 Home
+                    </a>
+
+                    <a
+                        href="cart.html"
+                        class="cart-btn"
+                    >
+                        🛒 Cart
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <!-- MY ORDERS -->
+
+    <main class="orders-page">
+
+        <div class="container">
+
+            <h1 class="orders-title">
+                📦 My Orders
+            </h1>
+
+            <p class="orders-subtitle">
+                Track and manage your medicine orders
+            </p>
+
+
+            <div
+                class="orders-container"
+                id="ordersContainer"
+            >
+
+                <!-- Orders will be loaded here -->
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- FOOTER -->
+
+    <footer class="footer">
+
+        <div class="container">
+
+            <div class="footer-bottom">
+
+                <p>
+                    &copy; 2026 ChemistBoys.
+                    All rights reserved.
+                </p>
+
+            </div>
+
+        </div>
+
+    </footer>
+
+
+    <script src="orders.js"></script>
+
+</body>
+
+</html>
