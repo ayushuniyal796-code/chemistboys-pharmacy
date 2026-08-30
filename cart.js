@@ -1,47 +1,41 @@
-document.addEventListener("DOMContentLoaded", () => {
-
-    /* ============================
-       GET CART
-    ============================ */
+document.addEventListener("DOMContentLoaded", function () {
 
     let cart =
         JSON.parse(localStorage.getItem("chemistCart")) || [];
 
-
-    /* ============================
-       ELEMENTS
-    ============================ */
-
-    const cartItems =
-        document.getElementById("cartItems");
-
-    const cartCount =
-        document.getElementById("cartCount");
-
-    const totalItems =
-        document.getElementById("totalItems");
-
-    const subtotalElement =
-        document.getElementById("subtotal");
-
-    const deliveryElement =
-        document.getElementById("deliveryCharge");
-
-    const totalElement =
-        document.getElementById("grandTotal");
-
-    const checkoutBtn =
-        document.getElementById("checkoutBtn");
+    const cartItems = document.getElementById("cartItems");
+    const cartCount = document.getElementById("cartCount");
+    const totalItems = document.getElementById("totalItems");
+    const subtotalElement = document.getElementById("subtotal");
+    const deliveryElement = document.getElementById("deliveryCharge");
+    const grandTotalElement = document.getElementById("grandTotal");
+    const checkoutBtn = document.getElementById("checkoutBtn");
 
 
-    /* ============================
+    /* =========================
+       SAVE CART
+    ========================= */
+
+    function saveCart() {
+
+        localStorage.setItem(
+            "chemistCart",
+            JSON.stringify(cart)
+        );
+
+        updateCartCount();
+        displayCart();
+    }
+
+
+    /* =========================
        CART COUNT
-    ============================ */
+    ========================= */
 
     function updateCartCount() {
 
         const count = cart.reduce(
-            (total, item) => {
+            function (total, item) {
                 return total + Number(item.quantity || 0);
             },
             0
@@ -53,9 +47,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* ============================
+    /* =========================
        DISPLAY CART
-    ============================ */
+    ========================= */
 
     function displayCart() {
 
@@ -63,8 +57,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         cartItems.innerHTML = "";
 
-
-        /* EMPTY CART */
 
         if (cart.length === 0) {
 
@@ -81,8 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </h2>
 
                     <p>
-                        Looks like you haven't added
-                        anything yet.
+                        Add some medicines to continue.
                     </p>
 
                     <a
@@ -97,34 +88,30 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
 
             updateSummary();
-            updateCartCount();
-
             return;
         }
 
 
-        /* CART PRODUCTS */
+        cart.forEach(function (item) {
 
-        cart.forEach(item => {
-
-            const productPrice =
+            const price =
                 Number(item.price) || 0;
 
             const quantity =
                 Number(item.quantity) || 1;
 
             const itemTotal =
-                productPrice * quantity;
+                price * quantity;
 
 
-            const cartItem =
+            const div =
                 document.createElement("div");
 
-            cartItem.className =
+            div.className =
                 "cart-product";
 
 
-            cartItem.innerHTML = `
+            div.innerHTML = `
 
                 <div class="product-info">
 
@@ -133,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
 
                     <div class="product-price">
-                        ₹${productPrice}
+                        ₹${price}
                     </div>
 
                 </div>
@@ -180,62 +167,55 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
 
 
-            cartItems.appendChild(cartItem);
+            cartItems.appendChild(div);
 
         });
 
 
-        addCartEvents();
-
+        addEvents();
         updateSummary();
-
-        updateCartCount();
 
     }
 
 
-    /* ============================
-       CART BUTTON EVENTS
-    ============================ */
+    /* =========================
+       BUTTON EVENTS
+    ========================= */
 
-    function addCartEvents() {
+    function addEvents() {
 
-
-        /* INCREASE */
 
         document
             .querySelectorAll(".increase")
-            .forEach(button => {
+            .forEach(function (button) {
 
                 button.addEventListener(
                     "click",
-                    () => {
+                    function () {
 
-                        const id =
-                            button.dataset.id;
-
-                        changeQuantity(id, 1);
+                        changeQuantity(
+                            button.dataset.id,
+                            1
+                        );
 
                     }
                 );
 
             });
 
-
-        /* DECREASE */
 
         document
             .querySelectorAll(".decrease")
-            .forEach(button => {
+            .forEach(function (button) {
 
                 button.addEventListener(
                     "click",
-                    () => {
+                    function () {
 
-                        const id =
-                            button.dataset.id;
-
-                        changeQuantity(id, -1);
+                        changeQuantity(
+                            button.dataset.id,
+                            -1
+                        );
 
                     }
                 );
@@ -243,20 +223,17 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
 
-        /* REMOVE */
-
         document
             .querySelectorAll(".remove-btn")
-            .forEach(button => {
+            .forEach(function (button) {
 
                 button.addEventListener(
                     "click",
-                    () => {
+                    function () {
 
-                        const id =
-                            button.dataset.id;
-
-                        removeItem(id);
+                        removeItem(
+                            button.dataset.id
+                        );
 
                     }
                 );
@@ -266,9 +243,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* ============================
+    /* =========================
        CHANGE QUANTITY
-    ============================ */
+    ========================= */
 
     function changeQuantity(
         productId,
@@ -276,31 +253,30 @@ document.addEventListener("DOMContentLoaded", () => {
     ) {
 
         const item =
-            cart.find(
-                product =>
-                    String(product.id) ===
-                    String(productId)
-            );
+            cart.find(function (product) {
+
+                return String(product.id) ===
+                    String(productId);
+
+            });
 
 
         if (!item) return;
 
 
         item.quantity =
-            Number(item.quantity || 0) +
-            change;
+            Number(item.quantity || 0) + change;
 
-
-        /* REMOVE WHEN ZERO */
 
         if (item.quantity <= 0) {
 
             cart =
-                cart.filter(
-                    product =>
-                        String(product.id) !==
-                        String(productId)
-                );
+                cart.filter(function (product) {
+
+                    return String(product.id) !==
+                        String(productId);
+
+                });
 
         }
 
@@ -310,18 +286,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* ============================
+    /* =========================
        REMOVE ITEM
-    ============================ */
+    ========================= */
 
     function removeItem(productId) {
 
         cart =
-            cart.filter(
-                item =>
-                    String(item.id) !==
-                    String(productId)
-            );
+            cart.filter(function (item) {
+
+                return String(item.id) !==
+                    String(productId);
+
+            });
 
 
         saveCart();
@@ -329,35 +306,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* ============================
-       SAVE CART
-    ============================ */
-
-    function saveCart() {
-
-        localStorage.setItem(
-            "chemistCart",
-            JSON.stringify(cart)
-        );
-
-
-        displayCart();
-
-    }
-
-
-    /* ============================
-       UPDATE SUMMARY
-    ============================ */
+    /* =========================
+       SUMMARY
+    ========================= */
 
     function updateSummary() {
 
         let subtotal = 0;
+        let items = 0;
 
-        let itemCount = 0;
 
-
-        cart.forEach(item => {
+        cart.forEach(function (item) {
 
             const price =
                 Number(item.price) || 0;
@@ -369,27 +328,17 @@ document.addEventListener("DOMContentLoaded", () => {
             subtotal +=
                 price * quantity;
 
-
-            itemCount += quantity;
+            items += quantity;
 
         });
 
 
-        /*
-
-            FREE DELIVERY
-            ABOVE ₹500
-
-        */
-
-        let delivery = 0;
-
-
-        if (subtotal > 0 && subtotal < 500) {
-
-            delivery = 50;
-
-        }
+        const delivery =
+            subtotal === 0
+                ? 0
+                : subtotal >= 500
+                    ? 0
+                    : 50;
 
 
         const grandTotal =
@@ -397,18 +346,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (totalItems) {
-
-            totalItems.textContent =
-                itemCount;
-
+            totalItems.textContent = items;
         }
 
 
         if (subtotalElement) {
-
             subtotalElement.textContent =
                 `₹${subtotal}`;
-
         }
 
 
@@ -422,9 +366,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        if (totalElement) {
+        if (grandTotalElement) {
 
-            totalElement.textContent =
+            grandTotalElement.textContent =
                 `₹${grandTotal}`;
 
         }
@@ -432,9 +376,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* ============================
+    /* =========================
        CHECKOUT
-    ============================ */
+    ========================= */
 
     if (checkoutBtn) {
 
@@ -442,22 +386,21 @@ document.addEventListener("DOMContentLoaded", () => {
             "click",
             function (event) {
 
-                event.preventDefault();
-
-
                 if (cart.length === 0) {
+
+                    event.preventDefault();
 
                     alert(
                         "Your cart is empty!"
                     );
 
                     return;
-
                 }
 
-
-                window.location.href =
-                    "checkout.html";
+                /*
+                    Normal link will open:
+                    checkout.html
+                */
 
             }
         );
@@ -465,12 +408,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* ============================
-       INITIAL LOAD
-    ============================ */
+    /* =========================
+       START
+    ========================= */
 
     updateCartCount();
-
     displayCart();
 
 });
