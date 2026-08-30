@@ -4,63 +4,33 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("ordersContainer");
 
 
-    /*
-        Demo orders
+    /* =========================================
+       LOAD ORDERS FROM LOCAL STORAGE
+    ========================================= */
 
-        Baad mein Firebase/database se
-        real orders yahan load karenge.
-    */
-
-    const orders = [
-
-        {
-            id: "CB10245",
-            date: "30 August 2026",
-            delivery: "2 September 2026",
-            status: "Out for Delivery",
-
-            items: [
-                {
-                    name: "Paracetamol 500mg",
-                    quantity: 2,
-                    price: 120
-                },
-                {
-                    name: "Vitamin C Tablets",
-                    quantity: 1,
-                    price: 199
-                },
-                {
-                    name: "First Aid Kit",
-                    quantity: 1,
-                    price: 330
-                }
-            ],
-
-            total: 769
-        },
-
-        {
-            id: "CB10231",
-            date: "25 August 2026",
-            delivery: "28 August 2026",
-            status: "Delivered",
-
-            items: [
-                {
-                    name: "Multivitamin Tablets",
-                    quantity: 1,
-                    price: 299
-                }
-            ],
-
-            total: 299
-        }
-
-    ];
+    let orders =
+        JSON.parse(
+            localStorage.getItem("orders")
+        ) || [];
 
 
-    if (orders.length === 0) {
+    /* =========================================
+       CHECK ORDERS CONTAINER
+    ========================================= */
+
+    if (!ordersContainer) {
+        return;
+    }
+
+
+    /* =========================================
+       NO ORDERS
+    ========================================= */
+
+    if (
+        !Array.isArray(orders) ||
+        orders.length === 0
+    ) {
 
         ordersContainer.innerHTML = `
 
@@ -82,7 +52,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     href="index.html"
                     class="shop-btn"
                 >
-                    Start Shopping
+                    🛍️ Start Shopping
                 </a>
 
             </div>
@@ -90,14 +60,48 @@ document.addEventListener("DOMContentLoaded", function () {
         `;
 
         return;
-
     }
 
+
+    /* =========================================
+       NEWEST ORDER FIRST
+    ========================================= */
+
+    orders.sort(function (a, b) {
+
+        const dateA =
+            a.orderDateISO ||
+            a.orderDate ||
+            "";
+
+        const dateB =
+            b.orderDateISO ||
+            b.orderDate ||
+            "";
+
+        return String(dateB)
+            .localeCompare(String(dateA));
+
+    });
+
+
+    /* =========================================
+       CLEAR OLD CONTENT
+    ========================================= */
 
     ordersContainer.innerHTML = "";
 
 
+    /* =========================================
+       DISPLAY EACH ORDER
+    ========================================= */
+
     orders.forEach(function (order) {
+
+
+        /* =====================================
+           ORDER CARD
+        ===================================== */
 
         const orderCard =
             document.createElement("div");
@@ -106,73 +110,236 @@ document.addEventListener("DOMContentLoaded", function () {
             "order-card";
 
 
+        /* =====================================
+           ITEMS HTML
+        ===================================== */
+
         let itemsHTML = "";
 
 
-        order.items.forEach(function (item) {
+        if (
+            Array.isArray(order.items) &&
+            order.items.length > 0
+        ) {
 
-            itemsHTML += `
+            order.items.forEach(function (item) {
+
+                const itemName =
+                    item.name ||
+                    "Medicine";
+
+
+                const itemPrice =
+                    Number(item.price) || 0;
+
+
+                const quantity =
+                    Number(item.quantity) || 1;
+
+
+                const itemTotal =
+                    itemPrice * quantity;
+
+
+                itemsHTML += `
+
+                    <div class="order-item">
+
+                        <span>
+                            ${itemName}
+                            × ${quantity}
+                        </span>
+
+                        <strong>
+                            ₹${itemTotal}
+                        </strong>
+
+                    </div>
+
+                `;
+
+            });
+
+        }
+        else {
+
+            itemsHTML = `
 
                 <div class="order-item">
 
                     <span>
-                        ${item.name}
-                        × ${item.quantity}
+                        No item details available
                     </span>
-
-                    <strong>
-                        ₹${item.price * item.quantity}
-                    </strong>
 
                 </div>
 
             `;
 
-        });
+        }
 
+
+        /* =====================================
+           STATUS
+        ===================================== */
+
+        const status =
+            order.status ||
+            "Processing";
+
+
+        /* =====================================
+           PAYMENT
+        ===================================== */
+
+        let paymentText =
+            "Pending";
+
+
+        if (
+            order.paymentMethod === "cod"
+        ) {
+
+            paymentText =
+                "Cash on Delivery";
+
+        }
+        else if (
+            order.paymentMethod === "online"
+        ) {
+
+            if (
+                order.paymentStatus === "Paid"
+            ) {
+
+                paymentText =
+                    "Paid Online";
+
+            }
+            else {
+
+                paymentText =
+                    "Online Payment - Pending";
+
+            }
+
+        }
+        else {
+
+            paymentText =
+                "Not Selected";
+
+        }
+
+
+        /* =====================================
+           TOTAL
+        ===================================== */
+
+        const total =
+            Number(order.total) || 0;
+
+
+        /* =====================================
+           ORDER CARD HTML
+        ===================================== */
 
         orderCard.innerHTML = `
 
             <div class="order-header">
 
+
                 <div class="order-id">
 
-                    Order #${order.id}
+                    Order #${order.id || "N/A"}
 
                 </div>
+
 
                 <div class="order-status">
 
-                    ${order.status}
+                    ${status}
 
                 </div>
 
+
             </div>
+
 
 
             <div class="order-info">
 
-                <p>
-                    📅 <strong>Order Date:</strong>
-                    ${order.date}
-                </p>
 
                 <p>
-                    🚚 <strong>Expected Delivery:</strong>
-                    ${order.delivery}
+
+                    📅
+
+                    <strong>
+                        Order Date:
+                    </strong>
+
+                    ${order.orderDate || "N/A"}
+
                 </p>
 
-                <p>
-                    💳 <strong>Payment:</strong>
-                    Paid
-                </p>
+
 
                 <p>
-                    📦 <strong>Order Status:</strong>
-                    ${order.status}
+
+                    🕐
+
+                    <strong>
+                        Order Time:
+                    </strong>
+
+                    ${order.orderTime || "N/A"}
+
                 </p>
+
+
+
+                <p>
+
+                    🚚
+
+                    <strong>
+                        Expected Delivery:
+                    </strong>
+
+                    ${order.deliveryDate || "N/A"}
+
+                </p>
+
+
+
+                <p>
+
+                    💳
+
+                    <strong>
+                        Payment:
+                    </strong>
+
+                    ${paymentText}
+
+                </p>
+
+
+
+                <p>
+
+                    📦
+
+                    <strong>
+                        Order Status:
+                    </strong>
+
+                    ${status}
+
+                </p>
+
 
             </div>
+
 
 
             <div class="order-items">
@@ -182,16 +349,24 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>
 
 
+
             <div class="order-total">
 
-                Total: ₹${order.total}
+                Total:
+                ₹${total}
 
             </div>
 
         `;
 
 
-        ordersContainer.appendChild(orderCard);
+        /* =====================================
+           ADD TO PAGE
+        ===================================== */
+
+        ordersContainer.appendChild(
+            orderCard
+        );
 
     });
 
