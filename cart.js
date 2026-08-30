@@ -1,58 +1,14 @@
 import {
-    initializeApp
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    auth,
+    authReady
+} from "./firebase.js";
 
-import {
-    getAuth,
-    onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
-
-/* ==========================================
-   FIREBASE CONFIG
-========================================== */
-
-const firebaseConfig = {
-
-    apiKey: "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWkT1FLjcmQ",
-
-    authDomain: "chemistboys.firebaseapp.com",
-
-    projectId: "chemistboys",
-
-    storageBucket: "chemistboys.firebasestorage.app",
-
-    messagingSenderId: "696067008650",
-
-    appId: "1:696067008650:web:aba739ed1593d315002573",
-
-    measurementId: "G-G3BHP0PSB0"
-
-};
-
-
-/* ==========================================
-   FIREBASE
-========================================== */
-
-const app = initializeApp(firebaseConfig);
-
-const auth = getAuth(app);
-
-
-/* ==========================================
-   CART
-========================================== */
 
 document.addEventListener("DOMContentLoaded", function () {
 
     let cart =
         JSON.parse(localStorage.getItem("chemistCart")) || [];
 
-
-    /* ==========================================
-       ELEMENTS
-    ========================================== */
 
     const cartItems =
         document.getElementById("cartItems");
@@ -77,61 +33,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* ==========================================
-       FIREBASE AUTH STATE
-    ========================================== */
-
-    let currentUser = null;
-
-    let authReady = false;
-
-
-    onAuthStateChanged(auth, function (user) {
-
-        currentUser = user;
-
-        authReady = true;
-
-    });
-
-
-    /* ==========================================
        CART COUNT
     ========================================== */
 
     function updateCartCount() {
 
-        const count =
-            cart.reduce(function (total, item) {
+        const count = cart.reduce(
+            function (total, item) {
 
                 return total +
                     Number(item.quantity || 0);
 
-            }, 0);
-
-
-        if (cartCount) {
-
-            cartCount.textContent = count;
-
-        }
-
-    }
-
-
-    /* ==========================================
-       SAVE CART
-    ========================================== */
-
-    function saveCart() {
-
-        localStorage.setItem(
-            "chemistCart",
-            JSON.stringify(cart)
+            },
+            0
         );
 
-        updateCartCount();
-
-        displayCart();
+        if (cartCount) {
+            cartCount.textContent = count;
+        }
 
     }
 
@@ -143,7 +62,6 @@ document.addEventListener("DOMContentLoaded", function () {
     function displayCart() {
 
         if (!cartItems) return;
-
 
         cartItems.innerHTML = "";
 
@@ -275,11 +193,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* ==========================================
-       CART BUTTON EVENTS
+       BUTTON EVENTS
     ========================================== */
 
     function addEvents() {
-
 
         document
             .querySelectorAll(".increase")
@@ -401,13 +318,30 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* ==========================================
+       SAVE CART
+    ========================================== */
+
+    function saveCart() {
+
+        localStorage.setItem(
+            "chemistCart",
+            JSON.stringify(cart)
+        );
+
+        updateCartCount();
+
+        displayCart();
+
+    }
+
+
+    /* ==========================================
        ORDER SUMMARY
     ========================================== */
 
     function updateSummary() {
 
         let subtotal = 0;
-
         let items = 0;
 
 
@@ -442,18 +376,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         if (totalItems) {
-
-            totalItems.textContent =
-                items;
-
+            totalItems.textContent = items;
         }
 
 
         if (subtotalElement) {
-
             subtotalElement.textContent =
                 `₹${subtotal}`;
-
         }
 
 
@@ -483,22 +412,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (checkoutBtn) {
 
-        /*
-         * ALWAYS SHOW BUY NOW
-         */
-
         checkoutBtn.textContent =
             "🛒 Buy Now";
 
 
         checkoutBtn.addEventListener(
             "click",
-            function (event) {
+            async function (event) {
 
                 event.preventDefault();
 
-
-                /* EMPTY CART */
 
                 if (cart.length === 0) {
 
@@ -512,44 +435,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
                 /*
-                 * Firebase ko thoda time nahi,
-                 * auth state ready hone tak wait.
+                 * Wait for Firebase to finish
+                 * restoring the login session.
                  */
 
-                if (!authReady) {
-
-                    const unsubscribe =
-                        onAuthStateChanged(
-                            auth,
-                            function (user) {
-
-                                unsubscribe();
-
-                                if (user) {
-
-                                    window.location.href =
-                                        "checkout.html";
-
-                                } else {
-
-                                    window.location.href =
-                                        "login.html";
-
-                                }
-
-                            }
-                        );
-
-                    return;
-
-                }
+                await authReady;
 
 
                 /*
-                 * LOGGED IN
+                 * USER LOGGED IN
                  */
 
-                if (currentUser) {
+                if (auth.currentUser) {
 
                     window.location.href =
                         "checkout.html";
@@ -560,7 +457,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
                 /*
-                 * NOT LOGGED IN
+                 * USER NOT LOGGED IN
                  */
 
                 window.location.href =
