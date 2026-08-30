@@ -3,58 +3,74 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Checkout - ChemistBoys</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
 
     <style>
         .checkout-page {
-            min-height: 75vh;
+            min-height: 70vh;
             padding: 50px 0;
+            background: #f5fbfa;
+        }
+
+        .checkout-title {
+            text-align: center;
+            color: #075f55;
+            margin-bottom: 35px;
         }
 
         .checkout-layout {
+            max-width: 1100px;
+            margin: auto;
             display: grid;
-            grid-template-columns: 1fr 380px;
-            gap: 30px;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 25px;
         }
 
-        .checkout-box,
-        .checkout-summary {
-            background: rgba(255,255,255,0.94);
-            padding: 28px;
-            border-radius: 24px;
-            box-shadow: 0 15px 45px rgba(0,80,70,0.08);
+        .checkout-card {
+            background: white;
+            padding: 25px;
+            border-radius: 18px;
+            box-shadow: 0 8px 25px rgba(0, 80, 70, 0.08);
+            margin-bottom: 20px;
         }
 
-        .checkout-box h2,
-        .checkout-summary h2 {
-            margin-bottom: 25px;
+        .checkout-card h2 {
             color: #075f55;
+            margin-bottom: 20px;
         }
 
         .form-group {
-            margin-bottom: 18px;
+            margin-bottom: 17px;
         }
 
         .form-group label {
             display: block;
             margin-bottom: 7px;
             font-weight: 600;
+            color: #365853;
         }
 
         .form-group input,
         .form-group textarea,
         .form-group select {
             width: 100%;
-            padding: 14px;
-            border: 1px solid #d5e8e4;
-            border-radius: 12px;
+            padding: 13px;
+            border: 1px solid #d8e9e6;
+            border-radius: 10px;
             outline: none;
             font-size: 15px;
-            transition: 0.3s;
+            box-sizing: border-box;
         }
 
         .form-group textarea {
@@ -66,122 +82,117 @@
         .form-group textarea:focus,
         .form-group select:focus {
             border-color: #0ca88f;
-            box-shadow: 0 0 0 4px rgba(12,168,143,0.1);
         }
 
-        .payment-options {
+        .delivery-options {
             display: grid;
             gap: 10px;
-            margin-top: 10px;
         }
 
-        .payment-option {
+        .delivery-option {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 15px;
-            border: 1px solid #dcebe8;
-            border-radius: 12px;
+            gap: 10px;
+            padding: 13px;
+            border: 1px solid #d8e9e6;
+            border-radius: 10px;
             cursor: pointer;
-            transition: 0.3s;
         }
 
-        .payment-option:hover {
-            background: #effaf8;
+        .delivery-option:hover {
             border-color: #0ca88f;
+            background: #f3fbf9;
         }
 
-        .summary-item {
+        .delivery-option input {
+            width: auto;
+        }
+
+        .cart-item {
             display: flex;
             justify-content: space-between;
             gap: 15px;
-            padding: 12px 0;
-            border-bottom: 1px solid #e5efed;
+            padding: 13px 0;
+            border-bottom: 1px solid #edf3f2;
         }
 
-        .summary-item span:first-child {
-            color: #526d6a;
+        .cart-item-name {
+            font-weight: 600;
+            color: #365853;
         }
 
-        .checkout-total {
+        .cart-item-price {
+            font-weight: 700;
+            color: #075f55;
+        }
+
+        .price-row {
             display: flex;
             justify-content: space-between;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px solid #dceae7;
-            font-size: 22px;
-            font-weight: bold;
+            padding: 9px 0;
+            color: #526d69;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #dceae7;
+            margin-top: 12px;
+            padding-top: 15px;
+            font-size: 21px;
+            font-weight: 800;
             color: #075f55;
         }
 
         .place-order-btn {
             width: 100%;
             border: none;
-            padding: 16px;
-            margin-top: 25px;
-            border-radius: 14px;
+            padding: 15px;
+            border-radius: 12px;
             background: #0ca88f;
             color: white;
             font-size: 17px;
-            font-weight: bold;
+            font-weight: 700;
             cursor: pointer;
-            transition: 0.3s;
+            transition: 0.2s;
         }
 
         .place-order-btn:hover {
-            background: #075f55;
-            transform: translateY(-3px);
+            background: #087c6b;
+            transform: translateY(-2px);
         }
 
-        /* SUCCESS */
-
-        .success-screen {
-            display: none;
+        .empty-cart {
+            max-width: 600px;
+            margin: 60px auto;
             text-align: center;
-            padding: 80px 20px;
+            background: white;
+            padding: 50px 25px;
+            border-radius: 20px;
         }
 
-        .success-icon {
-            font-size: 80px;
-            animation: successPop 0.7s ease;
+        .empty-cart-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
         }
 
-        @keyframes successPop {
-            0% {
-                transform: scale(0);
-            }
-
-            70% {
-                transform: scale(1.2);
-            }
-
-            100% {
-                transform: scale(1);
-            }
+        .continue-shopping {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 22px;
+            border-radius: 10px;
+            background: #0ca88f;
+            color: white;
+            font-weight: 700;
         }
 
-        .success-screen h1 {
-            color: #087c6b;
-            margin: 20px 0 10px;
-        }
-
-        .order-id {
-            margin: 20px auto;
-            padding: 15px;
-            background: #effaf8;
-            border-radius: 12px;
-            max-width: 350px;
-            font-weight: bold;
-        }
-
-        @media (max-width: 850px) {
-
+        @media (max-width: 750px) {
             .checkout-layout {
                 grid-template-columns: 1fr;
             }
-
         }
     </style>
+
 </head>
 
 <body>
@@ -194,20 +205,35 @@
 
             <div class="header-top">
 
-                <div class="logo">
-                    <span class="logo-icon">💊</span>
-                    <span class="logo-text">ChemistBoys</span>
-                </div>
+                <a
+                    href="index.html"
+                    class="logo-link"
+                >
+                    <div class="logo">
+
+                        <span class="logo-icon">💊</span>
+
+                        <span class="logo-text">
+                            ChemistBoys
+                        </span>
+
+                    </div>
+                </a>
 
                 <div class="header-actions">
 
-                    <a href="index.html" class="account-btn">
+                    <a
+                        href="index.html"
+                        class="account-btn"
+                    >
                         🏠 Home
                     </a>
 
-                    <a href="cart.html" class="cart-btn">
+                    <a
+                        href="cart.html"
+                        class="cart-btn"
+                    >
                         🛒 Cart
-                        <span class="cart-count" id="cartCount">0</span>
                     </a>
 
                 </div>
@@ -225,185 +251,196 @@
 
         <div class="container">
 
-            <h1 class="section-title">
-                Secure Checkout
+            <h1 class="checkout-title">
+                🛍️ Secure Checkout
             </h1>
 
 
-            <div id="checkoutContent">
-
-                <div class="checkout-layout">
-
-                    <!-- CUSTOMER FORM -->
-
-                    <div class="checkout-box">
-
-                        <h2>📦 Delivery Information</h2>
-
-                        <form id="checkoutForm">
-
-                            <div class="form-group">
-
-                                <label>
-                                    Full Name
-                                </label>
-
-                                <input
-                                    type="text"
-                                    id="fullName"
-                                    placeholder="Enter your name"
-                                    required
-                                >
-
-                            </div>
+            <form
+                id="checkoutForm"
+                class="checkout-layout"
+            >
 
 
-                            <div class="form-group">
+                <!-- LEFT SIDE -->
 
-                                <label>
-                                    Mobile Number
-                                </label>
-
-                                <input
-                                    type="tel"
-                                    id="phone"
-                                    placeholder="Enter mobile number"
-                                    pattern="[0-9]{10}"
-                                    required
-                                >
-
-                            </div>
+                <div>
 
 
-                            <div class="form-group">
+                    <!-- CUSTOMER DETAILS -->
 
-                                <label>
-                                    Email
-                                </label>
+                    <div class="checkout-card">
 
-                                <input
-                                    type="email"
-                                    id="email"
-                                    placeholder="Enter email"
-                                    required
-                                >
-
-                            </div>
+                        <h2>
+                            👤 Delivery Details
+                        </h2>
 
 
-                            <div class="form-group">
+                        <div class="form-group">
 
-                                <label>
-                                    Delivery Address
-                                </label>
+                            <label for="customerName">
+                                Full Name
+                            </label>
 
-                                <textarea
-                                    id="address"
-                                    placeholder="House no., street, area..."
-                                    required
-                                ></textarea>
-
-                            </div>
-
-
-                            <div class="form-group">
-
-                                <label>
-                                    City
-                                </label>
-
-                                <input
-                                    type="text"
-                                    id="city"
-                                    placeholder="Enter city"
-                                    required
-                                >
-
-                            </div>
-
-
-                            <div class="form-group">
-
-                                <label>
-                                    Pincode
-                                </label>
-
-                                <input
-                                    type="text"
-                                    id="pincode"
-                                    placeholder="6-digit pincode"
-                                    pattern="[0-9]{6}"
-                                    required
-                                >
-
-                            </div>
-
-
-                            <h2 style="margin-top:30px;">
-                                💳 Payment Method
-                            </h2>
-
-
-                            <div class="payment-options">
-
-                                <label class="payment-option">
-
-                                    <input
-                                        type="radio"
-                                        name="payment"
-                                        value="cod"
-                                        checked
-                                    >
-
-                                    <span>
-                                        💵 Cash on Delivery
-                                    </span>
-
-                                </label>
-
-
-                                <label class="payment-option">
-
-                                    <input
-                                        type="radio"
-                                        name="payment"
-                                        value="online"
-                                    >
-
-                                    <span>
-                                        💳 Online Payment
-                                    </span>
-
-                                </label>
-
-                            </div>
-
-
-                            <button
-                                type="submit"
-                                class="place-order-btn"
+                            <input
+                                type="text"
+                                id="customerName"
+                                placeholder="Enter your full name"
+                                required
                             >
-                                🔒 Place Order
-                            </button>
 
-                        </form>
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="customerPhone">
+                                Mobile Number
+                            </label>
+
+                            <input
+                                type="tel"
+                                id="customerPhone"
+                                placeholder="Enter 10-digit mobile number"
+                                maxlength="10"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="customerAddress">
+                                Delivery Address
+                            </label>
+
+                            <textarea
+                                id="customerAddress"
+                                placeholder="House no., street, area..."
+                                required
+                            ></textarea>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="customerCity">
+                                City
+                            </label>
+
+                            <input
+                                type="text"
+                                id="customerCity"
+                                placeholder="Enter city"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="customerPincode">
+                                Pincode
+                            </label>
+
+                            <input
+                                type="text"
+                                id="customerPincode"
+                                placeholder="Enter 6-digit pincode"
+                                maxlength="6"
+                                required
+                            >
+
+                        </div>
 
                     </div>
 
 
-                    <!-- ORDER SUMMARY -->
 
-                    <div class="checkout-summary">
+                    <!-- DELIVERY DATE -->
+
+                    <div class="checkout-card">
+
+                        <h2>
+                            🚚 Choose Delivery Date
+                        </h2>
+
+                        <p>
+                            Select your preferred available delivery date.
+                        </p>
+
+                        <br>
+
+                        <div
+                            class="delivery-options"
+                            id="deliveryOptions"
+                        ></div>
+
+                    </div>
+
+
+
+                    <!-- PAYMENT -->
+
+                    <div class="checkout-card">
+
+                        <h2>
+                            💳 Payment Method
+                        </h2>
+
+                        <div class="form-group">
+
+                            <label for="paymentMethod">
+                                Select Payment Method
+                            </label>
+
+                            <select
+                                id="paymentMethod"
+                                required
+                            >
+
+                                <option value="">
+                                    Select payment method
+                                </option>
+
+                                <option value="cod">
+                                    Cash on Delivery
+                                </option>
+
+                                <option value="online">
+                                    Online Payment
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- RIGHT SIDE -->
+
+                <div>
+
+                    <div class="checkout-card">
 
                         <h2>
                             🛒 Order Summary
                         </h2>
 
-                        <div id="orderItems">
-                        </div>
+
+                        <div
+                            id="checkoutItems"
+                        ></div>
 
 
-                        <div class="summary-item">
+                        <div class="price-row">
 
                             <span>
                                 Subtotal
@@ -416,83 +453,48 @@
                         </div>
 
 
-                        <div class="summary-item">
+                        <div class="price-row">
 
                             <span>
                                 Delivery
                             </span>
 
-                            <strong id="delivery">
+                            <strong id="deliveryCharge">
                                 ₹0
                             </strong>
 
                         </div>
 
 
-                        <div class="checkout-total">
+                        <div class="total-row">
 
                             <span>
                                 Total
                             </span>
 
-                            <span id="total">
+                            <span id="grandTotal">
                                 ₹0
                             </span>
 
                         </div>
 
+
+                        <br>
+
+
+                        <button
+                            type="submit"
+                            class="place-order-btn"
+                        >
+                            🔒 Place Order
+                        </button>
+
                     </div>
 
                 </div>
 
-            </div>
 
-
-            <!-- SUCCESS -->
-
-            <div
-                class="success-screen"
-                id="successScreen"
-            >
-
-                <div class="success-icon">
-                    ✅
-                </div>
-
-                <h1>
-                    Order Placed Successfully!
-                </h1>
-
-                <p>
-                    Thank you for shopping with ChemistBoys.
-                </p>
-
-                <div class="order-id">
-
-                    Order ID:
-                    <span id="orderId">
-                    </span>
-
-                </div>
-
-                <p>
-                    Your order will be delivered soon.
-                </p>
-
-                <a
-                    href="index.html"
-                    class="checkout-btn"
-                    style="
-                        display:inline-block;
-                        width:auto;
-                        text-decoration:none;
-                        margin-top:25px;
-                    "
-                >
-                    🏠 Back to Home
-                </a>
-
-            </div>
+            </form>
 
         </div>
 
@@ -508,7 +510,8 @@
             <div class="footer-bottom">
 
                 <p>
-                    © 2026 ChemistBoys. All rights reserved.
+                    &copy; 2026 ChemistBoys.
+                    All rights reserved.
                 </p>
 
             </div>
