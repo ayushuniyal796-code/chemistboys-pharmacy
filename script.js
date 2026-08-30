@@ -47,69 +47,44 @@ const toastNotification =
 
 
 /* =========================================================
-   FIREBASE LOGIN CHECK
+   LOGIN CHECK
 ========================================================= */
 
-function requireLogin() {
+async function requireLogin() {
 
-    return new Promise((resolve) => {
+    try {
 
         /*
-         * account.js Firebase user ko
-         * window.currentFirebaseUser mein rakhega.
+         * account.js Firebase authentication
+         * completely ready hone ka wait.
          */
 
-        if (window.currentFirebaseUser) {
+        const user =
+            await window.firebaseAuthReady;
 
-            resolve(true);
 
-            return;
+        if (user) {
+
+            return true;
+
         }
 
+    } catch (error) {
 
-        /*
-         * Firebase ko thoda time do.
-         */
+        console.error(
+            "Firebase authentication error:",
+            error
+        );
 
-        let checkCount = 0;
-
-
-        const checkLogin = setInterval(() => {
-
-            checkCount++;
+    }
 
 
-            if (window.currentFirebaseUser) {
+    alert("🔒 Please login first.");
 
-                clearInterval(checkLogin);
+    window.location.href =
+        "login.html";
 
-                resolve(true);
-
-                return;
-            }
-
-
-            /*
-             * Maximum 5 seconds wait
-             */
-
-            if (checkCount >= 50) {
-
-                clearInterval(checkLogin);
-
-                alert("🔒 Please login first.");
-
-                window.location.href =
-                    "login.html";
-
-                resolve(false);
-
-            }
-
-        }, 100);
-
-    });
-
+    return false;
 }
 
 
@@ -176,16 +151,12 @@ function showToast(message) {
         message;
 
 
-    toastNotification.classList.add(
-        "show"
-    );
+    toastNotification.classList.add("show");
 
 
     setTimeout(() => {
 
-        toastNotification.classList.remove(
-            "show"
-        );
+        toastNotification.classList.remove("show");
 
     }, 2500);
 
@@ -257,7 +228,7 @@ async function addToCart(productId) {
                 product.category || "",
 
             rating:
-                product.rating || 0,
+                Number(product.rating) || 0,
 
             quantity: 1
 
@@ -326,7 +297,7 @@ async function buyNow(productId) {
             product.category || "",
 
         rating:
-            product.rating || 0,
+            Number(product.rating) || 0,
 
         quantity: 1
 
@@ -678,7 +649,7 @@ if (searchInput) {
 
     searchInput.addEventListener(
         "keydown",
-        function (event) {
+        event => {
 
             if (event.key === "Enter") {
 
@@ -728,7 +699,7 @@ if (priceRange) {
 
     priceRange.addEventListener(
         "input",
-        function () {
+        () => {
 
             if (priceLabel) {
 
@@ -754,7 +725,7 @@ if (shopNowBtn) {
 
     shopNowBtn.addEventListener(
         "click",
-        function () {
+        () => {
 
             const productsSection =
                 document.getElementById("products");
