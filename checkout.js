@@ -1,8 +1,97 @@
-document.addEventListener("DOMContentLoaded", function () {
 
-    /* =========================================
+import {
+    initializeApp
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+    getAuth,
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+
+/* =========================================
+   FIREBASE CONFIG
+========================================= */
+
+const firebaseConfig = {
+
+    apiKey:
+        "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWkT1FLjcmQ",
+
+    authDomain:
+        "chemistboys.firebaseapp.com",
+
+    projectId:
+        "chemistboys",
+
+    storageBucket:
+        "chemistboys.firebasestorage.app",
+
+    messagingSenderId:
+        "696067008650",
+
+    appId:
+        "1:696067008650:web:aba739ed1593d315002573",
+
+    measurementId:
+        "G-G3BHP0PSB0"
+};
+
+
+/* =========================================
+   FIREBASE INITIALIZE
+========================================= */
+
+const app =
+    initializeApp(firebaseConfig);
+
+const auth =
+    getAuth(app);
+
+
+/* =========================================
+   WAIT FOR FIREBASE LOGIN STATUS
+========================================= */
+
+onAuthStateChanged(auth, function (user) {
+
+    /* =====================================
+       NOT LOGGED IN
+    ===================================== */
+
+    if (!user) {
+
+        alert(
+            "🔒 Please login first to continue checkout."
+        );
+
+        window.location.href =
+            "login.html";
+
+        return;
+    }
+
+
+    /* =====================================
+       LOGGED IN
+       START CHECKOUT
+    ===================================== */
+
+    startCheckout(user);
+
+});
+
+
+/* =========================================
+   CHECKOUT FUNCTION
+========================================= */
+
+function startCheckout(user) {
+
+
+    /* =====================================
        ELEMENTS
-    ========================================= */
+    ===================================== */
 
     const checkoutForm =
         document.getElementById("checkoutForm");
@@ -23,26 +112,38 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("deliveryOptions");
 
 
-    /* =========================================
+    /* =====================================
        LOAD CART
-    ========================================= */
+    ===================================== */
 
-    let cart =
-        JSON.parse(
-            localStorage.getItem("chemistCart")
-        ) || [];
+    let cart = [];
+
+    try {
+
+        cart =
+            JSON.parse(
+                localStorage.getItem("chemistCart")
+            ) || [];
+
+    } catch (error) {
+
+        cart = [];
+
+    }
 
 
-    /* =========================================
+    /* =====================================
        CHECK CART
-    ========================================= */
+    ===================================== */
 
     if (
         !Array.isArray(cart) ||
         cart.length === 0
     ) {
 
-        document.querySelector(".checkout-page").innerHTML = `
+        document.querySelector(
+            ".checkout-page"
+        ).innerHTML = `
 
             <div class="container">
 
@@ -78,9 +179,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
-    /* =========================================
-       DISPLAY CART ITEMS
-    ========================================= */
+    /* =====================================
+       DISPLAY CART
+    ===================================== */
 
     function displayCheckoutItems() {
 
@@ -139,9 +240,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
 
-        /* =====================================
-           DELIVERY CHARGE
-        ===================================== */
+        /* DELIVERY */
 
         const deliveryCharge =
             subtotal >= 500
@@ -168,17 +267,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         return {
-            subtotal: subtotal,
-            deliveryCharge: deliveryCharge,
-            grandTotal: grandTotal
+
+            subtotal:
+                subtotal,
+
+            deliveryCharge:
+                deliveryCharge,
+
+            grandTotal:
+                grandTotal
+
         };
 
     }
 
 
-    /* =========================================
+    /* =====================================
        DELIVERY DATES
-    ========================================= */
+    ===================================== */
 
     function createDeliveryDates() {
 
@@ -205,7 +311,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
             const value =
-                date.toISOString()
+                date
+                    .toISOString()
                     .split("T")[0];
 
 
@@ -254,9 +361,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
-    /* =========================================
+    /* =====================================
        INITIAL LOAD
-    ========================================= */
+    ===================================== */
 
     const totals =
         displayCheckoutItems();
@@ -265,9 +372,9 @@ document.addEventListener("DOMContentLoaded", function () {
     createDeliveryDates();
 
 
-    /* =========================================
+    /* =====================================
        PLACE ORDER
-    ========================================= */
+    ===================================== */
 
     checkoutForm.addEventListener(
         "submit",
@@ -276,9 +383,7 @@ document.addEventListener("DOMContentLoaded", function () {
             event.preventDefault();
 
 
-            /* ==============================
-               CUSTOMER DETAILS
-            ============================== */
+            /* CUSTOMER DETAILS */
 
             const name =
                 document
@@ -327,9 +432,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
 
 
-            /* ==============================
-               VALIDATION
-            ============================== */
+            /* VALIDATION */
 
             if (name === "") {
 
@@ -341,9 +444,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
 
-            if (
-                !/^\d{10}$/.test(phone)
-            ) {
+            if (!/^\d{10}$/.test(phone)) {
 
                 alert(
                     "Please enter a valid 10-digit mobile number."
@@ -373,9 +474,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
 
-            if (
-                !/^\d{6}$/.test(pincode)
-            ) {
+            if (!/^\d{6}$/.test(pincode)) {
 
                 alert(
                     "Please enter a valid 6-digit pincode."
@@ -405,9 +504,9 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
 
-            /* ==============================
-               CURRENT DATE & TIME
-            ============================== */
+            /* =================================
+               ORDER DATE
+            ================================= */
 
             const now =
                 new Date();
@@ -434,13 +533,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
 
 
-            const orderDateISO =
-                now.toISOString();
-
-
-            /* ==============================
+            /* =================================
                DELIVERY DATE
-            ============================== */
+            ================================= */
 
             const deliveryDateObject =
                 new Date(
@@ -460,9 +555,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
 
 
-            /* ==============================
+            /* =================================
                ORDER ID
-            ============================== */
+            ================================= */
 
             const orderId =
                 "CB" +
@@ -471,71 +566,71 @@ document.addEventListener("DOMContentLoaded", function () {
                     .slice(-8);
 
 
-            /* ==============================
-               PAYMENT STATUS
-            ============================== */
-
-            let paymentStatus =
-                "Pending";
-
-
-            if (paymentMethod === "cod") {
-
-                paymentStatus =
-                    "Pending";
-
-            }
-
-
-            /* ==============================
+            /* =================================
                CREATE ORDER
-            ============================== */
+            ================================= */
 
             const newOrder = {
 
-                id: orderId,
+                id:
+                    orderId,
 
-                orderDate: orderDate,
+                userId:
+                    user.uid,
 
-                orderDateISO: orderDateISO,
+                userEmail:
+                    user.email,
 
-                orderTime: orderTime,
+                orderDate:
+                    orderDate,
 
-                deliveryDate: deliveryDate,
+                orderDateISO:
+                    now.toISOString(),
+
+                orderTime:
+                    orderTime,
+
+                deliveryDate:
+                    deliveryDate,
 
                 deliveryDateISO:
                     deliveryInput.value,
 
-                status: "Processing",
+                status:
+                    "Processing",
 
                 paymentMethod:
                     paymentMethod,
 
                 paymentStatus:
-                    paymentStatus,
-
+                    "Pending",
 
                 customer: {
 
-                    name: name,
+                    name:
+                        name,
 
-                    phone: phone,
+                    phone:
+                        phone,
 
-                    address: address,
+                    address:
+                        address,
 
-                    city: city,
+                    city:
+                        city,
 
-                    pincode: pincode
+                    pincode:
+                        pincode
 
                 },
-
 
                 items:
                     cart.map(function (item) {
 
                         return {
 
-                            id: item.id,
+                            id:
+                                item.id,
 
                             name:
                                 item.name,
@@ -550,7 +645,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     }),
 
-
                 subtotal:
                     totals.subtotal,
 
@@ -563,14 +657,24 @@ document.addEventListener("DOMContentLoaded", function () {
             };
 
 
-            /* ==============================
+            /* =================================
                LOAD OLD ORDERS
-            ============================== */
+            ================================= */
 
-            let orders =
-                JSON.parse(
-                    localStorage.getItem("orders")
-                ) || [];
+            let orders = [];
+
+            try {
+
+                orders =
+                    JSON.parse(
+                        localStorage.getItem("orders")
+                    ) || [];
+
+            } catch (error) {
+
+                orders = [];
+
+            }
 
 
             if (!Array.isArray(orders)) {
@@ -580,9 +684,9 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
 
-            /* ==============================
+            /* =================================
                SAVE ORDER
-            ============================== */
+            ================================= */
 
             orders.push(newOrder);
 
@@ -593,28 +697,24 @@ document.addEventListener("DOMContentLoaded", function () {
             );
 
 
-            /* ==============================
-               SAVE LAST ORDER
-            ============================== */
-
             localStorage.setItem(
                 "lastOrder",
                 JSON.stringify(newOrder)
             );
 
 
-            /* ==============================
+            /* =================================
                CLEAR CART
-            ============================== */
+            ================================= */
 
             localStorage.removeItem(
                 "chemistCart"
             );
 
 
-            /* ==============================
+            /* =================================
                SUCCESS
-            ============================== */
+            ================================= */
 
             alert(
 
@@ -632,14 +732,10 @@ document.addEventListener("DOMContentLoaded", function () {
             );
 
 
-            /* ==============================
-               MY ORDERS
-            ============================== */
-
             window.location.href =
                 "orders.html";
 
         }
     );
 
-});
+}
