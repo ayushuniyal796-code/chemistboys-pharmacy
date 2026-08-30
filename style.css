@@ -760,3 +760,57 @@ body {
         width: 100%;
     }
 }
+/* ==========================================
+   LOGIN + REGISTER BUTTONS
+   MOBILE FIX
+========================================== */
+
+.header-actions {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+}
+
+.account-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: #0ca88f;
+    color: white !important;
+    text-decoration: none;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 768px) {
+
+    .header-top {
+        flex-wrap: wrap;
+    }
+
+    .header-actions {
+        width: 100%;
+        display: flex !important;
+        justify-content: center;
+        order: 3;
+        margin-top: 12px;
+    }
+
+    .account-btn {
+        display: inline-flex !important;
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    .cart-btn {
+        padding: 10px 14px;
+    }
+
+}
