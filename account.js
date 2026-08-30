@@ -15,7 +15,8 @@ import {
 
 const firebaseConfig = {
 
-    apiKey: "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWk1TFLjcmQ",
+    apiKey:
+        "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWk1TFLjcmQ",
 
     authDomain:
         "chemistboys.firebaseapp.com",
@@ -34,6 +35,7 @@ const firebaseConfig = {
 
     measurementId:
         "G-G3BHP0PSB0"
+
 };
 
 
@@ -71,15 +73,29 @@ const ordersBtn =
 
 onAuthStateChanged(auth, (user) => {
 
-    if (user) {
 
-        /* ==============================
-           USER LOGGED IN
-        ============================== */
+    /* ======================================
+       IMPORTANT
+       Make Firebase user available to
+       script.js
+    ====================================== */
+
+    window.currentFirebaseUser = user;
+
+
+    /* ======================================
+       USER LOGGED IN
+    ====================================== */
+
+    if (user) {
 
         const name =
             user.displayName ||
-            user.email.split("@")[0];
+            (
+                user.email
+                    ? user.email.split("@")[0]
+                    : "User"
+            );
 
 
         /* ACCOUNT BUTTON */
@@ -95,7 +111,7 @@ onAuthStateChanged(auth, (user) => {
         }
 
 
-        /* REGISTER BUTTON HIDE */
+        /* REGISTER HIDE */
 
         if (registerBtn) {
 
@@ -124,12 +140,16 @@ onAuthStateChanged(auth, (user) => {
 
         }
 
+    }
 
-    } else {
 
-        /* ==============================
-           USER LOGGED OUT
-        ============================== */
+    /* ======================================
+       USER LOGGED OUT
+    ====================================== */
+
+    else {
+
+        /* ACCOUNT BUTTON */
 
         if (accountBtn) {
 
@@ -162,7 +182,7 @@ onAuthStateChanged(auth, (user) => {
         }
 
 
-        /* ORDERS */
+        /* ORDERS SHOW */
 
         if (ordersBtn) {
 
@@ -190,19 +210,30 @@ if (logoutBtn) {
 
                 await signOut(auth);
 
+
+                /* CLEAR CURRENT USER */
+
+                window.currentFirebaseUser =
+                    null;
+
+
                 alert(
                     "You have been logged out."
                 );
 
+
                 window.location.href =
                     "index.html";
 
-            } catch (error) {
+            }
+
+            catch (error) {
 
                 console.error(
                     "Logout error:",
                     error
                 );
+
 
                 alert(
                     "Logout failed. Please try again."
