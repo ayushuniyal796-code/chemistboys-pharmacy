@@ -1,6 +1,5 @@
 import {
-    auth,
-    authReady
+    auth
 } from "./firebase.js";
 
 import {
@@ -90,6 +89,20 @@ if (registerForm) {
             });
 
 
+            /*
+             * Confirm user is actually available
+             * in the SAME Firebase auth instance.
+             */
+
+            if (!auth.currentUser) {
+
+                throw new Error(
+                    "Firebase authentication was not established."
+                );
+
+            }
+
+
             message.textContent =
                 "✅ Account created successfully!";
 
@@ -97,17 +110,13 @@ if (registerForm) {
                 "#087c6b";
 
 
-            // Firebase auth state confirm hone do
-            await authReady;
+            /*
+             * Direct redirect.
+             * No artificial timeout.
+             */
 
-
-            setTimeout(() => {
-
-                window.location.href =
-                    "index.html";
-
-            }, 500);
-
+            window.location.href =
+                "index.html";
 
         } catch (error) {
 
@@ -196,10 +205,38 @@ if (loginForm) {
 
         try {
 
-            await signInWithEmailAndPassword(
-                auth,
-                email,
-                password
+            const userCredential =
+                await signInWithEmailAndPassword(
+                    auth,
+                    email,
+                    password
+                );
+
+
+            const user =
+                userCredential.user;
+
+
+            /*
+             * IMPORTANT:
+             * Login successful hone ke baad
+             * SAME auth instance mein user hona chahiye.
+             */
+
+            if (!auth.currentUser) {
+
+                throw new Error(
+                    "Firebase login completed but currentUser is unavailable."
+                );
+
+            }
+
+
+            console.log(
+                "Logged in user:",
+                user.uid,
+                user.email,
+                user.displayName
             );
 
 
@@ -210,17 +247,13 @@ if (loginForm) {
                 "#087c6b";
 
 
-            // Firebase state ready
-            await authReady;
+            /*
+             * No setTimeout.
+             * Firebase sign-in already completed.
+             */
 
-
-            setTimeout(() => {
-
-                window.location.href =
-                    "index.html";
-
-            }, 500);
-
+            window.location.href =
+                "index.html";
 
         } catch (error) {
 
