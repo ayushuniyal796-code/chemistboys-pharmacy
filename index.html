@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -13,17 +14,21 @@
         ChemistBoys - Online Pharmacy & Medicine Store
     </title>
 
+    <!-- MAIN CSS -->
     <link
         rel="stylesheet"
         href="style.css"
     >
+
 </head>
+
 
 <body>
 
-    <!-- =========================================
-         NAVIGATION HEADER
-    ========================================== -->
+
+    <!-- =================================================
+         HEADER
+    ================================================== -->
 
     <header class="header">
 
@@ -31,12 +36,14 @@
 
             <div class="header-top">
 
+
                 <!-- LOGO -->
 
                 <a
                     href="index.html"
                     class="logo-link"
                 >
+
                     <div class="logo">
 
                         <span class="logo-icon">
@@ -48,10 +55,12 @@
                         </span>
 
                     </div>
+
                 </a>
 
 
-                <!-- SEARCH BAR -->
+
+                <!-- SEARCH -->
 
                 <div class="search-bar">
 
@@ -59,11 +68,13 @@
                         type="text"
                         id="searchInput"
                         placeholder="Search medicines, vitamins..."
+                        autocomplete="off"
                     >
 
                     <button
                         type="button"
                         class="search-btn"
+                        id="searchBtn"
                     >
                         🔍
                     </button>
@@ -71,9 +82,11 @@
                 </div>
 
 
-                <!-- ACCOUNT + CART -->
+
+                <!-- ACCOUNT / ORDERS / CART -->
 
                 <div class="header-actions">
+
 
                     <!-- LOGIN -->
 
@@ -84,6 +97,7 @@
                     >
                         👤 Login
                     </a>
+
 
 
                     <!-- REGISTER -->
@@ -97,8 +111,20 @@
                     </a>
 
 
-                    <!-- LOGOUT
-                         Hidden until user logs in -->
+
+                    <!-- MY ORDERS -->
+
+                    <a
+                        href="orders.html"
+                        class="account-btn"
+                        id="ordersBtn"
+                    >
+                        📦 My Orders
+                    </a>
+
+
+
+                    <!-- LOGOUT -->
 
                     <button
                         type="button"
@@ -110,12 +136,15 @@
                     </button>
 
 
+
                     <!-- CART -->
 
                     <a
                         href="cart.html"
                         class="cart-btn"
+                        id="cartBtn"
                     >
+
                         🛒 Cart
 
                         <span
@@ -127,16 +156,19 @@
 
                     </a>
 
+
                 </div>
 
             </div>
 
 
-            <!-- =====================================
-                 NAVIGATION MENU
-            ====================================== -->
+
+            <!-- =================================================
+                 NAVIGATION
+            ================================================== -->
 
             <nav class="navbar">
+
 
                 <a
                     href="index.html"
@@ -145,12 +177,14 @@
                     Home
                 </a>
 
+
                 <a
                     href="#products"
                     class="nav-link"
                 >
                     All Medicines
                 </a>
+
 
                 <a
                     href="#vitamins"
@@ -159,12 +193,14 @@
                     Vitamins
                 </a>
 
+
                 <a
                     href="#firstaid"
                     class="nav-link"
                 >
                     First Aid
                 </a>
+
 
                 <a
                     href="#offers"
@@ -173,12 +209,14 @@
                     Offers
                 </a>
 
+
                 <a
                     href="about.html"
                     class="nav-link"
                 >
                     About
                 </a>
+
 
             </nav>
 
@@ -187,43 +225,52 @@
     </header>
 
 
-    <!-- =========================================
+
+    <!-- =================================================
          HERO SECTION
-    ========================================== -->
+    ================================================== -->
 
     <section class="hero">
 
+
         <div class="hero-content">
+
 
             <h1 class="hero-title">
                 Your Health, Our Priority
             </h1>
 
+
             <p class="hero-subtitle">
                 Buy medicines online with doorstep delivery
             </p>
 
+
             <button
                 type="button"
                 class="hero-btn"
-                onclick="document.getElementById('products').scrollIntoView({ behavior: 'smooth' });"
+                id="shopNowBtn"
             >
                 Shop Now
             </button>
 
+
         </div>
+
 
 
         <div class="hero-image">
             💉
         </div>
 
+
     </section>
 
 
-    <!-- =========================================
-         FILTER & SORTING
-    ========================================== -->
+
+    <!-- =================================================
+         FILTER & SORT
+    ================================================== -->
 
     <section class="filter-section">
 
@@ -231,7 +278,8 @@
 
             <div class="filter-controls">
 
-                <!-- CATEGORY FILTER -->
+
+                <!-- CATEGORY -->
 
                 <select
                     id="categoryFilter"
@@ -265,7 +313,8 @@
                 </select>
 
 
-                <!-- SORT FILTER -->
+
+                <!-- SORT -->
 
                 <select
                     id="sortFilter"
@@ -295,7 +344,8 @@
                 </select>
 
 
-                <!-- PRICE RANGE -->
+
+                <!-- PRICE -->
 
                 <input
                     type="range"
@@ -306,9 +356,11 @@
                     class="price-slider"
                 >
 
+
                 <span id="priceLabel">
                     Max Price: ₹5000
                 </span>
+
 
             </div>
 
@@ -317,9 +369,10 @@
     </section>
 
 
-    <!-- =========================================
-         PRODUCTS SECTION
-    ========================================== -->
+
+    <!-- =================================================
+         PRODUCTS
+    ================================================== -->
 
     <section
         class="products-section"
@@ -328,28 +381,62 @@
 
         <div class="container">
 
+
             <h2 class="section-title">
                 Featured Products
             </h2>
 
+
+            <!--
+                Products automatically load
+                from products.js
+            -->
 
             <div
                 class="products-grid"
                 id="productsGrid"
             >
 
-                <!-- Products will be loaded from products.js -->
+                <!-- PRODUCTS WILL APPEAR HERE -->
 
             </div>
+
 
         </div>
 
     </section>
 
 
-    <!-- =========================================
+
+    <!-- =================================================
+         VITAMINS SECTION ANCHOR
+    ================================================== -->
+
+    <section
+        id="vitamins"
+        style="scroll-margin-top: 120px;"
+    >
+
+    </section>
+
+
+
+    <!-- =================================================
+         FIRST AID SECTION ANCHOR
+    ================================================== -->
+
+    <section
+        id="firstaid"
+        style="scroll-margin-top: 120px;"
+    >
+
+    </section>
+
+
+
+    <!-- =================================================
          SPECIAL OFFERS
-    ========================================== -->
+    ================================================== -->
 
     <section
         class="offers-section"
@@ -358,9 +445,11 @@
 
         <div class="container">
 
+
             <h2 class="section-title">
                 Special Offers
             </h2>
+
 
 
             <div class="offers-grid">
@@ -381,6 +470,7 @@
                 </div>
 
 
+
                 <!-- OFFER 2 -->
 
                 <div class="offer-card offer-2">
@@ -394,6 +484,7 @@
                     </p>
 
                 </div>
+
 
 
                 <!-- OFFER 3 -->
@@ -418,18 +509,20 @@
     </section>
 
 
-    <!-- =========================================
+
+    <!-- =================================================
          FEATURES
-    ========================================== -->
+    ================================================== -->
 
     <section class="features-section">
 
         <div class="container">
 
+
             <div class="features-grid">
 
 
-                <!-- FEATURE 1 -->
+                <!-- FREE DELIVERY -->
 
                 <div class="feature-card">
 
@@ -448,7 +541,8 @@
                 </div>
 
 
-                <!-- FEATURE 2 -->
+
+                <!-- SECURE PAYMENT -->
 
                 <div class="feature-card">
 
@@ -467,7 +561,8 @@
                 </div>
 
 
-                <!-- FEATURE 3 -->
+
+                <!-- AUTHENTIC -->
 
                 <div class="feature-card">
 
@@ -486,7 +581,8 @@
                 </div>
 
 
-                <!-- FEATURE 4 -->
+
+                <!-- RETURNS -->
 
                 <div class="feature-card">
 
@@ -512,13 +608,15 @@
     </section>
 
 
-    <!-- =========================================
+
+    <!-- =================================================
          FOOTER
-    ========================================== -->
+    ================================================== -->
 
     <footer class="footer">
 
         <div class="container">
+
 
             <div class="footer-grid">
 
@@ -540,6 +638,7 @@
                 </div>
 
 
+
                 <!-- QUICK LINKS -->
 
                 <div class="footer-column">
@@ -547,6 +646,7 @@
                     <h4>
                         Quick Links
                     </h4>
+
 
                     <ul>
 
@@ -556,17 +656,20 @@
                             </a>
                         </li>
 
+
                         <li>
                             <a href="contact.html">
                                 Contact Us
                             </a>
                         </li>
 
+
                         <li>
                             <a href="privacy.html">
                                 Privacy Policy
                             </a>
                         </li>
+
 
                         <li>
                             <a href="terms.html">
@@ -579,6 +682,7 @@
                 </div>
 
 
+
                 <!-- CUSTOMER SERVICE -->
 
                 <div class="footer-column">
@@ -587,30 +691,42 @@
                         Customer Service
                     </h4>
 
+
                     <ul>
 
                         <li>
+
                             <a href="orders.html">
-                                Track Order
+                                📦 My Orders
                             </a>
+
                         </li>
 
-                        <li>
-                            <a href="#">
-                                Returns
-                            </a>
-                        </li>
 
                         <li>
+
+                            <a href="cart.html">
+                                🛒 Cart
+                            </a>
+
+                        </li>
+
+
+                        <li>
+
                             <a href="faq.html">
-                                FAQ
+                                ❓ FAQ
                             </a>
+
                         </li>
 
+
                         <li>
+
                             <a href="contact.html">
-                                Help Center
+                                💬 Help Center
                             </a>
+
                         </li>
 
                     </ul>
@@ -618,7 +734,8 @@
                 </div>
 
 
-                <!-- CONTACT US -->
+
+                <!-- CONTACT -->
 
                 <div class="footer-column">
 
@@ -626,13 +743,16 @@
                         Contact Us
                     </h4>
 
+
                     <p>
                         📞 +91 8791883617
                     </p>
 
+
                     <p>
                         📧 ayushuniyal796@gmail.com
                     </p>
+
 
                     <p>
                         📍 Available 24/7
@@ -642,6 +762,7 @@
 
 
             </div>
+
 
 
             <!-- FOOTER BOTTOM -->
@@ -655,14 +776,16 @@
 
             </div>
 
+
         </div>
 
     </footer>
 
 
-    <!-- =========================================
-         CART TOAST NOTIFICATION
-    ========================================== -->
+
+    <!-- =================================================
+         TOAST NOTIFICATION
+    ================================================== -->
 
     <div
         class="toast-notification"
@@ -670,13 +793,22 @@
     ></div>
 
 
-    <!-- =========================================
-         JAVASCRIPT FILES
-    ========================================== -->
+
+    <!-- =================================================
+         JAVASCRIPT
+    ================================================== -->
+
+    <!-- PRODUCTS -->
 
     <script src="products.js"></script>
 
+
+    <!-- MAIN WEBSITE JS -->
+
     <script src="script.js"></script>
+
+
+    <!-- ACCOUNT / LOGIN SYSTEM -->
 
     <script
         type="module"
