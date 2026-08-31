@@ -9,16 +9,16 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-/* =================================================
-   GLOBAL AUTH STATE
-================================================= */
+/* =========================================================
+   AUTH STATE
+========================================================= */
 
 let currentUser = null;
 
 
-/* =================================================
+/* =========================================================
    HEADER ELEMENTS
-================================================= */
+========================================================= */
 
 const accountBtn =
     document.getElementById("accountBtn");
@@ -33,13 +33,16 @@ const logoutBtn =
     document.getElementById("logoutBtn");
 
 
-/* =================================================
+/* =========================================================
    UPDATE HEADER
-================================================= */
+========================================================= */
 
 function updateHeader(user) {
 
     currentUser = user || null;
+
+    window.currentFirebaseUser =
+        currentUser;
 
 
     if (currentUser) {
@@ -50,7 +53,6 @@ function updateHeader(user) {
             "Account";
 
 
-        // Account button
         if (accountBtn) {
 
             accountBtn.textContent =
@@ -62,7 +64,6 @@ function updateHeader(user) {
         }
 
 
-        // Register hide
         if (registerBtn) {
 
             registerBtn.style.display =
@@ -71,7 +72,6 @@ function updateHeader(user) {
         }
 
 
-        // Orders show
         if (ordersBtn) {
 
             ordersBtn.style.display =
@@ -80,7 +80,6 @@ function updateHeader(user) {
         }
 
 
-        // Logout show
         if (logoutBtn) {
 
             logoutBtn.style.display =
@@ -90,7 +89,6 @@ function updateHeader(user) {
 
     } else {
 
-        // Account → Login
         if (accountBtn) {
 
             accountBtn.textContent =
@@ -102,7 +100,6 @@ function updateHeader(user) {
         }
 
 
-        // Register show
         if (registerBtn) {
 
             registerBtn.style.display =
@@ -111,7 +108,6 @@ function updateHeader(user) {
         }
 
 
-        // Orders hide
         if (ordersBtn) {
 
             ordersBtn.style.display =
@@ -120,7 +116,6 @@ function updateHeader(user) {
         }
 
 
-        // Logout hide
         if (logoutBtn) {
 
             logoutBtn.style.display =
@@ -133,9 +128,9 @@ function updateHeader(user) {
 }
 
 
-/* =================================================
+/* =========================================================
    FIREBASE AUTH STATE
-================================================= */
+========================================================= */
 
 onAuthStateChanged(
     auth,
@@ -143,27 +138,27 @@ onAuthStateChanged(
 
         updateHeader(user);
 
-        // Other scripts can access current user
-        window.currentFirebaseUser =
-            user || null;
-
     }
 );
 
 
-/* =================================================
+/* =========================================================
    LOGOUT
-================================================= */
+========================================================= */
 
 if (logoutBtn) {
 
     logoutBtn.addEventListener(
         "click",
-        async () => {
+        async (event) => {
+
+            event.preventDefault();
 
             try {
 
                 await signOut(auth);
+
+                currentUser = null;
 
                 window.currentFirebaseUser =
                     null;
@@ -190,9 +185,9 @@ if (logoutBtn) {
 }
 
 
-/* =================================================
+/* =========================================================
    AUTH READY
-================================================= */
+========================================================= */
 
 window.firebaseAuthReady =
     authReady;
