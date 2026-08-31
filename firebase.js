@@ -8,6 +8,10 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
+/* =========================================================
+   CHEMISTBOYS FIREBASE CONFIG
+========================================================= */
+
 const firebaseConfig = {
 
     apiKey: "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWkT1FLjcmQ",
@@ -27,22 +31,40 @@ const firebaseConfig = {
 };
 
 
-const app = initializeApp(firebaseConfig);
+/* =========================================================
+   INITIALIZE FIREBASE
+========================================================= */
 
-export const auth = getAuth(app);
+const app =
+    initializeApp(firebaseConfig);
 
 
-export const authReady = new Promise((resolve) => {
+/* =========================================================
+   SINGLE AUTH INSTANCE
+========================================================= */
 
-    const unsubscribe = onAuthStateChanged(
-        auth,
-        () => {
+export const auth =
+    getAuth(app);
 
-            unsubscribe();
 
-            resolve();
+/* =========================================================
+   AUTH READY
+   Firebase ka initial login state restore hone ka wait
+========================================================= */
 
-        }
-    );
+export const authReady =
+    new Promise((resolve) => {
 
-});
+        const unsubscribe =
+            onAuthStateChanged(
+                auth,
+                () => {
+
+                    unsubscribe();
+
+                    resolve();
+
+                }
+            );
+
+    });
