@@ -1,5 +1,6 @@
 import {
-    auth
+    auth,
+    authReady
 } from "./firebase.js";
 
 import {
@@ -9,9 +10,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-/* =================================================
+/* =========================================================
    REGISTER
-================================================= */
+========================================================= */
 
 const registerForm =
     document.getElementById("registerForm");
@@ -38,15 +39,19 @@ if (registerForm) {
             document.getElementById("authMessage");
 
 
-        message.textContent = "";
+        if (message) {
+            message.textContent = "";
+        }
 
 
         if (password.length < 6) {
 
-            message.textContent =
-                "❌ Password must be at least 6 characters.";
+            if (message) {
+                message.textContent =
+                    "❌ Password must be at least 6 characters.";
 
-            message.style.color = "#e63b59";
+                message.style.color = "#e63b59";
+            }
 
             return;
         }
@@ -54,10 +59,12 @@ if (registerForm) {
 
         if (password !== confirmPassword) {
 
-            message.textContent =
-                "❌ Passwords do not match.";
+            if (message) {
+                message.textContent =
+                    "❌ Passwords do not match.";
 
-            message.style.color = "#e63b59";
+                message.style.color = "#e63b59";
+            }
 
             return;
         }
@@ -65,11 +72,12 @@ if (registerForm) {
 
         try {
 
-            message.textContent =
-                "Creating your account...";
+            if (message) {
+                message.textContent =
+                    "Creating your account...";
 
-            message.style.color =
-                "#087c6b";
+                message.style.color = "#087c6b";
+            }
 
 
             const userCredential =
@@ -84,39 +92,37 @@ if (registerForm) {
                 userCredential.user;
 
 
+            /* SAVE USER NAME IN FIREBASE */
+
             await updateProfile(user, {
                 displayName: name
             });
 
 
             /*
-             * Confirm user is actually available
-             * in the SAME Firebase auth instance.
+             * Make sure Firebase auth state
+             * has been initialized.
              */
 
-            if (!auth.currentUser) {
+            await authReady;
 
-                throw new Error(
-                    "Firebase authentication was not established."
-                );
 
+            if (message) {
+                message.textContent =
+                    "✅ Account created successfully!";
+
+                message.style.color = "#087c6b";
             }
 
 
-            message.textContent =
-                "✅ Account created successfully!";
-
-            message.style.color =
-                "#087c6b";
-
-
             /*
-             * Direct redirect.
-             * No artificial timeout.
+             * User is already authenticated here.
+             * No fake localStorage login is used.
              */
 
             window.location.href =
                 "index.html";
+
 
         } catch (error) {
 
@@ -125,6 +131,8 @@ if (registerForm) {
                 error
             );
 
+
+            if (!message) return;
 
             message.style.color =
                 "#e63b59";
@@ -169,9 +177,9 @@ if (registerForm) {
 }
 
 
-/* =================================================
+/* =========================================================
    LOGIN
-================================================= */
+========================================================= */
 
 const loginForm =
     document.getElementById("loginForm");
@@ -196,14 +204,22 @@ if (loginForm) {
             document.getElementById("loginMessage");
 
 
-        message.textContent =
-            "Logging in...";
+        if (message) {
 
-        message.style.color =
-            "#087c6b";
+            message.textContent =
+                "Logging in...";
+
+            message.style.color =
+                "#087c6b";
+
+        }
 
 
         try {
+
+            /*
+             * LOGIN USING THE SAME AUTH INSTANCE
+             */
 
             const userCredential =
                 await signInWithEmailAndPassword(
@@ -213,47 +229,46 @@ if (loginForm) {
                 );
 
 
+            /*
+             * Make sure the signed-in user
+             * is available from this SAME auth instance.
+             */
+
+            await authReady;
+
+
             const user =
                 userCredential.user;
 
 
-            /*
-             * IMPORTANT:
-             * Login successful hone ke baad
-             * SAME auth instance mein user hona chahiye.
-             */
-
-            if (!auth.currentUser) {
+            if (!user || !auth.currentUser) {
 
                 throw new Error(
-                    "Firebase login completed but currentUser is unavailable."
+                    "Firebase authentication state was not restored."
                 );
 
             }
 
 
-            console.log(
-                "Logged in user:",
-                user.uid,
-                user.email,
-                user.displayName
-            );
+            if (message) {
 
+                message.textContent =
+                    "✅ Login successful!";
 
-            message.textContent =
-                "✅ Login successful!";
+                message.style.color =
+                    "#087c6b";
 
-            message.style.color =
-                "#087c6b";
+            }
 
 
             /*
-             * No setTimeout.
-             * Firebase sign-in already completed.
+             * Direct redirect.
+             * No unnecessary timeout.
              */
 
             window.location.href =
                 "index.html";
+
 
         } catch (error) {
 
@@ -263,6 +278,8 @@ if (loginForm) {
             );
 
 
+            if (!message) return;
+
             message.style.color =
                 "#e63b59";
 
@@ -271,7 +288,9 @@ if (loginForm) {
                 error.code ===
                     "auth/invalid-credential" ||
                 error.code ===
-                    "auth/wrong-password"
+                    "auth/wrong-password" ||
+                error.code ===
+                    "auth/invalid-login-credentials"
             ) {
 
                 message.textContent =
@@ -308,9 +327,9 @@ if (loginForm) {
 }
 
 
-/* =================================================
+/* =========================================================
    REGISTER PASSWORD SHOW / HIDE
-================================================= */
+========================================================= */
 
 const showPassword =
     document.getElementById("showPassword");
@@ -321,6 +340,9 @@ if (showPassword) {
 
         const input =
             document.getElementById("password");
+
+
+        if (!input) return;
 
 
         if (input.type === "password") {
@@ -344,9 +366,9 @@ if (showPassword) {
 }
 
 
-/* =================================================
+/* =========================================================
    LOGIN PASSWORD SHOW / HIDE
-================================================= */
+========================================================= */
 
 const showLoginPassword =
     document.getElementById("showLoginPassword");
@@ -357,6 +379,9 @@ if (showLoginPassword) {
 
         const input =
             document.getElementById("loginPassword");
+
+
+        if (!input) return;
 
 
         if (input.type === "password") {
