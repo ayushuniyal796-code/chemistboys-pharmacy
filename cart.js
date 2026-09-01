@@ -2,6 +2,15 @@
    CHEMISTBOYS - CART
 ========================================================= */
 
+import {
+    auth,
+    authReady
+} from "./firebase.js";
+
+import {
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
 
 /* =========================================================
    GET CART
@@ -17,7 +26,6 @@ function getCart() {
                     "chemistboys_cart"
                 )
             );
-
 
         return Array.isArray(cart)
             ? cart
@@ -60,14 +68,15 @@ function updateCartCount() {
     const cart =
         getCart();
 
-
     const count =
         cart.reduce(
             function (total, item) {
 
                 return (
                     total +
-                    Number(item.quantity || 1)
+                    Number(
+                        item.quantity || 1
+                    )
                 );
 
             },
@@ -240,12 +249,16 @@ function changeQuantity(
 
 
     if (!item) {
+
         return;
+
     }
 
 
     item.quantity =
-        Number(item.quantity || 1) +
+        Number(
+            item.quantity || 1
+        ) +
         Number(change);
 
 
@@ -268,6 +281,138 @@ function changeQuantity(
 
 
 /* =========================================================
+   AUTH STATE
+========================================================= */
+
+let currentUser = null;
+
+
+/* Firebase auth ready hone ke baad state check */
+
+authReady.then(
+    function () {
+
+        currentUser =
+            auth.currentUser;
+
+    }
+);
+
+
+/* Firebase auth state continuously monitor */
+
+onAuthStateChanged(
+    auth,
+    function (user) {
+
+        currentUser =
+            user || null;
+
+        window.currentFirebaseUser =
+            currentUser;
+
+        updateCheckoutButton();
+
+    }
+);
+
+
+/* =========================================================
+   CHECKOUT BUTTON
+========================================================= */
+
+function updateCheckoutButton() {
+
+    const checkoutButtons =
+        document.querySelectorAll(
+            "#checkoutBtn, .checkout-btn"
+        );
+
+
+    checkoutButtons.forEach(
+        function (button) {
+
+            if (currentUser) {
+
+                button.textContent =
+                    "Proceed to Checkout";
+
+                button.disabled =
+                    false;
+
+                button.dataset.loggedIn =
+                    "true";
+
+            } else {
+
+                button.textContent =
+                    "Login to Checkout";
+
+                button.disabled =
+                    false;
+
+                button.dataset.loggedIn =
+                    "false";
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   CHECKOUT BUTTON CLICK
+========================================================= */
+
+document.addEventListener(
+    "click",
+    async function (event) {
+
+        const checkoutButton =
+            event.target.closest(
+                "#checkoutBtn, .checkout-btn"
+            );
+
+
+        if (!checkoutButton) {
+
+            return;
+
+        }
+
+
+        event.preventDefault();
+
+
+        /* Firebase auth state ready hone do */
+
+        await authReady;
+
+
+        const user =
+            auth.currentUser;
+
+
+        if (!user) {
+
+            window.location.href =
+                "login.html";
+
+            return;
+
+        }
+
+
+        window.location.href =
+            "checkout.html";
+
+    }
+);
+
+
+/* =========================================================
    PRODUCT PAGE BUTTONS
 ========================================================= */
 
@@ -281,17 +426,20 @@ document.addEventListener(
             );
 
 
-        if (addButton) {
+        if (!addButton) {
 
-            const productId =
-                addButton.dataset.productId;
-
-
-            addToCart(
-                productId
-            );
+            return;
 
         }
+
+
+        const productId =
+            addButton.dataset.productId;
+
+
+        addToCart(
+            productId
+        );
 
     }
 );
@@ -306,6 +454,8 @@ document.addEventListener(
     function () {
 
         updateCartCount();
+
+        updateCheckoutButton();
 
     }
 );
