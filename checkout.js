@@ -1,11 +1,19 @@
+/* =========================================================
+   CHEMISTBOYS - CHECKOUT
+========================================================= */
+
 import {
     auth,
     authReady
 } from "./firebase.js";
 
+import {
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
 
 /* =========================================================
-   CHECKOUT
+   CHECKOUT AUTHENTICATION
 ========================================================= */
 
 document.addEventListener(
@@ -75,10 +83,14 @@ document.addEventListener(
                     document.getElementById(id);
 
 
-                if (
-                    field &&
-                    !field.value
-                ) {
+                if (!field) {
+
+                    return;
+
+                }
+
+
+                if (!field.value) {
 
                     field.value =
                         name;
@@ -107,10 +119,14 @@ document.addEventListener(
                     document.getElementById(id);
 
 
-                if (
-                    field &&
-                    !field.value
-                ) {
+                if (!field) {
+
+                    return;
+
+                }
+
+
+                if (!field.value) {
 
                     field.value =
                         email;
@@ -139,12 +155,8 @@ document.addEventListener(
                     element.tagName === "TEXTAREA"
                 ) {
 
-                    if (!element.value) {
-
-                        element.value =
-                            name;
-
-                    }
+                    element.value =
+                        name;
 
                 } else {
 
@@ -175,17 +187,32 @@ document.addEventListener(
                     element.tagName === "TEXTAREA"
                 ) {
 
-                    if (!element.value) {
-
-                        element.value =
-                            email;
-
-                    }
+                    element.value =
+                        email;
 
                 } else {
 
                     element.textContent =
                         email;
+
+                }
+
+            }
+        );
+
+
+        /* =====================================================
+           AUTH STATE LISTENER
+        ===================================================== */
+
+        onAuthStateChanged(
+            auth,
+            function (currentUser) {
+
+                if (!currentUser) {
+
+                    window.location.href =
+                        "login.html";
 
                 }
 
