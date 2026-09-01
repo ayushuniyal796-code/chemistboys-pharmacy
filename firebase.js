@@ -8,47 +8,46 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-/* =========================================================
-   FIREBASE CONFIG
-========================================================= */
-
 const firebaseConfig = {
+
     apiKey: "AIzaSyCiRX_njFBAAgUzM1vHDTEYgWkT1FLjcmQ",
+
     authDomain: "chemistboys.firebaseapp.com",
+
     projectId: "chemistboys",
+
     storageBucket: "chemistboys.firebasestorage.app",
+
     messagingSenderId: "696067008650",
+
     appId: "1:696067008650:web:aba739ed1593d315002573",
+
     measurementId: "G-G3BHP0PSB0"
+
 };
 
 
-/* =========================================================
-   INITIALIZE FIREBASE
-========================================================= */
-
-const app = initializeApp(firebaseConfig);
+const app =
+    initializeApp(firebaseConfig);
 
 
-/* =========================================================
-   AUTH
-========================================================= */
-
-export const auth = getAuth(app);
+export const auth =
+    getAuth(app);
 
 
-/* =========================================================
-   AUTH READY
-========================================================= */
+export const authReady =
+    new Promise((resolve) => {
 
-export const authReady = new Promise((resolve) => {
+        const unsubscribe =
+            onAuthStateChanged(
+                auth,
+                () => {
 
-    const unsubscribe = onAuthStateChanged(
-        auth,
-        () => {
-            unsubscribe();
-            resolve();
-        }
-    );
+                    unsubscribe();
 
-});
+                    resolve();
+
+                }
+            );
+
+    });
