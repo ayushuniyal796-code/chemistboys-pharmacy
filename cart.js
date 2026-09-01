@@ -3,22 +3,18 @@ import {
     authReady
 } from "./firebase.js";
 
-import {
-    onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
-
-/* =========================================================
-   CART DATA
-========================================================= */
+/* =================================================
+   CART
+================================================= */
 
 let cart =
     JSON.parse(localStorage.getItem("chemistCart")) || [];
 
 
-/* =========================================================
+/* =================================================
    ELEMENTS
-========================================================= */
+================================================= */
 
 const cartItems =
     document.getElementById("cartItems");
@@ -42,78 +38,33 @@ const checkoutBtn =
     document.getElementById("checkoutBtn");
 
 
-/* =========================================================
-   AUTH STATE
-========================================================= */
-
-let currentUser = null;
-
-
-/*
- * IMPORTANT:
- * Button text ko Firebase state ke according
- * "Login to Checkout" nahi banaya jayega.
- *
- * Cart page par button hamesha Buy Now rahega.
- */
-
-if (checkoutBtn) {
-
-    checkoutBtn.textContent =
-        "🛒 Buy Now";
-
-}
-
-
-/*
- * Firebase auth state listen karo.
- */
-
-onAuthStateChanged(
-    auth,
-    (user) => {
-
-        currentUser =
-            user || null;
-
-        window.currentFirebaseUser =
-            currentUser;
-
-    }
-);
-
-
-/* =========================================================
+/* =================================================
    CART COUNT
-========================================================= */
+================================================= */
 
 function updateCartCount() {
 
     const count =
-        cart.reduce(
-            (total, item) => {
+        cart.reduce((total, item) => {
 
-                return total +
-                    Number(item.quantity || 0);
+            return total +
+                Number(item.quantity || 0);
 
-            },
-            0
-        );
+        }, 0);
 
 
     if (cartCount) {
 
-        cartCount.textContent =
-            count;
+        cartCount.textContent = count;
 
     }
 
 }
 
 
-/* =========================================================
+/* =================================================
    SAVE CART
-========================================================= */
+================================================= */
 
 function saveCart() {
 
@@ -129,9 +80,9 @@ function saveCart() {
 }
 
 
-/* =========================================================
+/* =================================================
    DISPLAY CART
-========================================================= */
+================================================= */
 
 function displayCart() {
 
@@ -266,9 +217,9 @@ function displayCart() {
 }
 
 
-/* =========================================================
-   CART ITEM EVENTS
-========================================================= */
+/* =================================================
+   BUTTON EVENTS
+================================================= */
 
 function addEvents() {
 
@@ -331,14 +282,11 @@ function addEvents() {
 }
 
 
-/* =========================================================
+/* =================================================
    CHANGE QUANTITY
-========================================================= */
+================================================= */
 
-function changeQuantity(
-    productId,
-    change
-) {
+function changeQuantity(productId, change) {
 
     const item =
         cart.find(function (product) {
@@ -375,9 +323,9 @@ function changeQuantity(
 }
 
 
-/* =========================================================
+/* =================================================
    REMOVE ITEM
-========================================================= */
+================================================= */
 
 function removeItem(productId) {
 
@@ -395,9 +343,9 @@ function removeItem(productId) {
 }
 
 
-/* =========================================================
+/* =================================================
    ORDER SUMMARY
-========================================================= */
+================================================= */
 
 function updateSummary() {
 
@@ -472,11 +420,15 @@ function updateSummary() {
 }
 
 
-/* =========================================================
-   BUY NOW / CHECKOUT
-========================================================= */
+/* =================================================
+   BUY NOW
+================================================= */
 
 if (checkoutBtn) {
+
+    checkoutBtn.textContent =
+        "🛒 Buy Now";
+
 
     checkoutBtn.addEventListener(
         "click",
@@ -484,8 +436,6 @@ if (checkoutBtn) {
 
             event.preventDefault();
 
-
-            /* EMPTY CART */
 
             if (cart.length === 0) {
 
@@ -499,35 +449,26 @@ if (checkoutBtn) {
 
 
             /*
-             * Firebase auth restore hone ka
-             * wait karo.
+             * Firebase ki initial auth state
+             * restore hone ka wait.
              */
 
             await authReady;
 
 
             /*
-             * SAME Firebase auth instance se
-             * current user read karo.
+             * Yahi SAME Firebase auth instance
+             * use ho raha hai.
              */
 
-            currentUser =
-                auth.currentUser || null;
+            if (!auth.currentUser) {
 
-
-            window.currentFirebaseUser =
-                currentUser;
-
-
-            /*
-             * LOGGED IN
-             * → DIRECT CHECKOUT
-             */
-
-            if (currentUser) {
+                alert(
+                    "🔒 Please login first to continue."
+                );
 
                 window.location.href =
-                    "checkout.html";
+                    "login.html";
 
                 return;
 
@@ -535,16 +476,12 @@ if (checkoutBtn) {
 
 
             /*
-             * NOT LOGGED IN
-             * → LOGIN
+             * User already logged in hai,
+             * seedha checkout.
              */
 
-            alert(
-                "🔒 Please login first to continue."
-            );
-
             window.location.href =
-                "login.html";
+                "checkout.html";
 
         }
     );
@@ -552,9 +489,9 @@ if (checkoutBtn) {
 }
 
 
-/* =========================================================
+/* =================================================
    INITIAL LOAD
-========================================================= */
+================================================= */
 
 updateCartCount();
 
