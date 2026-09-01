@@ -27,43 +27,76 @@ if (registerForm) {
 
 
             const name =
-                document
-                    .getElementById("name")
-                    .value
+                document.getElementById("name")
+                    ?.value
                     .trim();
 
 
             const email =
-                document
-                    .getElementById("email")
-                    .value
+                document.getElementById("email")
+                    ?.value
                     .trim();
 
 
             const password =
-                document
-                    .getElementById("password")
-                    .value;
+                document.getElementById("password")
+                    ?.value || "";
 
 
             const confirmPassword =
-                document
-                    .getElementById("confirmPassword")
-                    .value;
+                document.getElementById("confirmPassword")
+                    ?.value || "";
 
 
             const message =
-                document.getElementById(
-                    "authMessage"
-                );
+                document.getElementById("authMessage");
+
+
+            if (!message) {
+                return;
+            }
+
+
+            message.textContent = "";
+
+
+            /* =================================================
+               VALIDATION
+            ================================================= */
+
+            if (!name) {
+
+                message.textContent =
+                    "❌ Please enter your name.";
+
+                message.style.color =
+                    "#e63b59";
+
+                return;
+
+            }
+
+
+            if (!email) {
+
+                message.textContent =
+                    "❌ Please enter your email.";
+
+                message.style.color =
+                    "#e63b59";
+
+                return;
+
+            }
 
 
             if (password.length < 6) {
 
-                showError(
-                    message,
-                    "❌ Password must be at least 6 characters."
-                );
+                message.textContent =
+                    "❌ Password must be at least 6 characters.";
+
+                message.style.color =
+                    "#e63b59";
 
                 return;
 
@@ -72,22 +105,28 @@ if (registerForm) {
 
             if (password !== confirmPassword) {
 
-                showError(
-                    message,
-                    "❌ Passwords do not match."
-                );
+                message.textContent =
+                    "❌ Passwords do not match.";
+
+                message.style.color =
+                    "#e63b59";
 
                 return;
 
             }
 
 
+            /* =================================================
+               CREATE ACCOUNT
+            ================================================= */
+
             try {
 
-                showSuccess(
-                    message,
-                    "Creating your account..."
-                );
+                message.textContent =
+                    "Creating your account...";
+
+                message.style.color =
+                    "#087c6b";
 
 
                 const userCredential =
@@ -98,6 +137,10 @@ if (registerForm) {
                     );
 
 
+                /* =================================================
+                   SAVE DISPLAY NAME
+                ================================================= */
+
                 await updateProfile(
                     userCredential.user,
                     {
@@ -106,10 +149,11 @@ if (registerForm) {
                 );
 
 
-                showSuccess(
-                    message,
-                    "✅ Account created successfully!"
-                );
+                message.textContent =
+                    "✅ Account created successfully!";
+
+                message.style.color =
+                    "#087c6b";
 
 
                 setTimeout(
@@ -131,11 +175,59 @@ if (registerForm) {
                 );
 
 
-                showFirebaseError(
-                    message,
-                    error,
-                    "Registration"
-                );
+                message.style.color =
+                    "#e63b59";
+
+
+                switch (error.code) {
+
+                    case "auth/email-already-in-use":
+
+                        message.textContent =
+                            "❌ This email is already registered.";
+
+                        break;
+
+
+                    case "auth/invalid-email":
+
+                        message.textContent =
+                            "❌ Invalid email address.";
+
+                        break;
+
+
+                    case "auth/weak-password":
+
+                        message.textContent =
+                            "❌ Password is too weak.";
+
+                        break;
+
+
+                    case "auth/api-key-not-valid":
+
+                        message.textContent =
+                            "❌ Firebase API key is invalid.";
+
+                        break;
+
+
+                    case "auth/network-request-failed":
+
+                        message.textContent =
+                            "❌ Network error. Check your internet connection.";
+
+                        break;
+
+
+                    default:
+
+                        message.textContent =
+                            "❌ Registration failed: " +
+                            error.message;
+
+                }
 
             }
 
@@ -163,29 +255,48 @@ if (loginForm) {
 
 
             const email =
-                document
-                    .getElementById("loginEmail")
-                    .value
+                document.getElementById("loginEmail")
+                    ?.value
                     .trim();
 
 
             const password =
-                document
-                    .getElementById("loginPassword")
-                    .value;
+                document.getElementById("loginPassword")
+                    ?.value || "";
 
 
             const message =
-                document.getElementById(
-                    "loginMessage"
-                );
+                document.getElementById("loginMessage");
 
 
-            showSuccess(
-                message,
-                "Logging in..."
-            );
+            if (!message) {
+                return;
+            }
 
+
+            message.textContent =
+                "Logging in...";
+
+            message.style.color =
+                "#087c6b";
+
+
+            if (!email || !password) {
+
+                message.textContent =
+                    "❌ Please enter email and password.";
+
+                message.style.color =
+                    "#e63b59";
+
+                return;
+
+            }
+
+
+            /* =================================================
+               SIGN IN
+            ================================================= */
 
             try {
 
@@ -196,10 +307,11 @@ if (loginForm) {
                 );
 
 
-                showSuccess(
-                    message,
-                    "✅ Login successful!"
-                );
+                message.textContent =
+                    "✅ Login successful!";
+
+                message.style.color =
+                    "#087c6b";
 
 
                 setTimeout(
@@ -221,11 +333,61 @@ if (loginForm) {
                 );
 
 
-                showFirebaseError(
-                    message,
-                    error,
-                    "Login"
-                );
+                message.style.color =
+                    "#e63b59";
+
+
+                switch (error.code) {
+
+                    case "auth/invalid-credential":
+
+                    case "auth/wrong-password":
+
+                        message.textContent =
+                            "❌ Incorrect email or password.";
+
+                        break;
+
+
+                    case "auth/user-not-found":
+
+                        message.textContent =
+                            "❌ Account not found.";
+
+                        break;
+
+
+                    case "auth/invalid-email":
+
+                        message.textContent =
+                            "❌ Invalid email address.";
+
+                        break;
+
+
+                    case "auth/api-key-not-valid":
+
+                        message.textContent =
+                            "❌ Firebase API key is invalid.";
+
+                        break;
+
+
+                    case "auth/network-request-failed":
+
+                        message.textContent =
+                            "❌ Network error. Check your internet connection.";
+
+                        break;
+
+
+                    default:
+
+                        message.textContent =
+                            "❌ Login failed: " +
+                            error.message;
+
+                }
 
             }
 
@@ -240,9 +402,7 @@ if (loginForm) {
 ========================================================= */
 
 const showPassword =
-    document.getElementById(
-        "showPassword"
-    );
+    document.getElementById("showPassword");
 
 
 if (showPassword) {
@@ -252,23 +412,79 @@ if (showPassword) {
         function () {
 
             const input =
-                document.getElementById(
-                    "password"
-                );
+                document.getElementById("password");
+
+
+            if (!input) {
+                return;
+            }
 
 
             if (input.type === "password") {
 
-                input.type = "text";
+                input.type =
+                    "text";
 
                 showPassword.textContent =
                     "🙈";
 
             } else {
 
-                input.type = "password";
+                input.type =
+                    "password";
 
                 showPassword.textContent =
+                    "👁️";
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   CONFIRM PASSWORD SHOW / HIDE
+========================================================= */
+
+const showConfirmPassword =
+    document.getElementById(
+        "showConfirmPassword"
+    );
+
+
+if (showConfirmPassword) {
+
+    showConfirmPassword.addEventListener(
+        "click",
+        function () {
+
+            const input =
+                document.getElementById(
+                    "confirmPassword"
+                );
+
+
+            if (!input) {
+                return;
+            }
+
+
+            if (input.type === "password") {
+
+                input.type =
+                    "text";
+
+                showConfirmPassword.textContent =
+                    "🙈";
+
+            } else {
+
+                input.type =
+                    "password";
+
+                showConfirmPassword.textContent =
                     "👁️";
 
             }
@@ -301,16 +517,23 @@ if (showLoginPassword) {
                 );
 
 
+            if (!input) {
+                return;
+            }
+
+
             if (input.type === "password") {
 
-                input.type = "text";
+                input.type =
+                    "text";
 
                 showLoginPassword.textContent =
                     "🙈";
 
             } else {
 
-                input.type = "password";
+                input.type =
+                    "password";
 
                 showLoginPassword.textContent =
                     "👁️";
@@ -319,144 +542,5 @@ if (showLoginPassword) {
 
         }
     );
-
-}
-
-
-/* =========================================================
-   MESSAGE HELPERS
-========================================================= */
-
-function showSuccess(
-    element,
-    text
-) {
-
-    if (!element) return;
-
-    element.textContent =
-        text;
-
-    element.style.color =
-        "#087c6b";
-
-}
-
-
-function showError(
-    element,
-    text
-) {
-
-    if (!element) return;
-
-    element.textContent =
-        text;
-
-    element.style.color =
-        "#e63b59";
-
-}
-
-
-/* =========================================================
-   FIREBASE ERROR HANDLING
-========================================================= */
-
-function showFirebaseError(
-    element,
-    error,
-    type
-) {
-
-    if (!element) return;
-
-
-    const code =
-        error.code || "";
-
-
-    if (
-        code ===
-        "auth/email-already-in-use"
-    ) {
-
-        showError(
-            element,
-            "❌ This email is already registered."
-        );
-
-    }
-
-    else if (
-        code ===
-        "auth/weak-password"
-    ) {
-
-        showError(
-            element,
-            "❌ Password is too weak."
-        );
-
-    }
-
-    else if (
-        code ===
-        "auth/invalid-email"
-    ) {
-
-        showError(
-            element,
-            "❌ Invalid email address."
-        );
-
-    }
-
-    else if (
-        code ===
-            "auth/invalid-credential" ||
-        code ===
-            "auth/wrong-password"
-    ) {
-
-        showError(
-            element,
-            "❌ Incorrect email or password."
-        );
-
-    }
-
-    else if (
-        code ===
-        "auth/user-not-found"
-    ) {
-
-        showError(
-            element,
-            "❌ Account not found."
-        );
-
-    }
-
-    else if (
-        code ===
-        "auth/api-key-not-valid"
-    ) {
-
-        showError(
-            element,
-            "❌ Firebase API key is invalid."
-        );
-
-    }
-
-    else {
-
-        showError(
-            element,
-            `❌ ${type} failed: ${error.message}`
-        );
-
-    }
 
 }
