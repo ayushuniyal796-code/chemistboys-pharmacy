@@ -9,7 +9,7 @@ import {
 
 
 /* =========================================================
-   CHEMISTBOYS FIREBASE
+   CHEMISTBOYS FIREBASE CONFIG
 ========================================================= */
 
 const firebaseConfig = {
@@ -32,7 +32,7 @@ const firebaseConfig = {
 
 
 /* =========================================================
-   INITIALIZE FIREBASE — ONLY ONCE
+   INITIALIZE FIREBASE
 ========================================================= */
 
 const app =
@@ -40,7 +40,7 @@ const app =
 
 
 /* =========================================================
-   SINGLE FIREBASE AUTH INSTANCE
+   SINGLE AUTH INSTANCE
 ========================================================= */
 
 export const auth =
@@ -48,7 +48,7 @@ export const auth =
 
 
 /* =========================================================
-   FIREBASE AUTH READY
+   AUTH READY
 ========================================================= */
 
 export const authReady =
