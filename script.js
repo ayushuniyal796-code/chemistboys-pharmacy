@@ -2,133 +2,125 @@
    CHEMISTBOYS - MAIN SCRIPT
 ========================================================= */
 
+document.addEventListener("DOMContentLoaded", function () {
 
-/* =========================================================
-   GET PRODUCTS
-========================================================= */
+    /* =====================================================
+       PRODUCTS
+    ===================================================== */
 
-const products = window.products || [];
-
-
-/* =========================================================
-   GLOBAL STATE
-========================================================= */
-
-let displayedProducts = [...products];
-
-let currentCategory = "all";
-
-let currentSearch = "";
-
-let currentSort = "default";
+    const products = Array.isArray(window.products)
+        ? window.products
+        : [];
 
 
-/* =========================================================
-   DOM ELEMENTS
-========================================================= */
-
-const productContainer =
-    document.getElementById("productContainer");
-
-const searchInput =
-    document.getElementById("searchInput");
-
-const categoryButtons =
-    document.querySelectorAll("[data-category]");
-
-const sortSelect =
-    document.getElementById("sortSelect");
+    const productsGrid =
+        document.getElementById("productsGrid");
 
 
-/* =========================================================
-   DISPLAY PRODUCTS
-========================================================= */
+    const searchInput =
+        document.getElementById("searchInput");
 
-function displayProducts(productList) {
 
-    if (!productContainer) {
+    const searchBtn =
+        document.getElementById("searchBtn");
+
+
+    const categoryFilter =
+        document.getElementById("categoryFilter");
+
+
+    const sortFilter =
+        document.getElementById("sortFilter");
+
+
+    const priceRange =
+        document.getElementById("priceRange");
+
+
+    const priceLabel =
+        document.getElementById("priceLabel");
+
+
+    /* =====================================================
+       CHECK PRODUCTS
+    ===================================================== */
+
+    if (!productsGrid) {
+
         console.error(
-            "Product container not found."
+            "❌ productsGrid not found in index.html"
         );
+
         return;
+
     }
 
 
-    productContainer.innerHTML = "";
+    if (products.length === 0) {
 
-
-    if (productList.length === 0) {
-
-        productContainer.innerHTML = `
-            <div class="no-products">
-                <h3>😔 No products found</h3>
-                <p>Try another search or category.</p>
-            </div>
+        productsGrid.innerHTML = `
+            <p class="no-products">
+                No products available.
+            </p>
         `;
 
+        console.error(
+            "❌ products.js did not load."
+        );
+
         return;
+
     }
 
 
-    productList.forEach(function (product) {
+    /* =====================================================
+       DISPLAY PRODUCTS
+    ===================================================== */
 
-        const card =
-            document.createElement("div");
+    function displayProducts(list) {
 
-        card.className =
-            "product-card";
-
-
-        card.innerHTML = `
-
-            <div class="product-image">
-
-                <img
-                    src="${product.image}"
-                    alt="${product.name}"
-                    loading="lazy"
-                >
-
-                ${
-                    product.discount
-                    ? `
-                        <span class="discount-badge">
-                            ${product.discount}
-                        </span>
-                    `
-                    : ""
-                }
-
-            </div>
+        productsGrid.innerHTML = "";
 
 
-            <div class="product-info">
+        if (list.length === 0) {
 
-                <h3 class="product-name">
-                    ${product.name}
-                </h3>
-
-
-                <div class="product-rating">
-
-                    <span>
-                        ⭐ ${product.rating}
-                    </span>
-
+            productsGrid.innerHTML = `
+                <div class="no-products">
+                    <h3>😔 No products found</h3>
+                    <p>Try another search or filter.</p>
                 </div>
+            `;
+
+            return;
+
+        }
 
 
-                <div class="product-price">
+        list.forEach(function (product) {
 
-                    <span class="current-price">
-                        ₹${product.price}
-                    </span>
+            const card =
+                document.createElement("div");
+
+
+            card.className =
+                "product-card";
+
+
+            card.innerHTML = `
+
+                <div class="product-image">
+
+                    <img
+                        src="${product.image}"
+                        alt="${product.name}"
+                        loading="lazy"
+                    >
 
                     ${
-                        product.oldPrice
+                        product.discount
                         ? `
-                            <span class="old-price">
-                                ₹${product.oldPrice}
+                            <span class="discount-badge">
+                                ${product.discount}
                             </span>
                         `
                         : ""
@@ -137,472 +129,383 @@ function displayProducts(productList) {
                 </div>
 
 
-                <button
-                    class="add-cart-btn"
-                    data-product-id="${product.id}"
-                >
-                    🛒 Add to Cart
-                </button>
+                <div class="product-info">
 
-            </div>
-
-        `;
+                    <h3>
+                        ${product.name}
+                    </h3>
 
 
-        productContainer.appendChild(card);
-
-    });
-
-
-    attachCartButtons();
-
-}
+                    <div class="product-rating">
+                        ⭐ ${product.rating}
+                    </div>
 
 
-/* =========================================================
-   FILTER PRODUCTS
-========================================================= */
+                    <div class="product-price">
 
-function filterProducts() {
+                        <span class="current-price">
+                            ₹${product.price}
+                        </span>
 
-    let result =
-        [...products];
+                        ${
+                            product.oldPrice
+                            ? `
+                                <span class="old-price">
+                                    ₹${product.oldPrice}
+                                </span>
+                            `
+                            : ""
+                        }
+
+                    </div>
 
 
-    /* CATEGORY */
+                    <button
+                        type="button"
+                        class="add-cart-btn"
+                        data-product-id="${product.id}"
+                    >
+                        🛒 Add to Cart
+                    </button>
 
-    if (
-        currentCategory !== "all"
-    ) {
+                </div>
 
-        result =
-            result.filter(function (product) {
+            `;
 
-                return (
-                    product.category ===
-                    currentCategory
-                );
 
-            });
+            productsGrid.appendChild(card);
+
+        });
 
     }
 
 
-    /* SEARCH */
+    /* =====================================================
+       FILTER + SEARCH + SORT
+    ===================================================== */
 
-    if (
-        currentSearch
-    ) {
+    function applyFilters() {
+
+        let result =
+            [...products];
+
+
+        /* SEARCH */
 
         const search =
-            currentSearch.toLowerCase();
+            searchInput
+                ? searchInput.value
+                    .trim()
+                    .toLowerCase()
+                : "";
+
+
+        if (search) {
+
+            result =
+                result.filter(function (product) {
+
+                    return (
+                        product.name
+                            .toLowerCase()
+                            .includes(search)
+
+                        ||
+
+                        product.category
+                            .toLowerCase()
+                            .includes(search)
+                    );
+
+                });
+
+        }
+
+
+        /* CATEGORY */
+
+        const category =
+            categoryFilter
+                ? categoryFilter.value
+                : "all";
+
+
+        if (
+            category &&
+            category !== "all"
+        ) {
+
+            result =
+                result.filter(function (product) {
+
+                    return (
+                        product.category ===
+                        category
+                    );
+
+                });
+
+        }
+
+
+        /* PRICE */
+
+        const maxPrice =
+            priceRange
+                ? Number(priceRange.value)
+                : Infinity;
 
 
         result =
             result.filter(function (product) {
 
                 return (
-
-                    product.name
-                        .toLowerCase()
-                        .includes(search)
-
-                    ||
-
-                    product.category
-                        .toLowerCase()
-                        .includes(search)
-
+                    Number(product.price) <=
+                    maxPrice
                 );
 
             });
 
+
+        /* SORT */
+
+        const sort =
+            sortFilter
+                ? sortFilter.value
+                : "default";
+
+
+        if (sort === "low") {
+
+            result.sort(function (a, b) {
+
+                return a.price - b.price;
+
+            });
+
+        }
+
+
+        else if (sort === "high") {
+
+            result.sort(function (a, b) {
+
+                return b.price - a.price;
+
+            });
+
+        }
+
+
+        else if (sort === "rating") {
+
+            result.sort(function (a, b) {
+
+                return b.rating - a.rating;
+
+            });
+
+        }
+
+
+        else if (sort === "newest") {
+
+            result.sort(function (a, b) {
+
+                return (
+                    Number(b.newest) -
+                    Number(a.newest)
+                );
+
+            });
+
+        }
+
+
+        displayProducts(result);
+
     }
 
 
-    /* SORT */
+    /* =====================================================
+       SEARCH BUTTON
+    ===================================================== */
 
-    if (
-        currentSort === "low"
-    ) {
+    if (searchBtn) {
 
-        result.sort(function (a, b) {
-
-            return a.price - b.price;
-
-        });
-
-    }
-
-
-    else if (
-        currentSort === "high"
-    ) {
-
-        result.sort(function (a, b) {
-
-            return b.price - a.price;
-
-        });
-
-    }
-
-
-    else if (
-        currentSort === "rating"
-    ) {
-
-        result.sort(function (a, b) {
-
-            return b.rating - a.rating;
-
-        });
-
-    }
-
-
-    else if (
-        currentSort === "newest"
-    ) {
-
-        result.sort(function (a, b) {
-
-            return (
-                Number(b.newest) -
-                Number(a.newest)
-            );
-
-        });
-
-    }
-
-
-    displayedProducts =
-        result;
-
-
-    displayProducts(
-        displayedProducts
-    );
-
-}
-
-
-/* =========================================================
-   CATEGORY BUTTONS
-========================================================= */
-
-categoryButtons.forEach(
-    function (button) {
-
-        button.addEventListener(
+        searchBtn.addEventListener(
             "click",
             function () {
 
-                currentCategory =
-                    button.dataset.category ||
-                    "all";
-
-
-                categoryButtons.forEach(
-                    function (btn) {
-
-                        btn.classList.remove(
-                            "active"
-                        );
-
-                    }
-                );
-
-
-                button.classList.add(
-                    "active"
-                );
-
-
-                filterProducts();
+                applyFilters();
 
             }
         );
 
     }
-);
 
 
-/* =========================================================
-   SEARCH
-========================================================= */
+    /* =====================================================
+       SEARCH ENTER KEY
+    ===================================================== */
 
-if (searchInput) {
+    if (searchInput) {
 
-    searchInput.addEventListener(
-        "input",
-        function () {
+        searchInput.addEventListener(
+            "keydown",
+            function (event) {
 
-            currentSearch =
-                searchInput.value.trim();
+                if (
+                    event.key === "Enter"
+                ) {
 
+                    event.preventDefault();
 
-            filterProducts();
+                    applyFilters();
 
-        }
-    );
+                }
 
-}
-
-
-/* =========================================================
-   SORT
-========================================================= */
-
-if (sortSelect) {
-
-    sortSelect.addEventListener(
-        "change",
-        function () {
-
-            currentSort =
-                sortSelect.value;
-
-
-            filterProducts();
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   CART
-========================================================= */
-
-function getCart() {
-
-    try {
-
-        const cart =
-            JSON.parse(
-                localStorage.getItem(
-                    "chemistboys_cart"
-                )
-            );
-
-
-        return Array.isArray(cart)
-            ? cart
-            : [];
-
-    } catch (error) {
-
-        console.error(
-            "Cart read error:",
-            error
-        );
-
-        return [];
-
-    }
-
-}
-
-
-function saveCart(cart) {
-
-    localStorage.setItem(
-        "chemistboys_cart",
-        JSON.stringify(cart)
-    );
-
-}
-
-
-function addToCart(productId) {
-
-    const product =
-        products.find(function (item) {
-
-            return (
-                item.id ===
-                productId
-            );
-
-        });
-
-
-    if (!product) {
-
-        console.error(
-            "Product not found:",
-            productId
-        );
-
-        return;
-
-    }
-
-
-    const cart =
-        getCart();
-
-
-    const existingItem =
-        cart.find(function (item) {
-
-            return (
-                item.id ===
-                productId
-            );
-
-        });
-
-
-    if (existingItem) {
-
-        existingItem.quantity =
-            (existingItem.quantity || 1) + 1;
-
-    } else {
-
-        cart.push({
-
-            id: product.id,
-
-            name: product.name,
-
-            price: product.price,
-
-            image: product.image,
-
-            quantity: 1
-
-        });
-
-    }
-
-
-    saveCart(cart);
-
-
-    updateCartCount();
-
-
-    alert(
-        "✅ " +
-        product.name +
-        " added to cart!"
-    );
-
-}
-
-
-/* =========================================================
-   CART BUTTONS
-========================================================= */
-
-function attachCartButtons() {
-
-    const buttons =
-        document.querySelectorAll(
-            ".add-cart-btn"
+            }
         );
 
 
-    buttons.forEach(function (button) {
+        /* Live search */
 
-        button.addEventListener(
-            "click",
+        searchInput.addEventListener(
+            "input",
             function () {
 
-                const productId =
-                    Number(
-                        button.dataset.productId
-                    );
+                applyFilters();
+
+            }
+        );
+
+    }
 
 
-                addToCart(
+    /* =====================================================
+       CATEGORY FILTER
+    ===================================================== */
+
+    if (categoryFilter) {
+
+        categoryFilter.addEventListener(
+            "change",
+            function () {
+
+                applyFilters();
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       SORT FILTER
+    ===================================================== */
+
+    if (sortFilter) {
+
+        sortFilter.addEventListener(
+            "change",
+            function () {
+
+                applyFilters();
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       PRICE FILTER
+    ===================================================== */
+
+    if (priceRange) {
+
+        function updatePrice() {
+
+            const value =
+                Number(priceRange.value);
+
+
+            if (priceLabel) {
+
+                priceLabel.textContent =
+                    `Up to ₹${value}`;
+
+            }
+
+
+            applyFilters();
+
+        }
+
+
+        priceRange.addEventListener(
+            "input",
+            updatePrice
+        );
+
+
+        updatePrice();
+
+    }
+
+
+    /* =====================================================
+       ADD TO CART
+    ===================================================== */
+
+    document.addEventListener(
+        "click",
+        function (event) {
+
+            const button =
+                event.target.closest(
+                    ".add-cart-btn"
+                );
+
+
+            if (!button) {
+                return;
+            }
+
+
+            const productId =
+                Number(
+                    button.dataset.productId
+                );
+
+
+            if (
+                typeof window.addToCart ===
+                "function"
+            ) {
+
+                window.addToCart(
                     productId
                 );
 
-            }
-        );
+            } else {
 
-    });
-
-}
-
-
-/* =========================================================
-   CART COUNT
-========================================================= */
-
-function updateCartCount() {
-
-    const cart =
-        getCart();
-
-
-    const count =
-        cart.reduce(
-            function (total, item) {
-
-                return (
-                    total +
-                    (item.quantity || 1)
+                console.error(
+                    "❌ addToCart function not found."
                 );
 
-            },
-            0
-        );
-
-
-    const cartCountElements =
-        document.querySelectorAll(
-            "#cartCount, .cart-count"
-        );
-
-
-    cartCountElements.forEach(
-        function (element) {
-
-            element.textContent =
-                count;
+            }
 
         }
     );
 
-}
+
+    /* =====================================================
+       INITIAL DISPLAY
+    ===================================================== */
+
+    displayProducts(products);
 
 
-/* =========================================================
-   INITIAL LOAD
-========================================================= */
-
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
-
-        if (
-            !Array.isArray(
-                window.products
-            )
-        ) {
-
-            console.error(
-                "products.js was not loaded."
-            );
-
-            return;
-
-        }
-
-
-        displayProducts(
-            products
-        );
-
-
-        updateCartCount();
-
-    }
-);
+});
