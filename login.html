@@ -2,7 +2,6 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -15,7 +14,6 @@
     <link rel="stylesheet" href="style.css">
 
     <style>
-
         .auth-page {
             min-height: 85vh;
             display: flex;
@@ -32,21 +30,6 @@
             padding: 38px;
             border-radius: 28px;
             box-shadow: 0 25px 70px rgba(0,80,70,.14);
-            animation: loginAppear .7s ease;
-        }
-
-        @keyframes loginAppear {
-
-            from {
-                opacity: 0;
-                transform: translateY(30px) scale(.97);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-
         }
 
         .auth-logo {
@@ -83,12 +66,7 @@
             border-radius: 12px;
             outline: none;
             font-size: 15px;
-            transition: .3s;
-        }
-
-        .auth-group input:focus {
-            border-color: #0ca88f;
-            box-shadow: 0 0 0 4px rgba(12,168,143,.1);
+            box-sizing: border-box;
         }
 
         .password-box {
@@ -117,12 +95,6 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: .3s;
-        }
-
-        .auth-btn:hover {
-            background: #075f55;
-            transform: translateY(-2px);
         }
 
         .auth-message {
@@ -143,14 +115,11 @@
             font-weight: bold;
             text-decoration: none;
         }
-
     </style>
-
 </head>
 
 
 <body>
-
 
 <header class="header">
 
@@ -184,7 +153,6 @@
 </header>
 
 
-
 <main class="auth-page">
 
     <div class="auth-card">
@@ -204,10 +172,9 @@
 
         <form id="loginForm">
 
-
             <div class="auth-group">
 
-                <label>
+                <label for="loginEmail">
                     Email Address
                 </label>
 
@@ -223,7 +190,7 @@
 
             <div class="auth-group">
 
-                <label>
+                <label for="loginPassword">
                     Password
                 </label>
 
@@ -261,7 +228,6 @@
                 id="loginMessage"
             ></div>
 
-
         </form>
 
 
@@ -280,7 +246,10 @@
 </main>
 
 
-<script type="module" src="auth.js"></script>
+<script
+    type="module"
+    src="auth.js"
+></script>
 
 </body>
 
