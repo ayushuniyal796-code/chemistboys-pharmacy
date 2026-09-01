@@ -1,8 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Create Account - ChemistBoys</title>
 
@@ -19,30 +24,17 @@
 
         .auth-card {
             width: 100%;
-            max-width: 470px;
-            background: rgba(255,255,255,0.94);
+            max-width: 450px;
+            background: rgba(255,255,255,.94);
             backdrop-filter: blur(20px);
-            padding: 35px;
+            padding: 38px;
             border-radius: 28px;
-            box-shadow: 0 25px 70px rgba(0,80,70,0.14);
-            animation: authAppear .7s ease;
-        }
-
-        @keyframes authAppear {
-            from {
-                opacity: 0;
-                transform: translateY(30px) scale(.97);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
+            box-shadow: 0 25px 70px rgba(0,80,70,.14);
         }
 
         .auth-logo {
             text-align: center;
-            font-size: 45px;
+            font-size: 50px;
         }
 
         .auth-title {
@@ -54,11 +46,11 @@
         .auth-subtitle {
             text-align: center;
             color: #718987;
-            margin-bottom: 25px;
+            margin-bottom: 28px;
         }
 
         .auth-group {
-            margin-bottom: 17px;
+            margin-bottom: 20px;
         }
 
         .auth-group label {
@@ -74,12 +66,7 @@
             border-radius: 12px;
             outline: none;
             font-size: 15px;
-            transition: .3s;
-        }
-
-        .auth-group input:focus {
-            border-color: #0ca88f;
-            box-shadow: 0 0 0 4px rgba(12,168,143,.1);
+            box-sizing: border-box;
         }
 
         .password-box {
@@ -108,24 +95,18 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: .3s;
-        }
-
-        .auth-btn:hover {
-            background: #075f55;
-            transform: translateY(-2px);
         }
 
         .auth-message {
-            margin-top: 15px;
             text-align: center;
+            margin-top: 15px;
             font-weight: 600;
             min-height: 20px;
         }
 
         .auth-footer {
             text-align: center;
-            margin-top: 22px;
+            margin-top: 25px;
             color: #718987;
         }
 
@@ -134,14 +115,9 @@
             font-weight: bold;
             text-decoration: none;
         }
-
-        .password-hint {
-            font-size: 12px;
-            color: #718987;
-            margin-top: 6px;
-        }
     </style>
 </head>
+
 
 <body>
 
@@ -151,11 +127,23 @@
 
         <div class="header-top">
 
-            <a href="index.html" style="text-decoration:none;">
+            <a
+                href="index.html"
+                style="text-decoration:none;"
+            >
+
                 <div class="logo">
-                    <span class="logo-icon">💊</span>
-                    <span class="logo-text">ChemistBoys</span>
+
+                    <span class="logo-icon">
+                        💊
+                    </span>
+
+                    <span class="logo-text">
+                        ChemistBoys
+                    </span>
+
                 </div>
+
             </a>
 
         </div>
@@ -169,14 +157,16 @@
 
     <div class="auth-card">
 
-        <div class="auth-logo">💊</div>
+        <div class="auth-logo">
+            💊
+        </div>
 
         <h1 class="auth-title">
             Create Account
         </h1>
 
         <p class="auth-subtitle">
-            Join ChemistBoys today
+            Create your ChemistBoys account
         </p>
 
 
@@ -184,7 +174,9 @@
 
             <div class="auth-group">
 
-                <label>Full Name</label>
+                <label for="name">
+                    Full Name
+                </label>
 
                 <input
                     type="text"
@@ -198,7 +190,9 @@
 
             <div class="auth-group">
 
-                <label>Email Address</label>
+                <label for="email">
+                    Email Address
+                </label>
 
                 <input
                     type="email"
@@ -212,15 +206,16 @@
 
             <div class="auth-group">
 
-                <label>Password</label>
+                <label for="password">
+                    Password
+                </label>
 
                 <div class="password-box">
 
                     <input
                         type="password"
                         id="password"
-                        placeholder="Create password"
-                        minlength="6"
+                        placeholder="Enter your password"
                         required
                     >
 
@@ -233,34 +228,21 @@
 
                 </div>
 
-                <div class="password-hint">
-                    Minimum 6 characters
-                </div>
-
             </div>
 
 
             <div class="auth-group">
 
-                <label>Confirm Password</label>
+                <label for="confirmPassword">
+                    Confirm Password
+                </label>
 
-                <div class="password-box">
-
-                    <input
-                        type="password"
-                        id="confirmPassword"
-                        placeholder="Confirm password"
-                        required
-                    >
-
-                    <span
-                        class="show-password"
-                        id="showConfirmPassword"
-                    >
-                        👁️
-                    </span>
-
-                </div>
+                <input
+                    type="password"
+                    id="confirmPassword"
+                    placeholder="Confirm your password"
+                    required
+                >
 
             </div>
 
@@ -269,7 +251,7 @@
                 type="submit"
                 class="auth-btn"
             >
-                🚀 Create Account
+                📝 Create Account
             </button>
 
 
@@ -296,6 +278,11 @@
 </main>
 
 
-<script type="module" src="auth.js"></script>
+<script
+    type="module"
+    src="auth.js"
+></script>
+
 </body>
+
 </html>
