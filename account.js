@@ -4,15 +4,17 @@ import {
 } from "./firebase.js";
 
 import {
+    onAuthStateChanged,
     signOut
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
 /* =========================================================
-   CURRENT USER
+   SHARED AUTH STATE
 ========================================================= */
 
-let currentUser = null;
+window.firebaseAuth = auth;
+window.firebaseAuthReady = authReady;
 
 
 /* =========================================================
@@ -38,23 +40,15 @@ const logoutBtn =
 
 function updateHeader(user) {
 
-    currentUser =
+    window.currentFirebaseUser =
         user || null;
 
 
-    window.currentFirebaseUser =
-        currentUser;
-
-
-    /* =====================================================
-       LOGGED IN
-    ===================================================== */
-
-    if (currentUser) {
+    if (user) {
 
         const name =
-            currentUser.displayName ||
-            currentUser.email ||
+            user.displayName ||
+            user.email ||
             "Account";
 
 
@@ -92,14 +86,7 @@ function updateHeader(user) {
 
         }
 
-    }
-
-
-    /* =====================================================
-       LOGGED OUT
-    ===================================================== */
-
-    else {
+    } else {
 
         if (accountBtn) {
 
@@ -141,18 +128,16 @@ function updateHeader(user) {
 
 
 /* =========================================================
-   WAIT FOR FIREBASE AUTH
+   FIREBASE AUTH STATE LISTENER
 ========================================================= */
 
-await authReady;
+onAuthStateChanged(
+    auth,
+    function (user) {
 
+        updateHeader(user);
 
-/* =========================================================
-   INITIAL USER STATE
-========================================================= */
-
-updateHeader(
-    auth.currentUser
+    }
 );
 
 
@@ -172,10 +157,6 @@ if (logoutBtn) {
             try {
 
                 await signOut(auth);
-
-
-                currentUser =
-                    null;
 
 
                 window.currentFirebaseUser =
@@ -204,11 +185,3 @@ if (logoutBtn) {
     );
 
 }
-
-
-/* =========================================================
-   GLOBAL AUTH READY
-========================================================= */
-
-window.firebaseAuthReady =
-    authReady;
