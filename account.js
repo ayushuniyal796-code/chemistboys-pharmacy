@@ -9,16 +9,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-/* =========================================================
-   AUTH STATE
-========================================================= */
-
 let currentUser = null;
 
-
-/* =========================================================
-   HEADER ELEMENTS
-========================================================= */
 
 const accountBtn =
     document.getElementById("accountBtn");
@@ -32,10 +24,6 @@ const ordersBtn =
 const logoutBtn =
     document.getElementById("logoutBtn");
 
-
-/* =========================================================
-   UPDATE HEADER
-========================================================= */
 
 function updateHeader(user) {
 
@@ -128,10 +116,6 @@ function updateHeader(user) {
 }
 
 
-/* =========================================================
-   FIREBASE AUTH STATE
-========================================================= */
-
 onAuthStateChanged(
     auth,
     (user) => {
@@ -142,23 +126,15 @@ onAuthStateChanged(
 );
 
 
-/* =========================================================
-   LOGOUT
-========================================================= */
-
 if (logoutBtn) {
 
     logoutBtn.addEventListener(
         "click",
-        async (event) => {
-
-            event.preventDefault();
+        async () => {
 
             try {
 
                 await signOut(auth);
-
-                currentUser = null;
 
                 window.currentFirebaseUser =
                     null;
@@ -184,10 +160,6 @@ if (logoutBtn) {
 
 }
 
-
-/* =========================================================
-   AUTH READY
-========================================================= */
 
 window.firebaseAuthReady =
     authReady;
