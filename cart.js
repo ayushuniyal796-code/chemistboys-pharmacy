@@ -1,5 +1,6 @@
 /* =========================================================
    CHEMISTBOYS - CART
+   Clean Version - No Popup Alert
 ========================================================= */
 
 import {
@@ -24,13 +25,12 @@ function getCart() {
             localStorage.getItem("chemistboys_cart")
         );
 
-        return Array.isArray(cart)
-            ? cart
-            : [];
+        return Array.isArray(cart) ? cart : [];
 
     } catch (error) {
 
         console.error("Cart error:", error);
+
         return [];
 
     }
@@ -53,7 +53,7 @@ function saveCart(cart) {
 
 
 /* =========================================================
-   UPDATE CART COUNT
+   CART COUNT
 ========================================================= */
 
 function updateCartCount() {
@@ -63,9 +63,7 @@ function updateCartCount() {
     const count = cart.reduce(
         function (total, item) {
 
-            return total + Number(
-                item.quantity || 1
-            );
+            return total + Number(item.quantity || 1);
 
         },
         0
@@ -87,83 +85,107 @@ function updateCartCount() {
    SUCCESS MESSAGE
 ========================================================= */
 
-function showCartMessage(message) {
+function showCartMessage(productName) {
 
-    let messageElement =
+    let message =
         document.getElementById("cartSuccessMessage");
 
 
-    if (!messageElement) {
+    /* Create message if it doesn't exist */
 
-        messageElement =
+    if (!message) {
+
+        message =
             document.createElement("div");
 
-        messageElement.id =
+        message.id =
             "cartSuccessMessage";
 
-        messageElement.style.position =
+        message.style.position =
             "fixed";
 
-        messageElement.style.bottom =
-            "25px";
-
-        messageElement.style.left =
+        message.style.left =
             "50%";
 
-        messageElement.style.transform =
-            "translateX(-50%)";
+        message.style.bottom =
+            "25px";
 
-        messageElement.style.background =
-            "#0ca88f";
+        message.style.transform =
+            "translateX(-50%) translateY(20px)";
 
-        messageElement.style.color =
+        message.style.background =
             "#ffffff";
 
-        messageElement.style.padding =
-            "13px 22px";
+        message.style.color =
+            "#087c6b";
 
-        messageElement.style.borderRadius =
-            "10px";
+        message.style.padding =
+            "14px 24px";
 
-        messageElement.style.fontSize =
+        message.style.borderRadius =
+            "14px";
+
+        message.style.boxShadow =
+            "0 8px 30px rgba(0,0,0,0.12)";
+
+        message.style.border =
+            "1px solid #d8eee9";
+
+        message.style.fontSize =
             "15px";
 
-        messageElement.style.fontWeight =
+        message.style.fontWeight =
             "600";
 
-        messageElement.style.zIndex =
-            "9999";
+        message.style.zIndex =
+            "99999";
 
-        messageElement.style.boxShadow =
-            "0 5px 20px rgba(0,0,0,0.15)";
+        message.style.opacity =
+            "0";
 
-        messageElement.style.transition =
-            "opacity 0.3s ease";
+        message.style.transition =
+            "all 0.3s ease";
 
-        document.body.appendChild(
-            messageElement
-        );
+        message.style.pointerEvents =
+            "none";
+
+        document.body.appendChild(message);
 
     }
 
 
-    messageElement.textContent =
-        message;
+    message.innerHTML =
+        `✓ ${productName} successfully added to cart`;
 
-    messageElement.style.opacity =
-        "1";
 
+    /* Show */
+
+    requestAnimationFrame(function () {
+
+        message.style.opacity =
+            "1";
+
+        message.style.transform =
+            "translateX(-50%) translateY(0)";
+
+    });
+
+
+    /* Hide after 2.5 seconds */
 
     clearTimeout(
-        window.cartMessageTimeout
+        window.cartMessageTimer
     );
 
 
-    window.cartMessageTimeout =
+    window.cartMessageTimer =
         setTimeout(function () {
 
-            messageElement.style.opacity =
+            message.style.opacity =
                 "0";
+
+            message.style.transform =
+                "translateX(-50%) translateY(20px)";
 
         }, 2500);
 
@@ -217,9 +239,7 @@ function addToCart(productId) {
     if (existingItem) {
 
         existingItem.quantity =
-            Number(
-                existingItem.quantity || 1
-            ) + 1;
+            Number(existingItem.quantity || 1) + 1;
 
     } else {
 
@@ -229,7 +249,7 @@ function addToCart(productId) {
 
             name: product.name,
 
-            price: Number(product.price),
+            price: product.price,
 
             image: product.image,
 
@@ -245,11 +265,9 @@ function addToCart(productId) {
     updateCartCount();
 
 
-    /* NO POPUP */
+    /* NO ALERT / NO POPUP */
 
-    showCartMessage(
-        "✅ Product successfully added to cart"
-    );
+    showCartMessage(product.name);
 
 }
 
@@ -337,8 +355,6 @@ function changeQuantity(
 let currentUser = null;
 
 
-/* Wait for Firebase auth */
-
 authReady.then(function () {
 
     currentUser =
@@ -348,8 +364,6 @@ authReady.then(function () {
 
 });
 
-
-/* Monitor Firebase auth */
 
 onAuthStateChanged(
     auth,
@@ -379,41 +393,39 @@ function updateCheckoutButton() {
         );
 
 
-    checkoutButtons.forEach(
-        function (button) {
+    checkoutButtons.forEach(function (button) {
 
-            if (currentUser) {
+        if (currentUser) {
 
-                button.textContent =
-                    "🛒 Buy Now";
+            button.textContent =
+                "🛒 Buy Now";
 
-                button.disabled =
-                    false;
+            button.disabled =
+                false;
 
-                button.dataset.loggedIn =
-                    "true";
+            button.dataset.loggedIn =
+                "true";
 
-            } else {
+        } else {
 
-                button.textContent =
-                    "🔐 Login to Checkout";
+            button.textContent =
+                "🔐 Login to Checkout";
 
-                button.disabled =
-                    false;
+            button.disabled =
+                false;
 
-                button.dataset.loggedIn =
-                    "false";
-
-            }
+            button.dataset.loggedIn =
+                "false";
 
         }
-    );
+
+    });
 
 }
 
 
 /* =========================================================
-   CHECKOUT BUTTON CLICK
+   CHECKOUT CLICK
 ========================================================= */
 
 document.addEventListener(
@@ -461,7 +473,7 @@ document.addEventListener(
 
 
 /* =========================================================
-   PRODUCT PAGE - ADD TO CART BUTTON
+   ADD TO CART BUTTON
 ========================================================= */
 
 document.addEventListener(
@@ -492,7 +504,7 @@ document.addEventListener(
 
 
 /* =========================================================
-   INITIAL CART COUNT
+   INITIALIZE
 ========================================================= */
 
 document.addEventListener(
@@ -508,7 +520,7 @@ document.addEventListener(
 
 
 /* =========================================================
-   MAKE CART FUNCTIONS AVAILABLE
+   GLOBAL FUNCTIONS
 ========================================================= */
 
 window.getCart =
