@@ -1,6 +1,5 @@
 /* =========================================================
-   CHEMISTBOYS - CART.JS
-   Firebase Authentication + Cart Management
+   CHEMISTBOYS - CART
 ========================================================= */
 
 import {
@@ -21,10 +20,9 @@ function getCart() {
 
     try {
 
-        const cart =
-            JSON.parse(
-                localStorage.getItem("chemistboys_cart")
-            );
+        const cart = JSON.parse(
+            localStorage.getItem("chemistboys_cart")
+        );
 
         return Array.isArray(cart)
             ? cart
@@ -32,8 +30,7 @@ function getCart() {
 
     } catch (error) {
 
-        console.error("Cart read error:", error);
-
+        console.error("Cart error:", error);
         return [];
 
     }
@@ -66,9 +63,8 @@ function updateCartCount() {
     const count = cart.reduce(
         function (total, item) {
 
-            return (
-                total +
-                Number(item.quantity || 1)
+            return total + Number(
+                item.quantity || 1
             );
 
         },
@@ -78,282 +74,119 @@ function updateCartCount() {
 
     document
         .querySelectorAll("#cartCount, .cart-count")
-        .forEach(
-            function (element) {
+        .forEach(function (element) {
 
-                element.textContent = count;
+            element.textContent = count;
 
-            }
-        );
+        });
 
 }
 
 
 /* =========================================================
-   UPDATE CART PAGE
+   SUCCESS MESSAGE
 ========================================================= */
 
-function renderCart() {
+function showCartMessage(message) {
 
-    const cartItems =
-        document.getElementById("cartItems");
-
-    const totalItems =
-        document.getElementById("totalItems");
-
-    const subtotalElement =
-        document.getElementById("subtotal");
-
-    const deliveryChargeElement =
-        document.getElementById("deliveryCharge");
-
-    const grandTotalElement =
-        document.getElementById("grandTotal");
+    let messageElement =
+        document.getElementById("cartSuccessMessage");
 
 
-    if (!cartItems) {
-        return;
-    }
+    if (!messageElement) {
 
+        messageElement =
+            document.createElement("div");
 
-    const cart = getCart();
+        messageElement.id =
+            "cartSuccessMessage";
 
+        messageElement.style.position =
+            "fixed";
 
-    /* EMPTY CART */
+        messageElement.style.bottom =
+            "25px";
 
-    if (cart.length === 0) {
+        messageElement.style.left =
+            "50%";
 
-        cartItems.innerHTML = `
-            <div class="empty-cart">
-                <h3>🛒 Your cart is empty</h3>
-                <p>Add some medicines to continue.</p>
+        messageElement.style.transform =
+            "translateX(-50%)";
 
-                <a
-                    href="index.html"
-                    class="continue-btn"
-                >
-                    ← Shop Now
-                </a>
-            </div>
-        `;
+        messageElement.style.background =
+            "#0ca88f";
 
+        messageElement.style.color =
+            "#ffffff";
 
-        if (totalItems) {
-            totalItems.textContent = "0";
-        }
+        messageElement.style.padding =
+            "13px 22px";
 
-        if (subtotalElement) {
-            subtotalElement.textContent = "₹0";
-        }
+        messageElement.style.borderRadius =
+            "10px";
 
-        if (deliveryChargeElement) {
-            deliveryChargeElement.textContent = "FREE";
-        }
+        messageElement.style.fontSize =
+            "15px";
 
-        if (grandTotalElement) {
-            grandTotalElement.textContent = "₹0";
-        }
+        messageElement.style.fontWeight =
+            "600";
 
-        updateCheckoutButton();
+        messageElement.style.zIndex =
+            "9999";
 
-        return;
+        messageElement.style.boxShadow =
+            "0 5px 20px rgba(0,0,0,0.15)";
+
+        messageElement.style.transition =
+            "opacity 0.3s ease";
+
+        document.body.appendChild(
+            messageElement
+        );
 
     }
 
 
-    /* CART ITEMS */
+    messageElement.textContent =
+        message;
 
-    let totalQuantity = 0;
-    let subtotal = 0;
-
-
-    cartItems.innerHTML = "";
+    messageElement.style.opacity =
+        "1";
 
 
-    cart.forEach(
-        function (item) {
-
-            const quantity =
-                Number(item.quantity || 1);
-
-            const price =
-                Number(item.price || 0);
-
-            const itemTotal =
-                price * quantity;
-
-
-            totalQuantity += quantity;
-
-            subtotal += itemTotal;
-
-
-            const itemElement =
-                document.createElement("div");
-
-
-            itemElement.className =
-                "cart-item";
-
-
-            itemElement.innerHTML = `
-
-                <div class="cart-item-image">
-
-                    <img
-                        src="${item.image || ""}"
-                        alt="${item.name || "Product"}"
-                    >
-
-                </div>
-
-
-                <div class="cart-item-info">
-
-                    <h3>
-                        ${item.name || "Product"}
-                    </h3>
-
-
-                    <p>
-                        ₹${price}
-                    </p>
-
-
-                    <div class="cart-quantity">
-
-                        <button
-                            type="button"
-                            class="quantity-btn"
-                            data-action="decrease"
-                            data-product-id="${item.id}"
-                        >
-                            −
-                        </button>
-
-
-                        <span>
-                            ${quantity}
-                        </span>
-
-
-                        <button
-                            type="button"
-                            class="quantity-btn"
-                            data-action="increase"
-                            data-product-id="${item.id}"
-                        >
-                            +
-                        </button>
-
-                    </div>
-
-
-                    <strong>
-                        Total: ₹${itemTotal}
-                    </strong>
-
-
-                    <button
-                        type="button"
-                        class="remove-btn"
-                        data-action="remove"
-                        data-product-id="${item.id}"
-                    >
-                        🗑️ Remove
-                    </button>
-
-                </div>
-
-            `;
-
-
-            cartItems.appendChild(itemElement);
-
-        }
+    clearTimeout(
+        window.cartMessageTimeout
     );
 
 
-    /* SUMMARY */
+    window.cartMessageTimeout =
+        setTimeout(function () {
 
-    if (totalItems) {
+            messageElement.style.opacity =
+                "0";
 
-        totalItems.textContent =
-            totalQuantity;
-
-    }
-
-
-    if (subtotalElement) {
-
-        subtotalElement.textContent =
-            `₹${subtotal}`;
-
-    }
-
-
-    /* DELIVERY */
-
-    const delivery =
-        subtotal >= 500
-            ? 0
-            : subtotal > 0
-                ? 40
-                : 0;
-
-
-    if (deliveryChargeElement) {
-
-        deliveryChargeElement.textContent =
-            delivery === 0
-                ? "FREE"
-                : `₹${delivery}`;
-
-    }
-
-
-    /* GRAND TOTAL */
-
-    const grandTotal =
-        subtotal + delivery;
-
-
-    if (grandTotalElement) {
-
-        grandTotalElement.textContent =
-            `₹${grandTotal}`;
-
-    }
-
-
-    updateCheckoutButton();
+        }, 2500);
 
 }
 
 
 /* =========================================================
-   ADD TO CART
+   ADD PRODUCT TO CART
 ========================================================= */
 
 function addToCart(productId) {
 
     const products =
-        Array.isArray(window.products)
-            ? window.products
-            : [];
+        window.products || [];
 
 
     const product =
-        products.find(
-            function (item) {
+        products.find(function (item) {
 
-                return (
-                    Number(item.id) ===
-                    Number(productId)
-                );
+            return Number(item.id) ===
+                Number(productId);
 
-            }
-        );
+        });
 
 
     if (!product) {
@@ -373,16 +206,12 @@ function addToCart(productId) {
 
 
     const existingItem =
-        cart.find(
-            function (item) {
+        cart.find(function (item) {
 
-                return (
-                    Number(item.id) ===
-                    Number(productId)
-                );
+            return Number(item.id) ===
+                Number(productId);
 
-            }
-        );
+        });
 
 
     if (existingItem) {
@@ -415,18 +244,18 @@ function addToCart(productId) {
 
     updateCartCount();
 
-    renderCart();
 
+    /* NO POPUP */
 
-    alert(
-        `✅ ${product.name} added to cart!`
+    showCartMessage(
+        "✅ Product successfully added to cart"
     );
 
 }
 
 
 /* =========================================================
-   REMOVE FROM CART
+   REMOVE PRODUCT
 ========================================================= */
 
 function removeFromCart(productId) {
@@ -436,23 +265,17 @@ function removeFromCart(productId) {
 
 
     cart =
-        cart.filter(
-            function (item) {
+        cart.filter(function (item) {
 
-                return (
-                    Number(item.id) !==
-                    Number(productId)
-                );
+            return Number(item.id) !==
+                Number(productId);
 
-            }
-        );
+        });
 
 
     saveCart(cart);
 
     updateCartCount();
-
-    renderCart();
 
 }
 
@@ -471,20 +294,18 @@ function changeQuantity(
 
 
     const item =
-        cart.find(
-            function (product) {
+        cart.find(function (product) {
 
-                return (
-                    Number(product.id) ===
-                    Number(productId)
-                );
+            return Number(product.id) ===
+                Number(productId);
 
-            }
-        );
+        });
 
 
     if (!item) {
+
         return;
+
     }
 
 
@@ -506,16 +327,44 @@ function changeQuantity(
 
     updateCartCount();
 
-    renderCart();
-
 }
 
 
 /* =========================================================
-   FIREBASE AUTH STATE
+   AUTH STATE
 ========================================================= */
 
 let currentUser = null;
+
+
+/* Wait for Firebase auth */
+
+authReady.then(function () {
+
+    currentUser =
+        auth.currentUser;
+
+    updateCheckoutButton();
+
+});
+
+
+/* Monitor Firebase auth */
+
+onAuthStateChanged(
+    auth,
+    function (user) {
+
+        currentUser =
+            user || null;
+
+        window.currentFirebaseUser =
+            currentUser;
+
+        updateCheckoutButton();
+
+    }
+);
 
 
 /* =========================================================
@@ -547,7 +396,7 @@ function updateCheckoutButton() {
             } else {
 
                 button.textContent =
-                    "🔐 Login to Buy";
+                    "🔐 Login to Checkout";
 
                 button.disabled =
                     false;
@@ -564,29 +413,7 @@ function updateCheckoutButton() {
 
 
 /* =========================================================
-   AUTH STATE LISTENER
-========================================================= */
-
-onAuthStateChanged(
-    auth,
-    function (user) {
-
-        currentUser =
-            user || null;
-
-
-        window.currentFirebaseUser =
-            currentUser;
-
-
-        updateCheckoutButton();
-
-    }
-);
-
-
-/* =========================================================
-   CHECKOUT CLICK
+   CHECKOUT BUTTON CLICK
 ========================================================= */
 
 document.addEventListener(
@@ -600,17 +427,14 @@ document.addEventListener(
 
 
         if (!checkoutButton) {
+
             return;
+
         }
 
 
         event.preventDefault();
 
-
-        /*
-         * IMPORTANT:
-         * Firebase auth state fully ready hone ka wait.
-         */
 
         await authReady;
 
@@ -619,93 +443,25 @@ document.addEventListener(
             auth.currentUser;
 
 
-        /* USER LOGGED IN */
-
-        if (user) {
+        if (!user) {
 
             window.location.href =
-                "checkout.html";
+                "login.html";
 
             return;
 
         }
 
-
-        /* USER NOT LOGGED IN */
 
         window.location.href =
-            "login.html";
+            "checkout.html";
 
     }
 );
 
 
 /* =========================================================
-   CART ITEM BUTTONS
-========================================================= */
-
-document.addEventListener(
-    "click",
-    function (event) {
-
-        const button =
-            event.target.closest(
-                "[data-action]"
-            );
-
-
-        if (!button) {
-            return;
-        }
-
-
-        const productId =
-            button.dataset.productId;
-
-
-        const action =
-            button.dataset.action;
-
-
-        if (!productId) {
-            return;
-        }
-
-
-        if (action === "increase") {
-
-            changeQuantity(
-                productId,
-                1
-            );
-
-        }
-
-
-        else if (action === "decrease") {
-
-            changeQuantity(
-                productId,
-                -1
-            );
-
-        }
-
-
-        else if (action === "remove") {
-
-            removeFromCart(
-                productId
-            );
-
-        }
-
-    }
-);
-
-
-/* =========================================================
-   PRODUCT PAGE ADD TO CART
+   PRODUCT PAGE - ADD TO CART BUTTON
 ========================================================= */
 
 document.addEventListener(
@@ -719,17 +475,14 @@ document.addEventListener(
 
 
         if (!addButton) {
+
             return;
+
         }
 
 
         const productId =
             addButton.dataset.productId;
-
-
-        if (!productId) {
-            return;
-        }
 
 
         addToCart(productId);
@@ -739,27 +492,14 @@ document.addEventListener(
 
 
 /* =========================================================
-   PAGE LOAD
+   INITIAL CART COUNT
 ========================================================= */
 
 document.addEventListener(
     "DOMContentLoaded",
-    async function () {
-
-        await authReady;
-
-
-        currentUser =
-            auth.currentUser;
-
-
-        window.currentFirebaseUser =
-            currentUser;
-
+    function () {
 
         updateCartCount();
-
-        renderCart();
 
         updateCheckoutButton();
 
@@ -768,7 +508,7 @@ document.addEventListener(
 
 
 /* =========================================================
-   EXPORT FUNCTIONS TO WINDOW
+   MAKE CART FUNCTIONS AVAILABLE
 ========================================================= */
 
 window.getCart =
@@ -788,6 +528,3 @@ window.changeQuantity =
 
 window.updateCartCount =
     updateCartCount;
-
-window.renderCart =
-    renderCart;
