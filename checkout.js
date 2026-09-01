@@ -52,7 +52,8 @@ document.addEventListener(
 
 
         const email =
-            user.email || "";
+            user.email ||
+            "";
 
 
         /* =====================================================
@@ -190,7 +191,6 @@ document.addEventListener(
 
             }
         );
-
 
     }
 );
