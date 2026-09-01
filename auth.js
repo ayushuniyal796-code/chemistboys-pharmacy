@@ -1,4 +1,11 @@
-import { auth } from "./firebase.js";
+/* =========================================================
+   CHEMISTBOYS - FIREBASE AUTHENTICATION
+   LOGIN + REGISTER
+========================================================= */
+
+import {
+    auth
+} from "./firebase.js";
 
 import {
     createUserWithEmailAndPassword,
@@ -8,345 +15,501 @@ import {
 
 
 /* =========================================================
-   REGISTER
+   DOM READY
 ========================================================= */
 
-const registerForm =
-    document.getElementById("registerForm");
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
 
-if (registerForm) {
+        /* =====================================================
+           LOGIN FORM
+        ===================================================== */
 
-    registerForm.addEventListener("submit", async (event) => {
-
-        event.preventDefault();
-
-        const name =
-            document.getElementById("name")?.value.trim();
-
-        const email =
-            document.getElementById("email")?.value.trim();
-
-        const password =
-            document.getElementById("password")?.value || "";
-
-        const confirmPassword =
-            document.getElementById("confirmPassword")?.value || "";
-
-        const message =
-            document.getElementById("authMessage");
+        const loginForm =
+            document.getElementById("loginForm");
 
 
-        if (!message) return;
+        if (loginForm) {
+
+            loginForm.addEventListener(
+                "submit",
+                async function (event) {
+
+                    event.preventDefault();
 
 
-        if (!name) {
-            message.textContent = "❌ Please enter your name.";
-            return;
-        }
-
-        if (password.length < 6) {
-            message.textContent =
-                "❌ Password must be at least 6 characters.";
-            return;
-        }
-
-        if (password !== confirmPassword) {
-            message.textContent =
-                "❌ Passwords do not match.";
-            return;
-        }
+                    const email =
+                        document
+                            .getElementById("loginEmail")
+                            .value
+                            .trim();
 
 
-        try {
-
-            message.textContent =
-                "Creating your account...";
-            message.style.color = "#087c6b";
-
-
-            const userCredential =
-                await createUserWithEmailAndPassword(
-                    auth,
-                    email,
-                    password
-                );
+                    const password =
+                        document
+                            .getElementById("loginPassword")
+                            .value;
 
 
-            /* SAVE USER NAME IN FIREBASE */
+                    const message =
+                        document.getElementById(
+                            "loginMessage"
+                        );
 
-            await updateProfile(
-                userCredential.user,
-                {
-                    displayName: name
+
+                    if (!email || !password) {
+
+                        if (message) {
+                            message.textContent =
+                                "Please fill all fields.";
+                        }
+
+                        return;
+
+                    }
+
+
+                    const button =
+                        loginForm.querySelector(
+                            'button[type="submit"]'
+                        );
+
+
+                    try {
+
+                        if (button) {
+                            button.disabled = true;
+                            button.textContent =
+                                "🔄 Logging in...";
+                        }
+
+
+                        if (message) {
+                            message.textContent =
+                                "Checking account...";
+                        }
+
+
+                        /* Firebase Login */
+
+                        await signInWithEmailAndPassword(
+                            auth,
+                            email,
+                            password
+                        );
+
+
+                        if (message) {
+                            message.textContent =
+                                "✅ Login successful!";
+                        }
+
+
+                        /*
+                         * Firebase auth state is now updated.
+                         * Redirect to home.
+                         */
+
+                        window.location.href =
+                            "index.html";
+
+
+                    } catch (error) {
+
+                        console.error(
+                            "Login error:",
+                            error
+                        );
+
+
+                        if (message) {
+
+                            switch (error.code) {
+
+                                case "auth/invalid-credential":
+                                case "auth/wrong-password":
+                                case "auth/user-not-found":
+
+                                    message.textContent =
+                                        "❌ Invalid email or password.";
+
+                                    break;
+
+
+                                case "auth/invalid-email":
+
+                                    message.textContent =
+                                        "❌ Please enter a valid email.";
+
+                                    break;
+
+
+                                case "auth/too-many-requests":
+
+                                    message.textContent =
+                                        "❌ Too many attempts. Try again later.";
+
+                                    break;
+
+
+                                default:
+
+                                    message.textContent =
+                                        "❌ Login failed. Please try again.";
+
+                            }
+
+                        }
+
+
+                        if (button) {
+
+                            button.disabled = false;
+
+                            button.textContent =
+                                "🔐 Login";
+
+                        }
+
+                    }
+
                 }
             );
 
-
-            message.textContent =
-                "✅ Account created successfully!";
+        }
 
 
-            /* Firebase has already signed the user in */
+        /* =====================================================
+           REGISTER FORM
+        ===================================================== */
 
-            window.location.href =
-                "index.html";
+        const registerForm =
+            document.getElementById("registerForm");
 
 
-        } catch (error) {
+        if (registerForm) {
 
-            console.error(
-                "Registration error:",
-                error
+            registerForm.addEventListener(
+                "submit",
+                async function (event) {
+
+                    event.preventDefault();
+
+
+                    const name =
+                        document
+                            .getElementById("name")
+                            .value
+                            .trim();
+
+
+                    const email =
+                        document
+                            .getElementById("email")
+                            .value
+                            .trim();
+
+
+                    const password =
+                        document
+                            .getElementById("password")
+                            .value;
+
+
+                    const confirmPassword =
+                        document
+                            .getElementById("confirmPassword")
+                            .value;
+
+
+                    const message =
+                        document.getElementById(
+                            "authMessage"
+                        );
+
+
+                    /* =================================================
+                       VALIDATION
+                    ================================================= */
+
+                    if (
+                        !name ||
+                        !email ||
+                        !password ||
+                        !confirmPassword
+                    ) {
+
+                        if (message) {
+                            message.textContent =
+                                "Please fill all fields.";
+                        }
+
+                        return;
+
+                    }
+
+
+                    if (password.length < 6) {
+
+                        if (message) {
+                            message.textContent =
+                                "❌ Password must be at least 6 characters.";
+                        }
+
+                        return;
+
+                    }
+
+
+                    if (password !== confirmPassword) {
+
+                        if (message) {
+                            message.textContent =
+                                "❌ Passwords do not match.";
+                        }
+
+                        return;
+
+                    }
+
+
+                    const button =
+                        registerForm.querySelector(
+                            'button[type="submit"]'
+                        );
+
+
+                    try {
+
+                        if (button) {
+
+                            button.disabled = true;
+
+                            button.textContent =
+                                "🔄 Creating account...";
+
+                        }
+
+
+                        if (message) {
+
+                            message.textContent =
+                                "Creating your Firebase account...";
+
+                        }
+
+
+                        /* =================================================
+                           CREATE FIREBASE USER
+                        ================================================= */
+
+                        const userCredential =
+                            await createUserWithEmailAndPassword(
+                                auth,
+                                email,
+                                password
+                            );
+
+
+                        const user =
+                            userCredential.user;
+
+
+                        /* =================================================
+                           SAVE DISPLAY NAME IN FIREBASE
+                        ================================================= */
+
+                        await updateProfile(
+                            user,
+                            {
+                                displayName: name
+                            }
+                        );
+
+
+                        if (message) {
+
+                            message.textContent =
+                                "✅ Account created successfully!";
+
+                        }
+
+
+                        /*
+                         * Firebase automatically logs the newly
+                         * created user in.
+                         */
+
+                        window.location.href =
+                            "index.html";
+
+
+                    } catch (error) {
+
+                        console.error(
+                            "Registration error:",
+                            error
+                        );
+
+
+                        if (message) {
+
+                            switch (error.code) {
+
+                                case "auth/email-already-in-use":
+
+                                    message.textContent =
+                                        "❌ This email is already registered. Please login.";
+
+                                    break;
+
+
+                                case "auth/invalid-email":
+
+                                    message.textContent =
+                                        "❌ Please enter a valid email.";
+
+                                    break;
+
+
+                                case "auth/weak-password":
+
+                                    message.textContent =
+                                        "❌ Password is too weak. Use at least 6 characters.";
+
+                                    break;
+
+
+                                default:
+
+                                    message.textContent =
+                                        "❌ Registration failed. Please try again.";
+
+                            }
+
+                        }
+
+
+                        if (button) {
+
+                            button.disabled = false;
+
+                            button.textContent =
+                                "📝 Create Account";
+
+                        }
+
+                    }
+
+                }
             );
 
-            message.style.color =
-                "#e63b59";
-
-
-            if (error.code === "auth/email-already-in-use") {
-
-                message.textContent =
-                    "❌ This email is already registered.";
-
-            } else if (error.code === "auth/invalid-email") {
-
-                message.textContent =
-                    "❌ Invalid email address.";
-
-            } else if (error.code === "auth/weak-password") {
-
-                message.textContent =
-                    "❌ Password is too weak.";
-
-            } else if (error.code === "auth/api-key-not-valid") {
-
-                message.textContent =
-                    "❌ Firebase API key is invalid.";
-
-            } else {
-
-                message.textContent =
-                    "❌ Registration failed: " +
-                    error.message;
-
-            }
-
-        }
-
-    });
-
-}
-
-
-/* =========================================================
-   LOGIN
-========================================================= */
-
-const loginForm =
-    document.getElementById("loginForm");
-
-if (loginForm) {
-
-    loginForm.addEventListener("submit", async (event) => {
-
-        event.preventDefault();
-
-
-        const email =
-            document.getElementById("loginEmail")?.value.trim();
-
-        const password =
-            document.getElementById("loginPassword")?.value || "";
-
-        const message =
-            document.getElementById("loginMessage");
-
-
-        if (!message) return;
-
-
-        if (!email || !password) {
-
-            message.textContent =
-                "❌ Please enter email and password.";
-
-            message.style.color =
-                "#e63b59";
-
-            return;
         }
 
 
-        try {
+        /* =====================================================
+           LOGIN PASSWORD SHOW / HIDE
+        ===================================================== */
 
-            message.textContent =
-                "Logging in...";
-
-            message.style.color =
-                "#087c6b";
-
-
-            await signInWithEmailAndPassword(
-                auth,
-                email,
-                password
+        const showLoginPassword =
+            document.getElementById(
+                "showLoginPassword"
             );
 
 
-            message.textContent =
-                "✅ Login successful!";
-
-
-            window.location.href =
-                "index.html";
-
-
-        } catch (error) {
-
-            console.error(
-                "Login error:",
-                error
+        const loginPassword =
+            document.getElementById(
+                "loginPassword"
             );
 
-            message.style.color =
-                "#e63b59";
 
+        if (
+            showLoginPassword &&
+            loginPassword
+        ) {
 
-            if (
-                error.code === "auth/invalid-credential" ||
-                error.code === "auth/wrong-password"
-            ) {
+            showLoginPassword.addEventListener(
+                "click",
+                function () {
 
-                message.textContent =
-                    "❌ Incorrect email or password.";
+                    if (
+                        loginPassword.type ===
+                        "password"
+                    ) {
 
-            } else if (error.code === "auth/user-not-found") {
+                        loginPassword.type =
+                            "text";
 
-                message.textContent =
-                    "❌ Account not found.";
+                        showLoginPassword.textContent =
+                            "🙈";
 
-            } else if (error.code === "auth/invalid-email") {
+                    } else {
 
-                message.textContent =
-                    "❌ Invalid email address.";
+                        loginPassword.type =
+                            "password";
 
-            } else if (error.code === "auth/api-key-not-valid") {
+                        showLoginPassword.textContent =
+                            "👁️";
 
-                message.textContent =
-                    "❌ Firebase API key is invalid.";
+                    }
 
-            } else {
-
-                message.textContent =
-                    "❌ Login failed: " +
-                    error.message;
-
-            }
-
-        }
-
-    });
-
-}
-
-
-/* =========================================================
-   REGISTER PASSWORD SHOW / HIDE
-========================================================= */
-
-const showPassword =
-    document.getElementById("showPassword");
-
-if (showPassword) {
-
-    showPassword.addEventListener("click", () => {
-
-        const input =
-            document.getElementById("password");
-
-        if (!input) return;
-
-
-        if (input.type === "password") {
-
-            input.type = "text";
-            showPassword.textContent = "🙈";
-
-        } else {
-
-            input.type = "password";
-            showPassword.textContent = "👁️";
+                }
+            );
 
         }
 
-    });
 
-}
+        /* =====================================================
+           REGISTER PASSWORD SHOW / HIDE
+        ===================================================== */
 
-
-/* =========================================================
-   CONFIRM PASSWORD SHOW / HIDE
-========================================================= */
-
-const showConfirmPassword =
-    document.getElementById("showConfirmPassword");
-
-if (showConfirmPassword) {
-
-    showConfirmPassword.addEventListener("click", () => {
-
-        const input =
-            document.getElementById("confirmPassword");
-
-        if (!input) return;
+        const showPassword =
+            document.getElementById(
+                "showPassword"
+            );
 
 
-        if (input.type === "password") {
-
-            input.type = "text";
-            showConfirmPassword.textContent = "🙈";
-
-        } else {
-
-            input.type = "password";
-            showConfirmPassword.textContent = "👁️";
-
-        }
-
-    });
-
-}
+        const passwordInput =
+            document.getElementById(
+                "password"
+            );
 
 
-/* =========================================================
-   LOGIN PASSWORD SHOW / HIDE
-========================================================= */
+        if (
+            showPassword &&
+            passwordInput
+        ) {
 
-const showLoginPassword =
-    document.getElementById("showLoginPassword");
+            showPassword.addEventListener(
+                "click",
+                function () {
 
-if (showLoginPassword) {
+                    if (
+                        passwordInput.type ===
+                        "password"
+                    ) {
 
-    showLoginPassword.addEventListener("click", () => {
+                        passwordInput.type =
+                            "text";
 
-        const input =
-            document.getElementById("loginPassword");
+                        showPassword.textContent =
+                            "🙈";
 
-        if (!input) return;
+                    } else {
 
+                        passwordInput.type =
+                            "password";
 
-        if (input.type === "password") {
+                        showPassword.textContent =
+                            "👁️";
 
-            input.type = "text";
-            showLoginPassword.textContent = "🙈";
+                    }
 
-        } else {
-
-            input.type = "password";
-            showLoginPassword.textContent = "👁️";
+                }
+            );
 
         }
 
-    });
-
-}
+    }
+);
