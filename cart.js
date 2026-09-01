@@ -1,515 +1,429 @@
 /* =========================================================
-   CHEMISTBOYS - FIREBASE AUTHENTICATION
-   LOGIN + REGISTER
+   CHEMISTBOYS - CART
+   Firebase Shared Auth + LocalStorage Cart
 ========================================================= */
 
 import {
-    auth
+    auth,
+    authReady
 } from "./firebase.js";
 
 import {
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    updateProfile
+    onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
 /* =========================================================
-   DOM READY
+   GET CART
+========================================================= */
+
+function getCart() {
+
+    try {
+
+        const cart =
+            JSON.parse(
+                localStorage.getItem("chemistboys_cart")
+            );
+
+        return Array.isArray(cart)
+            ? cart
+            : [];
+
+    } catch (error) {
+
+        console.error("Cart error:", error);
+
+        return [];
+
+    }
+
+}
+
+
+/* =========================================================
+   SAVE CART
+========================================================= */
+
+function saveCart(cart) {
+
+    localStorage.setItem(
+        "chemistboys_cart",
+        JSON.stringify(cart)
+    );
+
+}
+
+
+/* =========================================================
+   UPDATE CART COUNT
+========================================================= */
+
+function updateCartCount() {
+
+    const cart = getCart();
+
+    const count =
+        cart.reduce(
+            function (total, item) {
+
+                return (
+                    total +
+                    Number(item.quantity || 1)
+                );
+
+            },
+            0
+        );
+
+
+    document
+        .querySelectorAll("#cartCount, .cart-count")
+        .forEach(
+            function (element) {
+
+                element.textContent = count;
+
+            }
+        );
+
+}
+
+
+/* =========================================================
+   ADD PRODUCT TO CART
+========================================================= */
+
+function addToCart(productId) {
+
+    const products =
+        window.products || [];
+
+
+    const product =
+        products.find(
+            function (item) {
+
+                return (
+                    Number(item.id) ===
+                    Number(productId)
+                );
+
+            }
+        );
+
+
+    if (!product) {
+
+        console.error(
+            "❌ Product not found:",
+            productId
+        );
+
+        return;
+
+    }
+
+
+    const cart = getCart();
+
+
+    const existingItem =
+        cart.find(
+            function (item) {
+
+                return (
+                    Number(item.id) ===
+                    Number(productId)
+                );
+
+            }
+        );
+
+
+    if (existingItem) {
+
+        existingItem.quantity =
+            Number(existingItem.quantity || 1) + 1;
+
+    } else {
+
+        cart.push({
+
+            id: product.id,
+
+            name: product.name,
+
+            price: Number(product.price),
+
+            image: product.image,
+
+            quantity: 1
+
+        });
+
+    }
+
+
+    saveCart(cart);
+
+    updateCartCount();
+
+
+    alert(
+        "✅ " +
+        product.name +
+        " added to cart!"
+    );
+
+}
+
+
+/* =========================================================
+   REMOVE PRODUCT
+========================================================= */
+
+function removeFromCart(productId) {
+
+    let cart = getCart();
+
+
+    cart =
+        cart.filter(
+            function (item) {
+
+                return (
+                    Number(item.id) !==
+                    Number(productId)
+                );
+
+            }
+        );
+
+
+    saveCart(cart);
+
+    updateCartCount();
+
+}
+
+
+/* =========================================================
+   CHANGE QUANTITY
+========================================================= */
+
+function changeQuantity(productId, change) {
+
+    const cart = getCart();
+
+
+    const item =
+        cart.find(
+            function (product) {
+
+                return (
+                    Number(product.id) ===
+                    Number(productId)
+                );
+
+            }
+        );
+
+
+    if (!item) {
+
+        return;
+
+    }
+
+
+    item.quantity =
+        Number(item.quantity || 1) +
+        Number(change);
+
+
+    if (item.quantity <= 0) {
+
+        removeFromCart(productId);
+
+        return;
+
+    }
+
+
+    saveCart(cart);
+
+    updateCartCount();
+
+}
+
+
+/* =========================================================
+   AUTH STATE
+========================================================= */
+
+async function updateCheckoutButton(user) {
+
+    const checkoutButtons =
+        document.querySelectorAll(
+            "#checkoutBtn, .checkout-btn, [data-checkout]"
+        );
+
+
+    checkoutButtons.forEach(
+        function (button) {
+
+            if (user) {
+
+                button.disabled = false;
+
+                button.textContent =
+                    "Proceed to Checkout";
+
+                button.dataset.loggedIn = "true";
+
+            } else {
+
+                button.disabled = false;
+
+                button.textContent =
+                    "Login to Checkout";
+
+                button.dataset.loggedIn = "false";
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   CHECKOUT BUTTON
+========================================================= */
+
+document.addEventListener(
+    "click",
+    async function (event) {
+
+        const checkoutButton =
+            event.target.closest(
+                "#checkoutBtn, .checkout-btn, [data-checkout]"
+            );
+
+
+        if (!checkoutButton) {
+
+            return;
+
+        }
+
+
+        event.preventDefault();
+
+
+        await authReady;
+
+
+        const user =
+            auth.currentUser;
+
+
+        if (!user) {
+
+            window.location.href =
+                "login.html";
+
+            return;
+
+        }
+
+
+        window.location.href =
+            "checkout.html";
+
+    }
+);
+
+
+/* =========================================================
+   PRODUCT ADD BUTTON
+========================================================= */
+
+document.addEventListener(
+    "click",
+    function (event) {
+
+        const addButton =
+            event.target.closest(
+                ".add-cart-btn"
+            );
+
+
+        if (!addButton) {
+
+            return;
+
+        }
+
+
+        const productId =
+            addButton.dataset.productId;
+
+
+        addToCart(productId);
+
+    }
+);
+
+
+/* =========================================================
+   FIREBASE AUTH LISTENER
+========================================================= */
+
+onAuthStateChanged(
+    auth,
+    function (user) {
+
+        updateCheckoutButton(user);
+
+    }
+);
+
+
+/* =========================================================
+   INITIAL CART COUNT
 ========================================================= */
 
 document.addEventListener(
     "DOMContentLoaded",
     function () {
 
-        /* =====================================================
-           LOGIN FORM
-        ===================================================== */
-
-        const loginForm =
-            document.getElementById("loginForm");
-
-
-        if (loginForm) {
-
-            loginForm.addEventListener(
-                "submit",
-                async function (event) {
-
-                    event.preventDefault();
-
-
-                    const email =
-                        document
-                            .getElementById("loginEmail")
-                            .value
-                            .trim();
-
-
-                    const password =
-                        document
-                            .getElementById("loginPassword")
-                            .value;
-
-
-                    const message =
-                        document.getElementById(
-                            "loginMessage"
-                        );
-
-
-                    if (!email || !password) {
-
-                        if (message) {
-                            message.textContent =
-                                "Please fill all fields.";
-                        }
-
-                        return;
-
-                    }
-
-
-                    const button =
-                        loginForm.querySelector(
-                            'button[type="submit"]'
-                        );
-
-
-                    try {
-
-                        if (button) {
-                            button.disabled = true;
-                            button.textContent =
-                                "🔄 Logging in...";
-                        }
-
-
-                        if (message) {
-                            message.textContent =
-                                "Checking account...";
-                        }
-
-
-                        /* Firebase Login */
-
-                        await signInWithEmailAndPassword(
-                            auth,
-                            email,
-                            password
-                        );
-
-
-                        if (message) {
-                            message.textContent =
-                                "✅ Login successful!";
-                        }
-
-
-                        /*
-                         * Firebase auth state is now updated.
-                         * Redirect to home.
-                         */
-
-                        window.location.href =
-                            "index.html";
-
-
-                    } catch (error) {
-
-                        console.error(
-                            "Login error:",
-                            error
-                        );
-
-
-                        if (message) {
-
-                            switch (error.code) {
-
-                                case "auth/invalid-credential":
-                                case "auth/wrong-password":
-                                case "auth/user-not-found":
-
-                                    message.textContent =
-                                        "❌ Invalid email or password.";
-
-                                    break;
-
-
-                                case "auth/invalid-email":
-
-                                    message.textContent =
-                                        "❌ Please enter a valid email.";
-
-                                    break;
-
-
-                                case "auth/too-many-requests":
-
-                                    message.textContent =
-                                        "❌ Too many attempts. Try again later.";
-
-                                    break;
-
-
-                                default:
-
-                                    message.textContent =
-                                        "❌ Login failed. Please try again.";
-
-                            }
-
-                        }
-
-
-                        if (button) {
-
-                            button.disabled = false;
-
-                            button.textContent =
-                                "🔐 Login";
-
-                        }
-
-                    }
-
-                }
-            );
-
-        }
-
-
-        /* =====================================================
-           REGISTER FORM
-        ===================================================== */
-
-        const registerForm =
-            document.getElementById("registerForm");
-
-
-        if (registerForm) {
-
-            registerForm.addEventListener(
-                "submit",
-                async function (event) {
-
-                    event.preventDefault();
-
-
-                    const name =
-                        document
-                            .getElementById("name")
-                            .value
-                            .trim();
-
-
-                    const email =
-                        document
-                            .getElementById("email")
-                            .value
-                            .trim();
-
-
-                    const password =
-                        document
-                            .getElementById("password")
-                            .value;
-
-
-                    const confirmPassword =
-                        document
-                            .getElementById("confirmPassword")
-                            .value;
-
-
-                    const message =
-                        document.getElementById(
-                            "authMessage"
-                        );
-
-
-                    /* =================================================
-                       VALIDATION
-                    ================================================= */
-
-                    if (
-                        !name ||
-                        !email ||
-                        !password ||
-                        !confirmPassword
-                    ) {
-
-                        if (message) {
-                            message.textContent =
-                                "Please fill all fields.";
-                        }
-
-                        return;
-
-                    }
-
-
-                    if (password.length < 6) {
-
-                        if (message) {
-                            message.textContent =
-                                "❌ Password must be at least 6 characters.";
-                        }
-
-                        return;
-
-                    }
-
-
-                    if (password !== confirmPassword) {
-
-                        if (message) {
-                            message.textContent =
-                                "❌ Passwords do not match.";
-                        }
-
-                        return;
-
-                    }
-
-
-                    const button =
-                        registerForm.querySelector(
-                            'button[type="submit"]'
-                        );
-
-
-                    try {
-
-                        if (button) {
-
-                            button.disabled = true;
-
-                            button.textContent =
-                                "🔄 Creating account...";
-
-                        }
-
-
-                        if (message) {
-
-                            message.textContent =
-                                "Creating your Firebase account...";
-
-                        }
-
-
-                        /* =================================================
-                           CREATE FIREBASE USER
-                        ================================================= */
-
-                        const userCredential =
-                            await createUserWithEmailAndPassword(
-                                auth,
-                                email,
-                                password
-                            );
-
-
-                        const user =
-                            userCredential.user;
-
-
-                        /* =================================================
-                           SAVE DISPLAY NAME IN FIREBASE
-                        ================================================= */
-
-                        await updateProfile(
-                            user,
-                            {
-                                displayName: name
-                            }
-                        );
-
-
-                        if (message) {
-
-                            message.textContent =
-                                "✅ Account created successfully!";
-
-                        }
-
-
-                        /*
-                         * Firebase automatically logs the newly
-                         * created user in.
-                         */
-
-                        window.location.href =
-                            "index.html";
-
-
-                    } catch (error) {
-
-                        console.error(
-                            "Registration error:",
-                            error
-                        );
-
-
-                        if (message) {
-
-                            switch (error.code) {
-
-                                case "auth/email-already-in-use":
-
-                                    message.textContent =
-                                        "❌ This email is already registered. Please login.";
-
-                                    break;
-
-
-                                case "auth/invalid-email":
-
-                                    message.textContent =
-                                        "❌ Please enter a valid email.";
-
-                                    break;
-
-
-                                case "auth/weak-password":
-
-                                    message.textContent =
-                                        "❌ Password is too weak. Use at least 6 characters.";
-
-                                    break;
-
-
-                                default:
-
-                                    message.textContent =
-                                        "❌ Registration failed. Please try again.";
-
-                            }
-
-                        }
-
-
-                        if (button) {
-
-                            button.disabled = false;
-
-                            button.textContent =
-                                "📝 Create Account";
-
-                        }
-
-                    }
-
-                }
-            );
-
-        }
-
-
-        /* =====================================================
-           LOGIN PASSWORD SHOW / HIDE
-        ===================================================== */
-
-        const showLoginPassword =
-            document.getElementById(
-                "showLoginPassword"
-            );
-
-
-        const loginPassword =
-            document.getElementById(
-                "loginPassword"
-            );
-
-
-        if (
-            showLoginPassword &&
-            loginPassword
-        ) {
-
-            showLoginPassword.addEventListener(
-                "click",
-                function () {
-
-                    if (
-                        loginPassword.type ===
-                        "password"
-                    ) {
-
-                        loginPassword.type =
-                            "text";
-
-                        showLoginPassword.textContent =
-                            "🙈";
-
-                    } else {
-
-                        loginPassword.type =
-                            "password";
-
-                        showLoginPassword.textContent =
-                            "👁️";
-
-                    }
-
-                }
-            );
-
-        }
-
-
-        /* =====================================================
-           REGISTER PASSWORD SHOW / HIDE
-        ===================================================== */
-
-        const showPassword =
-            document.getElementById(
-                "showPassword"
-            );
-
-
-        const passwordInput =
-            document.getElementById(
-                "password"
-            );
-
-
-        if (
-            showPassword &&
-            passwordInput
-        ) {
-
-            showPassword.addEventListener(
-                "click",
-                function () {
-
-                    if (
-                        passwordInput.type ===
-                        "password"
-                    ) {
-
-                        passwordInput.type =
-                            "text";
-
-                        showPassword.textContent =
-                            "🙈";
-
-                    } else {
-
-                        passwordInput.type =
-                            "password";
-
-                        showPassword.textContent =
-                            "👁️";
-
-                    }
-
-                }
-            );
-
-        }
+        updateCartCount();
 
     }
 );
+
+
+/* =========================================================
+   MAKE CART FUNCTIONS AVAILABLE
+========================================================= */
+
+window.getCart =
+    getCart;
+
+window.saveCart =
+    saveCart;
+
+window.addToCart =
+    addToCart;
+
+window.removeFromCart =
+    removeFromCart;
+
+window.changeQuantity =
+    changeQuantity;
+
+window.updateCartCount =
+    updateCartCount;
