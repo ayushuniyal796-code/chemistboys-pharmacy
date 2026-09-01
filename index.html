@@ -59,7 +59,6 @@
                 </a>
 
 
-
                 <!-- SEARCH -->
 
                 <div class="search-bar">
@@ -82,7 +81,6 @@
                 </div>
 
 
-
                 <!-- ACCOUNT / ORDERS / CART -->
 
                 <div class="header-actions">
@@ -99,7 +97,6 @@
                     </a>
 
 
-
                     <!-- REGISTER -->
 
                     <a
@@ -111,17 +108,16 @@
                     </a>
 
 
-
                     <!-- MY ORDERS -->
 
                     <a
                         href="orders.html"
                         class="account-btn"
                         id="ordersBtn"
+                        style="display: none;"
                     >
                         📦 My Orders
                     </a>
-
 
 
                     <!-- LOGOUT -->
@@ -134,7 +130,6 @@
                     >
                         🚪 Logout
                     </button>
-
 
 
                     <!-- CART -->
@@ -162,13 +157,11 @@
             </div>
 
 
-
             <!-- =================================================
                  NAVIGATION
             ================================================== -->
 
             <nav class="navbar">
-
 
                 <a
                     href="index.html"
@@ -177,14 +170,12 @@
                     Home
                 </a>
 
-
                 <a
                     href="#products"
                     class="nav-link"
                 >
                     All Medicines
                 </a>
-
 
                 <a
                     href="#vitamins"
@@ -193,14 +184,12 @@
                     Vitamins
                 </a>
 
-
                 <a
                     href="#firstaid"
                     class="nav-link"
                 >
                     First Aid
                 </a>
-
 
                 <a
                     href="#offers"
@@ -209,14 +198,12 @@
                     Offers
                 </a>
 
-
                 <a
                     href="about.html"
                     class="nav-link"
                 >
                     About
                 </a>
-
 
             </nav>
 
@@ -225,26 +212,21 @@
     </header>
 
 
-
     <!-- =================================================
          HERO SECTION
     ================================================== -->
 
     <section class="hero">
 
-
         <div class="hero-content">
-
 
             <h1 class="hero-title">
                 Your Health, Our Priority
             </h1>
 
-
             <p class="hero-subtitle">
                 Buy medicines online with doorstep delivery
             </p>
-
 
             <button
                 type="button"
@@ -254,18 +236,14 @@
                 Shop Now
             </button>
 
-
         </div>
-
 
 
         <div class="hero-image">
             💉
         </div>
 
-
     </section>
-
 
 
     <!-- =================================================
@@ -286,7 +264,7 @@
                     class="filter-select"
                 >
 
-                    <option value="">
+                    <option value="all">
                         All Categories
                     </option>
 
@@ -313,7 +291,6 @@
                 </select>
 
 
-
                 <!-- SORT -->
 
                 <select
@@ -321,15 +298,15 @@
                     class="filter-select"
                 >
 
-                    <option value="">
+                    <option value="default">
                         Sort By
                     </option>
 
-                    <option value="price-low">
+                    <option value="low">
                         Price: Low to High
                     </option>
 
-                    <option value="price-high">
+                    <option value="high">
                         Price: High to Low
                     </option>
 
@@ -342,7 +319,6 @@
                     </option>
 
                 </select>
-
 
 
                 <!-- PRICE -->
@@ -358,7 +334,7 @@
 
 
                 <span id="priceLabel">
-                    Max Price: ₹5000
+                    Up to ₹5000
                 </span>
 
 
@@ -367,7 +343,6 @@
         </div>
 
     </section>
-
 
 
     <!-- =================================================
@@ -381,57 +356,45 @@
 
         <div class="container">
 
-
             <h2 class="section-title">
                 Featured Products
             </h2>
 
-
-            <!--
-                Products automatically load
-                from products.js
-            -->
 
             <div
                 class="products-grid"
                 id="productsGrid"
             >
 
-                <!-- PRODUCTS WILL APPEAR HERE -->
+                <!-- PRODUCTS LOAD FROM products.js -->
 
             </div>
-
 
         </div>
 
     </section>
 
 
-
     <!-- =================================================
-         VITAMINS SECTION ANCHOR
+         VITAMINS ANCHOR
     ================================================== -->
 
     <section
         id="vitamins"
         style="scroll-margin-top: 120px;"
     >
-
     </section>
 
 
-
     <!-- =================================================
-         FIRST AID SECTION ANCHOR
+         FIRST AID ANCHOR
     ================================================== -->
 
     <section
         id="firstaid"
         style="scroll-margin-top: 120px;"
     >
-
     </section>
-
 
 
     <!-- =================================================
@@ -445,17 +408,13 @@
 
         <div class="container">
 
-
             <h2 class="section-title">
                 Special Offers
             </h2>
 
 
-
             <div class="offers-grid">
 
-
-                <!-- OFFER 1 -->
 
                 <div class="offer-card offer-1">
 
@@ -470,9 +429,6 @@
                 </div>
 
 
-
-                <!-- OFFER 2 -->
-
                 <div class="offer-card offer-2">
 
                     <h3>
@@ -485,9 +441,6 @@
 
                 </div>
 
-
-
-                <!-- OFFER 3 -->
 
                 <div class="offer-card offer-3">
 
@@ -509,7 +462,6 @@
     </section>
 
 
-
     <!-- =================================================
          FEATURES
     ================================================== -->
@@ -518,11 +470,8 @@
 
         <div class="container">
 
-
             <div class="features-grid">
 
-
-                <!-- FREE DELIVERY -->
 
                 <div class="feature-card">
 
@@ -541,9 +490,6 @@
                 </div>
 
 
-
-                <!-- SECURE PAYMENT -->
-
                 <div class="feature-card">
 
                     <span class="feature-icon">
@@ -561,9 +507,6 @@
                 </div>
 
 
-
-                <!-- AUTHENTIC -->
-
                 <div class="feature-card">
 
                     <span class="feature-icon">
@@ -580,9 +523,6 @@
 
                 </div>
 
-
-
-                <!-- RETURNS -->
 
                 <div class="feature-card">
 
@@ -608,7 +548,6 @@
     </section>
 
 
-
     <!-- =================================================
          FOOTER
     ================================================== -->
@@ -616,7 +555,6 @@
     <footer class="footer">
 
         <div class="container">
-
 
             <div class="footer-grid">
 
@@ -638,7 +576,6 @@
                 </div>
 
 
-
                 <!-- QUICK LINKS -->
 
                 <div class="footer-column">
@@ -646,7 +583,6 @@
                     <h4>
                         Quick Links
                     </h4>
-
 
                     <ul>
 
@@ -656,20 +592,17 @@
                             </a>
                         </li>
 
-
                         <li>
                             <a href="contact.html">
                                 Contact Us
                             </a>
                         </li>
 
-
                         <li>
                             <a href="privacy.html">
                                 Privacy Policy
                             </a>
                         </li>
-
 
                         <li>
                             <a href="terms.html">
@@ -682,7 +615,6 @@
                 </div>
 
 
-
                 <!-- CUSTOMER SERVICE -->
 
                 <div class="footer-column">
@@ -691,48 +623,35 @@
                         Customer Service
                     </h4>
 
-
                     <ul>
 
                         <li>
-
                             <a href="orders.html">
                                 📦 My Orders
                             </a>
-
                         </li>
 
-
                         <li>
-
                             <a href="cart.html">
                                 🛒 Cart
                             </a>
-
                         </li>
 
-
                         <li>
-
                             <a href="faq.html">
                                 ❓ FAQ
                             </a>
-
                         </li>
 
-
                         <li>
-
                             <a href="contact.html">
                                 💬 Help Center
                             </a>
-
                         </li>
 
                     </ul>
 
                 </div>
-
 
 
                 <!-- CONTACT -->
@@ -743,16 +662,13 @@
                         Contact Us
                     </h4>
 
-
                     <p>
                         📞 +91 8791883617
                     </p>
 
-
                     <p>
                         📧 ayushuniyal796@gmail.com
                     </p>
-
 
                     <p>
                         📍 Available 24/7
@@ -762,7 +678,6 @@
 
 
             </div>
-
 
 
             <!-- FOOTER BOTTOM -->
@@ -776,11 +691,9 @@
 
             </div>
 
-
         </div>
 
     </footer>
-
 
 
     <!-- =================================================
@@ -793,16 +706,33 @@
     ></div>
 
 
-
     <!-- =================================================
          JAVASCRIPT
+         IMPORTANT ORDER
     ================================================== -->
 
-  <script src="products.js"></script>
-<script type="module" src="account.js"></script>
-<script type="module" src="cart.js"></script>
-<script type="module" src="script.js"></script>
+    <!-- Products must load first -->
+    <script src="products.js"></script>
+
+    <!-- Firebase authentication/header -->
+    <script
+        type="module"
+        src="account.js"
+    ></script>
+
+    <!-- Cart -->
+    <script
+        type="module"
+        src="cart.js"
+    ></script>
+
+    <!-- Main script -->
+    <script
+        type="module"
+        src="script.js"
+    ></script>
+
+
 </body>
-</html>
 
 </html>
