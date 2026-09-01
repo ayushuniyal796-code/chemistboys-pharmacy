@@ -9,7 +9,7 @@ import {
 
 
 /* =========================================================
-   CHEMISTBOYS FIREBASE CONFIG
+   FIREBASE CONFIG
 ========================================================= */
 
 const firebaseConfig = {
@@ -38,7 +38,7 @@ export const auth = getAuth(app);
 
 
 /* =========================================================
-   WAIT FOR AUTH STATE
+   AUTH READY
 ========================================================= */
 
 export const authReady = new Promise((resolve) => {
