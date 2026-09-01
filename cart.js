@@ -1,498 +1,334 @@
-import {
-    auth,
-    authReady
-} from "./firebase.js";
+/* =========================================================
+   CHEMISTBOYS - CART
+========================================================= */
 
 
-/* =================================================
-   CART
-================================================= */
+/* =========================================================
+   GET CART
+========================================================= */
 
-let cart =
-    JSON.parse(localStorage.getItem("chemistCart")) || [];
+function getCart() {
 
+    try {
 
-/* =================================================
-   ELEMENTS
-================================================= */
-
-const cartItems =
-    document.getElementById("cartItems");
-
-const cartCount =
-    document.getElementById("cartCount");
-
-const totalItems =
-    document.getElementById("totalItems");
-
-const subtotalElement =
-    document.getElementById("subtotal");
-
-const deliveryElement =
-    document.getElementById("deliveryCharge");
-
-const grandTotalElement =
-    document.getElementById("grandTotal");
-
-const checkoutBtn =
-    document.getElementById("checkoutBtn");
+        const cart =
+            JSON.parse(
+                localStorage.getItem(
+                    "chemistboys_cart"
+                )
+            );
 
 
-/* =================================================
-   CART COUNT
-================================================= */
+        return Array.isArray(cart)
+            ? cart
+            : [];
 
-function updateCartCount() {
+    } catch (error) {
 
-    const count =
-        cart.reduce((total, item) => {
+        console.error(
+            "Cart error:",
+            error
+        );
 
-            return total +
-                Number(item.quantity || 0);
-
-        }, 0);
-
-
-    if (cartCount) {
-
-        cartCount.textContent = count;
+        return [];
 
     }
 
 }
 
 
-/* =================================================
+/* =========================================================
    SAVE CART
-================================================= */
+========================================================= */
 
-function saveCart() {
+function saveCart(cart) {
 
     localStorage.setItem(
-        "chemistCart",
+        "chemistboys_cart",
         JSON.stringify(cart)
     );
-
-    updateCartCount();
-
-    displayCart();
 
 }
 
 
-/* =================================================
-   DISPLAY CART
-================================================= */
+/* =========================================================
+   UPDATE CART COUNT
+========================================================= */
 
-function displayCart() {
+function updateCartCount() {
 
-    if (!cartItems) return;
-
-
-    cartItems.innerHTML = "";
+    const cart =
+        getCart();
 
 
-    if (cart.length === 0) {
+    const count =
+        cart.reduce(
+            function (total, item) {
 
-        cartItems.innerHTML = `
+                return (
+                    total +
+                    Number(item.quantity || 1)
+                );
 
-            <div class="empty-cart">
+            },
+            0
+        );
 
-                <div class="empty-cart-icon">
-                    🛒
-                </div>
 
-                <h2>
-                    Your Cart is Empty
-                </h2>
+    document
+        .querySelectorAll(
+            "#cartCount, .cart-count"
+        )
+        .forEach(
+            function (element) {
 
-                <p>
-                    Add some medicines to continue.
-                </p>
+                element.textContent =
+                    count;
 
-                <a
-                    href="index.html"
-                    class="shop-btn"
-                >
-                    🛍️ Start Shopping
-                </a>
+            }
+        );
 
-            </div>
+}
 
-        `;
 
-        updateSummary();
+/* =========================================================
+   ADD PRODUCT TO CART
+========================================================= */
+
+function addToCart(productId) {
+
+    const products =
+        window.products || [];
+
+
+    const product =
+        products.find(
+            function (item) {
+
+                return (
+                    Number(item.id) ===
+                    Number(productId)
+                );
+
+            }
+        );
+
+
+    if (!product) {
+
+        console.error(
+            "Product not found:",
+            productId
+        );
 
         return;
 
     }
 
 
-    cart.forEach(function (item) {
+    const cart =
+        getCart();
 
-        const price =
-            Number(item.price) || 0;
 
-        const quantity =
-            Number(item.quantity) || 1;
+    const existingItem =
+        cart.find(
+            function (item) {
 
-        const itemTotal =
-            price * quantity;
-
-
-        const div =
-            document.createElement("div");
-
-        div.className =
-            "cart-product";
-
-
-        div.innerHTML = `
-
-            <div class="product-info">
-
-                <div class="product-name">
-                    ${item.name || "Medicine"}
-                </div>
-
-                <div class="product-price">
-                    ₹${price}
-                </div>
-
-            </div>
-
-
-            <div class="quantity-controls">
-
-                <button
-                    type="button"
-                    class="quantity-btn decrease"
-                    data-id="${item.id}"
-                >
-                    −
-                </button>
-
-
-                <span class="quantity-number">
-                    ${quantity}
-                </span>
-
-
-                <button
-                    type="button"
-                    class="quantity-btn increase"
-                    data-id="${item.id}"
-                >
-                    +
-                </button>
-
-            </div>
-
-
-            <strong>
-                ₹${itemTotal}
-            </strong>
-
-
-            <button
-                type="button"
-                class="remove-btn"
-                data-id="${item.id}"
-            >
-                🗑 Remove
-            </button>
-
-        `;
-
-
-        cartItems.appendChild(div);
-
-    });
-
-
-    addEvents();
-
-    updateSummary();
-
-}
-
-
-/* =================================================
-   BUTTON EVENTS
-================================================= */
-
-function addEvents() {
-
-
-    document
-        .querySelectorAll(".increase")
-        .forEach(function (button) {
-
-            button.addEventListener(
-                "click",
-                function () {
-
-                    changeQuantity(
-                        button.dataset.id,
-                        1
-                    );
-
-                }
-            );
-
-        });
-
-
-    document
-        .querySelectorAll(".decrease")
-        .forEach(function (button) {
-
-            button.addEventListener(
-                "click",
-                function () {
-
-                    changeQuantity(
-                        button.dataset.id,
-                        -1
-                    );
-
-                }
-            );
-
-        });
-
-
-    document
-        .querySelectorAll(".remove-btn")
-        .forEach(function (button) {
-
-            button.addEventListener(
-                "click",
-                function () {
-
-                    removeItem(
-                        button.dataset.id
-                    );
-
-                }
-            );
-
-        });
-
-}
-
-
-/* =================================================
-   CHANGE QUANTITY
-================================================= */
-
-function changeQuantity(productId, change) {
-
-    const item =
-        cart.find(function (product) {
-
-            return String(product.id) ===
-                String(productId);
-
-        });
-
-
-    if (!item) return;
-
-
-    item.quantity =
-        Number(item.quantity || 0) +
-        change;
-
-
-    if (item.quantity <= 0) {
-
-        cart =
-            cart.filter(function (product) {
-
-                return String(product.id) !==
-                    String(productId);
-
-            });
-
-    }
-
-
-    saveCart();
-
-}
-
-
-/* =================================================
-   REMOVE ITEM
-================================================= */
-
-function removeItem(productId) {
-
-    cart =
-        cart.filter(function (item) {
-
-            return String(item.id) !==
-                String(productId);
-
-        });
-
-
-    saveCart();
-
-}
-
-
-/* =================================================
-   ORDER SUMMARY
-================================================= */
-
-function updateSummary() {
-
-    let subtotal = 0;
-
-    let items = 0;
-
-
-    cart.forEach(function (item) {
-
-        const price =
-            Number(item.price) || 0;
-
-        const quantity =
-            Number(item.quantity) || 0;
-
-
-        subtotal +=
-            price * quantity;
-
-        items +=
-            quantity;
-
-    });
-
-
-    const delivery =
-        subtotal === 0
-            ? 0
-            : subtotal >= 500
-                ? 0
-                : 50;
-
-
-    const grandTotal =
-        subtotal + delivery;
-
-
-    if (totalItems) {
-
-        totalItems.textContent =
-            items;
-
-    }
-
-
-    if (subtotalElement) {
-
-        subtotalElement.textContent =
-            `₹${subtotal}`;
-
-    }
-
-
-    if (deliveryElement) {
-
-        deliveryElement.textContent =
-            delivery === 0
-                ? "FREE"
-                : `₹${delivery}`;
-
-    }
-
-
-    if (grandTotalElement) {
-
-        grandTotalElement.textContent =
-            `₹${grandTotal}`;
-
-    }
-
-}
-
-
-/* =================================================
-   BUY NOW
-================================================= */
-
-if (checkoutBtn) {
-
-    checkoutBtn.textContent =
-        "🛒 Buy Now";
-
-
-    checkoutBtn.addEventListener(
-        "click",
-        async function (event) {
-
-            event.preventDefault();
-
-
-            if (cart.length === 0) {
-
-                alert(
-                    "Your cart is empty!"
+                return (
+                    Number(item.id) ===
+                    Number(productId)
                 );
 
-                return;
-
             }
+        );
 
 
-            /*
-             * Firebase ki initial auth state
-             * restore hone ka wait.
-             */
+    if (existingItem) {
 
-            await authReady;
+        existingItem.quantity =
+            Number(
+                existingItem.quantity || 1
+            ) + 1;
+
+    } else {
+
+        cart.push({
+
+            id: product.id,
+
+            name: product.name,
+
+            price: product.price,
+
+            image: product.image,
+
+            quantity: 1
+
+        });
+
+    }
 
 
-            /*
-             * Yahi SAME Firebase auth instance
-             * use ho raha hai.
-             */
+    saveCart(cart);
 
-            if (!auth.currentUser) {
-
-                alert(
-                    "🔒 Please login first to continue."
-                );
-
-                window.location.href =
-                    "login.html";
-
-                return;
-
-            }
+    updateCartCount();
 
 
-            /*
-             * User already logged in hai,
-             * seedha checkout.
-             */
-
-            window.location.href =
-                "checkout.html";
-
-        }
+    alert(
+        "✅ " +
+        product.name +
+        " added to cart!"
     );
 
 }
 
 
-/* =================================================
-   INITIAL LOAD
-================================================= */
+/* =========================================================
+   REMOVE PRODUCT
+========================================================= */
 
-updateCartCount();
+function removeFromCart(productId) {
 
-displayCart();
+    let cart =
+        getCart();
+
+
+    cart =
+        cart.filter(
+            function (item) {
+
+                return (
+                    Number(item.id) !==
+                    Number(productId)
+                );
+
+            }
+        );
+
+
+    saveCart(cart);
+
+    updateCartCount();
+
+}
+
+
+/* =========================================================
+   CHANGE QUANTITY
+========================================================= */
+
+function changeQuantity(
+    productId,
+    change
+) {
+
+    const cart =
+        getCart();
+
+
+    const item =
+        cart.find(
+            function (product) {
+
+                return (
+                    Number(product.id) ===
+                    Number(productId)
+                );
+
+            }
+        );
+
+
+    if (!item) {
+        return;
+    }
+
+
+    item.quantity =
+        Number(item.quantity || 1) +
+        Number(change);
+
+
+    if (item.quantity <= 0) {
+
+        removeFromCart(
+            productId
+        );
+
+        return;
+
+    }
+
+
+    saveCart(cart);
+
+    updateCartCount();
+
+}
+
+
+/* =========================================================
+   PRODUCT PAGE BUTTONS
+========================================================= */
+
+document.addEventListener(
+    "click",
+    function (event) {
+
+        const addButton =
+            event.target.closest(
+                ".add-cart-btn"
+            );
+
+
+        if (addButton) {
+
+            const productId =
+                addButton.dataset.productId;
+
+
+            addToCart(
+                productId
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   INITIAL CART COUNT
+========================================================= */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        updateCartCount();
+
+    }
+);
+
+
+/* =========================================================
+   MAKE CART FUNCTIONS AVAILABLE
+========================================================= */
+
+window.getCart =
+    getCart;
+
+window.saveCart =
+    saveCart;
+
+window.addToCart =
+    addToCart;
+
+window.removeFromCart =
+    removeFromCart;
+
+window.changeQuantity =
+    changeQuantity;
+
+window.updateCartCount =
+    updateCartCount;
