@@ -4,13 +4,20 @@ import {
 } from "./firebase.js";
 
 import {
-    onAuthStateChanged,
     signOut
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
+/* =========================================================
+   CURRENT USER
+========================================================= */
+
 let currentUser = null;
 
+
+/* =========================================================
+   HEADER ELEMENTS
+========================================================= */
 
 const accountBtn =
     document.getElementById("accountBtn");
@@ -25,13 +32,23 @@ const logoutBtn =
     document.getElementById("logoutBtn");
 
 
+/* =========================================================
+   UPDATE HEADER
+========================================================= */
+
 function updateHeader(user) {
 
-    currentUser = user || null;
+    currentUser =
+        user || null;
+
 
     window.currentFirebaseUser =
         currentUser;
 
+
+    /* =====================================================
+       LOGGED IN
+    ===================================================== */
 
     if (currentUser) {
 
@@ -75,7 +92,14 @@ function updateHeader(user) {
 
         }
 
-    } else {
+    }
+
+
+    /* =====================================================
+       LOGGED OUT
+    ===================================================== */
+
+    else {
 
         if (accountBtn) {
 
@@ -116,31 +140,51 @@ function updateHeader(user) {
 }
 
 
-onAuthStateChanged(
-    auth,
-    (user) => {
+/* =========================================================
+   WAIT FOR FIREBASE AUTH
+========================================================= */
 
-        updateHeader(user);
+await authReady;
 
-    }
+
+/* =========================================================
+   INITIAL USER STATE
+========================================================= */
+
+updateHeader(
+    auth.currentUser
 );
 
+
+/* =========================================================
+   LOGOUT
+========================================================= */
 
 if (logoutBtn) {
 
     logoutBtn.addEventListener(
         "click",
-        async () => {
+        async function (event) {
+
+            event.preventDefault();
+
 
             try {
 
                 await signOut(auth);
 
+
+                currentUser =
+                    null;
+
+
                 window.currentFirebaseUser =
                     null;
 
+
                 window.location.href =
                     "index.html";
+
 
             } catch (error) {
 
@@ -148,6 +192,7 @@ if (logoutBtn) {
                     "Logout error:",
                     error
                 );
+
 
                 alert(
                     "❌ Logout failed. Please try again."
@@ -160,6 +205,10 @@ if (logoutBtn) {
 
 }
 
+
+/* =========================================================
+   GLOBAL AUTH READY
+========================================================= */
 
 window.firebaseAuthReady =
     authReady;
