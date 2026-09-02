@@ -17,227 +17,24 @@
         href="style.css"
     >
 
-    <style>
-
-        .checkout-page {
-            min-height: 75vh;
-            padding: 45px 0;
-            background: #f5fbfa;
-        }
-
-        .checkout-title {
-            text-align: center;
-            color: #075f55;
-            font-size: 36px;
-            margin-bottom: 35px;
-        }
-
-        .checkout-layout {
-            max-width: 1100px;
-            margin: auto;
-            display: grid;
-            grid-template-columns: 1.4fr 0.9fr;
-            gap: 25px;
-        }
-
-        .checkout-card {
-            background: white;
-            padding: 25px;
-            border-radius: 18px;
-            box-shadow: 0 8px 25px rgba(0, 80, 70, 0.08);
-            margin-bottom: 20px;
-        }
-
-        .checkout-card h2 {
-            color: #075f55;
-            margin-top: 0;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 17px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 7px;
-            color: #244d48;
-            font-weight: 600;
-        }
-
-        .form-group input,
-        .form-group textarea,
-        .form-group select {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 12px 14px;
-            border: 1px solid #d7e7e4;
-            border-radius: 10px;
-            font-size: 15px;
-            outline: none;
-        }
-
-        .form-group textarea {
-            min-height: 90px;
-            resize: vertical;
-        }
-
-        .form-group input:focus,
-        .form-group textarea:focus,
-        .form-group select:focus {
-            border-color: #0ca88f;
-        }
-
-        .delivery-options {
-            display: grid;
-            gap: 10px;
-        }
-
-        .delivery-option {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 13px;
-            border: 1px solid #dceae7;
-            border-radius: 10px;
-            cursor: pointer;
-        }
-
-        .delivery-option:hover {
-            border-color: #0ca88f;
-            background: #f3fbf9;
-        }
-
-        .delivery-option input {
-            width: auto;
-        }
-
-        .checkout-item {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            padding: 13px 0;
-            border-bottom: 1px solid #e8efee;
-        }
-
-        .checkout-item-name {
-            font-weight: 600;
-            color: #244d48;
-        }
-
-        .checkout-item-quantity {
-            color: #718987;
-            font-size: 14px;
-            margin-top: 4px;
-        }
-
-        .checkout-item-price {
-            font-weight: 700;
-            color: #087c6b;
-            white-space: nowrap;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            color: #526d69;
-        }
-
-        .grand-total {
-            display: flex;
-            justify-content: space-between;
-            border-top: 1px solid #dceae7;
-            margin-top: 12px;
-            padding-top: 17px;
-            font-size: 22px;
-            font-weight: 800;
-            color: #075f55;
-        }
-
-        .place-order-btn {
-            width: 100%;
-            border: none;
-            padding: 15px;
-            margin-top: 22px;
-            border-radius: 12px;
-            background: #0ca88f;
-            color: white;
-            font-size: 17px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .place-order-btn:hover {
-            background: #087c6b;
-        }
-
-        .back-cart {
-            display: block;
-            text-align: center;
-            margin-top: 15px;
-            color: #087c6b;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .empty-cart {
-            max-width: 650px;
-            margin: 50px auto;
-            background: white;
-            padding: 55px 25px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 8px 25px rgba(0, 80, 70, 0.08);
-        }
-
-        .empty-cart-icon {
-            font-size: 65px;
-        }
-
-        .empty-cart h2 {
-            color: #075f55;
-        }
-
-        .continue-shopping {
-            display: inline-block;
-            padding: 13px 24px;
-            border-radius: 10px;
-            background: #0ca88f;
-            color: white;
-            text-decoration: none;
-            font-weight: 700;
-        }
-
-        @media (max-width: 750px) {
-
-            .checkout-layout {
-                grid-template-columns: 1fr;
-            }
-
-            .checkout-title {
-                font-size: 30px;
-            }
-
-        }
-
-    </style>
-
 </head>
 
 
 <body>
 
 
-    <!-- =========================
+    <!-- =================================================
          HEADER
-    ========================== -->
+    ================================================== -->
 
     <header class="header">
 
         <div class="container">
 
             <div class="header-top">
+
+
+                <!-- LOGO -->
 
                 <a
                     href="index.html"
@@ -259,6 +56,8 @@
                 </a>
 
 
+                <!-- HEADER ACTIONS -->
+
                 <div class="header-actions">
 
                     <a
@@ -268,12 +67,6 @@
                         🏠 Home
                     </a>
 
-                    <a
-                        href="cart.html"
-                        class="account-btn"
-                    >
-                        🛒 Cart
-                    </a>
 
                     <a
                         href="orders.html"
@@ -286,45 +79,111 @@
 
             </div>
 
+
+            <!-- NAVIGATION -->
+
+            <nav class="navbar">
+
+                <a
+                    href="index.html"
+                    class="nav-link"
+                >
+                    Home
+                </a>
+
+
+                <a
+                    href="index.html#products"
+                    class="nav-link"
+                >
+                    All Medicines
+                </a>
+
+
+                <a
+                    href="index.html#vitamins"
+                    class="nav-link"
+                >
+                    Vitamins
+                </a>
+
+
+                <a
+                    href="index.html#firstaid"
+                    class="nav-link"
+                >
+                    First Aid
+                </a>
+
+
+                <a
+                    href="index.html#offers"
+                    class="nav-link"
+                >
+                    Offers
+                </a>
+
+
+                <a
+                    href="about.html"
+                    class="nav-link"
+                >
+                    About
+                </a>
+
+            </nav>
+
         </div>
 
     </header>
 
 
-    <!-- =========================
-         CHECKOUT PAGE
-    ========================== -->
 
-    <main class="checkout-page">
+    <!-- =================================================
+         CHECKOUT PAGE
+    ================================================== -->
+
+    <main class="cart-page">
 
         <div class="container">
 
-            <h1 class="checkout-title">
-                🔒 Secure Checkout
+
+            <!-- PAGE TITLE -->
+
+            <h1 class="cart-title">
+                🛒 Checkout
             </h1>
 
 
-            <form
-                id="checkoutForm"
-                novalidate
-            >
 
-                <div class="checkout-layout">
+            <div class="cart-layout">
 
 
-                    <!-- =====================
+                <!-- =================================================
+                     LEFT SIDE
+                     CUSTOMER DETAILS + CART ITEMS
+                ================================================== -->
+
+                <div>
+
+
+                    <!-- =================================================
                          CUSTOMER DETAILS
-                    ====================== -->
+                    ================================================== -->
 
-                    <div>
+                    <div class="cart-card">
+
+                        <h2>
+                            👤 Customer Details
+                        </h2>
 
 
-                        <div class="checkout-card">
+                        <form
+                            id="checkoutForm"
+                        >
 
-                            <h2>
-                                👤 Customer Details
-                            </h2>
 
+                            <!-- NAME -->
 
                             <div class="form-group">
 
@@ -343,6 +202,29 @@
                             </div>
 
 
+
+                            <!-- EMAIL -->
+
+                            <div class="form-group">
+
+                                <label for="customerEmail">
+                                    Email
+                                </label>
+
+                                <input
+                                    type="email"
+                                    id="customerEmail"
+                                    name="customerEmail"
+                                    placeholder="Enter your email"
+                                    required
+                                >
+
+                            </div>
+
+
+
+                            <!-- PHONE -->
+
                             <div class="form-group">
 
                                 <label for="customerPhone">
@@ -353,13 +235,17 @@
                                     type="tel"
                                     id="customerPhone"
                                     name="customerPhone"
-                                    placeholder="10-digit mobile number"
+                                    placeholder="Enter 10-digit mobile number"
+                                    pattern="[0-9]{10}"
                                     maxlength="10"
                                     required
                                 >
 
                             </div>
 
+
+
+                            <!-- ADDRESS -->
 
                             <div class="form-group">
 
@@ -370,12 +256,16 @@
                                 <textarea
                                     id="customerAddress"
                                     name="customerAddress"
-                                    placeholder="House/Flat, Street, Area"
+                                    placeholder="House no., street, area..."
+                                    rows="3"
                                     required
                                 ></textarea>
 
                             </div>
 
+
+
+                            <!-- CITY -->
 
                             <div class="form-group">
 
@@ -387,12 +277,15 @@
                                     type="text"
                                     id="customerCity"
                                     name="customerCity"
-                                    placeholder="Enter city"
+                                    placeholder="Enter your city"
                                     required
                                 >
 
                             </div>
 
+
+
+                            <!-- PINCODE -->
 
                             <div class="form-group">
 
@@ -405,73 +298,34 @@
                                     id="customerPincode"
                                     name="customerPincode"
                                     placeholder="6-digit pincode"
+                                    pattern="[0-9]{6}"
                                     maxlength="6"
                                     required
                                 >
 
                             </div>
 
-                        </div>
+
+                        </form>
+
+                    </div>
 
 
-                        <!-- =====================
-                             DELIVERY DATE
-                        ====================== -->
 
-                        <div class="checkout-card">
+                    <!-- =================================================
+                         CART ITEMS
+                    ================================================== -->
 
-                            <h2>
-                                🚚 Select Delivery Date
-                            </h2>
+                    <div class="cart-card">
 
-                            <div
-                                id="deliveryOptions"
-                                class="delivery-options"
-                            >
-                                <!-- Dates added by checkout.js -->
-                            </div>
-
-                        </div>
+                        <h2>
+                            🛍️ Your Items
+                        </h2>
 
 
-                        <!-- =====================
-                             PAYMENT
-                        ====================== -->
+                        <div id="checkoutItems">
 
-                        <div class="checkout-card">
-
-                            <h2>
-                                💳 Payment Method
-                            </h2>
-
-
-                            <div class="form-group">
-
-                                <label for="paymentMethod">
-                                    Choose Payment Method
-                                </label>
-
-                                <select
-                                    id="paymentMethod"
-                                    name="paymentMethod"
-                                    required
-                                >
-
-                                    <option value="">
-                                        Select Payment Method
-                                    </option>
-
-                                    <option value="cod">
-                                        Cash on Delivery
-                                    </option>
-
-                                    <option value="online">
-                                        Online Payment
-                                    </option>
-
-                                </select>
-
-                            </div>
+                            <!-- Products loaded by checkout.js -->
 
                         </div>
 
@@ -479,78 +333,47 @@
 
 
 
-                    <!-- =====================
-                         ORDER SUMMARY
-                    ====================== -->
+                    <!-- =================================================
+                         PAYMENT METHOD
+                    ================================================== -->
 
-                    <div>
+                    <div class="cart-card">
 
-                        <div class="checkout-card">
-
-                            <h2>
-                                🛒 Order Summary
-                            </h2>
+                        <h2>
+                            💳 Payment Method
+                        </h2>
 
 
-                            <div id="checkoutItems">
-                                <!-- Cart items loaded by checkout.js -->
-                            </div>
+                        <div class="form-group">
+
+                            <label for="paymentMethod">
+                                Choose Payment Method
+                            </label>
 
 
-                            <div class="summary-row">
-
-                                <span>
-                                    Subtotal
-                                </span>
-
-                                <strong id="subtotal">
-                                    ₹0
-                                </strong>
-
-                            </div>
-
-
-                            <div class="summary-row">
-
-                                <span>
-                                    Delivery
-                                </span>
-
-                                <strong id="deliveryCharge">
-                                    FREE
-                                </strong>
-
-                            </div>
-
-
-                            <div class="grand-total">
-
-                                <span>
-                                    Total
-                                </span>
-
-                                <span id="grandTotal">
-                                    ₹0
-                                </span>
-
-                            </div>
-
-
-                            <button
-                                type="submit"
-                                id="placeOrderBtn"
-                                class="place-order-btn"
+                            <select
+                                id="paymentMethod"
+                                name="paymentMethod"
+                                required
                             >
-                                ✅ Place Order
-                            </button>
 
+                                <option value="">
+                                    Select Payment Method
+                                </option>
 
-                            <a
-                                href="cart.html"
-                                class="back-cart"
-                            >
-                                ← Back to Cart
-                            </a>
+                                <option value="cod">
+                                    💵 Cash on Delivery
+                                </option>
+
+                                <option value="upi">
+                                    📱 UPI
+                                </option>
+
+                                <option value="card">
+                                    💳 Debit / Credit Card
+                                </option>
+
+                            </select>
 
                         </div>
 
@@ -559,16 +382,123 @@
 
                 </div>
 
-            </form>
+
+
+                <!-- =================================================
+                     RIGHT SIDE
+                     ORDER SUMMARY
+                ================================================== -->
+
+                <div class="cart-card">
+
+                    <h2>
+                        🛒 Order Summary
+                    </h2>
+
+
+
+                    <!-- SUBTOTAL -->
+
+                    <div class="summary-row">
+
+                        <span>
+                            Subtotal
+                        </span>
+
+                        <strong id="subtotal">
+                            ₹0
+                        </strong>
+
+                    </div>
+
+
+
+                    <!-- DELIVERY -->
+
+                    <div class="summary-row">
+
+                        <span>
+                            Delivery
+                        </span>
+
+                        <strong id="deliveryCharge">
+                            FREE
+                        </strong>
+
+                    </div>
+
+
+
+                    <!-- SEPARATOR -->
+
+                    <div
+                        style="
+                            border-top:1px solid #e5e5e5;
+                            margin:18px 0;
+                        "
+                    ></div>
+
+
+
+                    <!-- TOTAL -->
+
+                    <div class="summary-total">
+
+                        <span>
+                            Total
+                        </span>
+
+                        <span id="grandTotal">
+                            ₹0
+                        </span>
+
+                    </div>
+
+
+
+                    <!-- =================================================
+                         PLACE ORDER
+                    ================================================== -->
+
+                    <button
+                        type="submit"
+                        form="checkoutForm"
+                        class="checkout-btn"
+                        id="placeOrderBtn"
+                        style="
+                            width:100%;
+                            border:none;
+                            cursor:pointer;
+                            margin-top:20px;
+                        "
+                    >
+                        ✅ Place Order
+                    </button>
+
+
+
+                    <!-- BACK TO CART -->
+
+                    <a
+                        href="cart.html"
+                        class="continue-btn"
+                    >
+                        ← Back to Cart
+                    </a>
+
+                </div>
+
+            </div>
 
         </div>
 
     </main>
 
 
-    <!-- =========================
+
+    <!-- =================================================
          FOOTER
-    ========================== -->
+    ================================================== -->
 
     <footer class="footer">
 
@@ -588,9 +518,23 @@
     </footer>
 
 
-    <!-- CHECKOUT JS -->
 
-    <script type="module" src="checkout.js"></script>
+    <!-- =================================================
+         JAVASCRIPT
+    ================================================== -->
+
+    <!-- IMPORTANT:
+         products.js must load BEFORE checkout.js
+         so checkout.js can find product prices.
+    -->
+
+    <script src="products.js"></script>
+
+    <script
+        type="module"
+        src="checkout.js"
+    ></script>
+
 
 </body>
 
