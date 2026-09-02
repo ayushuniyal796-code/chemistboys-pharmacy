@@ -1,344 +1,264 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>ChemistBoys - Admin Orders</title>
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Admin Panel - ChemistBoys</title>
+
+    <link rel="stylesheet" href="style.css">
 
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-        }
 
         body {
-            background: #f4f7fb;
-            color: #222;
+            background: #f4fbf9;
         }
 
-        .header {
-            background: #0b7a75;
-            color: white;
-            padding: 18px 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .admin-page {
+            min-height: 80vh;
+            padding: 40px 20px;
         }
 
-        .header h1 {
-            font-size: 24px;
+        .admin-container {
+            max-width: 1000px;
+            margin: auto;
         }
 
-        #logoutBtn {
+        .admin-header {
             background: white;
-            color: #0b7a75;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 0 15px;
-        }
-
-        .dashboard {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
+            padding: 25px;
+            border-radius: 18px;
             margin-bottom: 25px;
-        }
+            box-shadow: 0 5px 20px rgba(0,0,0,.08);
 
-        .stat-box {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .stat-box h3 {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-
-        .stat-box p {
-            font-size: 28px;
-            font-weight: bold;
-            color: #0b7a75;
-        }
-
-        .orders-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            gap: 10px;
+            gap: 15px;
+            flex-wrap: wrap;
         }
 
-        .orders-header h2 {
-            font-size: 22px;
+        .admin-header h1 {
+            margin: 0;
+            color: #075f55;
         }
 
-        #searchOrders {
-            padding: 11px;
-            width: 250px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
+        .admin-header p {
+            margin: 5px 0 0;
+            color: #718987;
         }
 
-        .order-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        }
-
-        .order-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 15px;
-            margin-bottom: 15px;
-        }
-
-        .order-id {
-            font-weight: bold;
-            color: #0b7a75;
-        }
-
-        .status {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: bold;
-        }
-
-        .pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .accepted {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .customer-info {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 18px;
-        }
-
-        .info-box {
-            background: #f8f9fa;
-            padding: 12px;
-            border-radius: 6px;
-        }
-
-        .info-box strong {
-            display: block;
-            font-size: 13px;
-            color: #666;
-            margin-bottom: 4px;
-        }
-
-        .items {
-            margin: 15px 0;
-        }
-
-        .items h3 {
-            margin-bottom: 10px;
-        }
-
-        .item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .order-bottom {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 18px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-        }
-
-        .total {
-            font-size: 20px;
-            font-weight: bold;
-            color: #0b7a75;
-        }
-
-        .actions {
+        .admin-actions {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
-        .accept-btn,
-        .delete-btn {
+        .admin-btn {
+            padding: 11px 18px;
             border: none;
-            padding: 10px 16px;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 700;
+            text-decoration: none;
         }
 
-        .accept-btn {
-            background: #0b7a75;
+        .home-btn {
+            background: #0ca88f;
             color: white;
         }
 
-        .delete-btn {
+        .logout-btn {
             background: #dc3545;
             color: white;
         }
 
-        .accept-btn:disabled {
-            background: #aaa;
-            cursor: not-allowed;
+        .orders-container {
+            width: 100%;
         }
 
-        #loading {
-            text-align: center;
-            padding: 40px;
-            font-size: 18px;
+        .admin-order-card {
+            width: 100%;
         }
 
-        #noOrders {
-            display: none;
-            text-align: center;
+        .loading {
             background: white;
-            padding: 40px;
-            border-radius: 10px;
-        }
-
-        #accessDenied {
-            display: none;
+            padding: 50px;
             text-align: center;
-            margin-top: 100px;
+            border-radius: 18px;
+            color: #075f55;
         }
 
-        #accessDenied h2 {
-            color: #dc3545;
-            margin-bottom: 10px;
+        @media(max-width:600px) {
+
+            .admin-page {
+                padding: 25px 12px;
+            }
+
+            .admin-header {
+                padding: 20px;
+            }
+
+            .admin-header h1 {
+                font-size: 25px;
+            }
+
         }
 
-        @media (max-width: 700px) {
-
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
-
-            .orders-header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            #searchOrders {
-                width: 100%;
-            }
-
-            .customer-info {
-                grid-template-columns: 1fr;
-            }
-
-            .order-bottom {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 15px;
-            }
-
-            .actions {
-                width: 100%;
-            }
-
-            .accept-btn,
-            .delete-btn {
-                flex: 1;
-            }
-        }
     </style>
+
 </head>
+
 
 <body>
 
+
+    <!-- HEADER -->
+
     <header class="header">
-        <h1>💊 ChemistBoys Admin</h1>
 
-        <button id="logoutBtn">
-            Logout
-        </button>
-    </header>
+        <div class="container">
 
-    <main class="container">
+            <div class="header-top">
 
-        <div id="accessDenied">
-            <h2>🚫 Access Denied</h2>
-            <p>You are not authorized to access the Admin Panel.</p>
-        </div>
-
-        <div id="adminContent" style="display:none;">
-
-            <div class="dashboard">
-
-                <div class="stat-box">
-                    <h3>Total Orders</h3>
-                    <p id="totalOrders">0</p>
-                </div>
-
-                <div class="stat-box">
-                    <h3>Pending Orders</h3>
-                    <p id="pendingOrders">0</p>
-                </div>
-
-                <div class="stat-box">
-                    <h3>Accepted Orders</h3>
-                    <p id="acceptedOrders">0</p>
-                </div>
-
-            </div>
-
-            <div class="orders-header">
-
-                <h2>📦 Customer Orders</h2>
-
-                <input
-                    type="text"
-                    id="searchOrders"
-                    placeholder="Search customer/order..."
+                <a
+                    href="index.html"
+                    class="logo-link"
                 >
 
+                    <div class="logo">
+
+                        <span class="logo-icon">
+                            💊
+                        </span>
+
+                        <span class="logo-text">
+                            ChemistBoys
+                        </span>
+
+                    </div>
+
+                </a>
+
             </div>
 
-            <div id="loading">
-                Loading orders...
+        </div>
+
+    </header>
+
+
+
+    <!-- ADMIN PAGE -->
+
+    <main class="admin-page">
+
+        <div class="admin-container">
+
+
+            <!-- ADMIN HEADER -->
+
+            <div class="admin-header">
+
+                <div>
+
+                    <h1>
+                        🛠️ Admin Panel
+                    </h1>
+
+                    <p>
+                        Manage ChemistBoys customer orders
+                    </p>
+
+                </div>
+
+
+                <div class="admin-actions">
+
+                    <a
+                        href="index.html"
+                        class="admin-btn home-btn"
+                    >
+                        🏠 Home
+                    </a>
+
+
+                    <button
+                        type="button"
+                        class="admin-btn logout-btn"
+                        onclick="logoutAdmin()"
+                    >
+                        🚪 Logout
+                    </button>
+
+                </div>
+
             </div>
 
-            <div id="ordersContainer"></div>
 
-            <div id="noOrders">
-                <h2>📭 No Orders Found</h2>
-                <p>Customer orders will appear here.</p>
+
+            <!-- ORDERS -->
+
+            <div
+                id="ordersContainer"
+                class="orders-container"
+            >
+
+                <div class="loading">
+
+                    <h2>
+                        🔄 Loading Orders...
+                    </h2>
+
+                    <p>
+                        Please wait.
+                    </p>
+
+                </div>
+
             </div>
+
 
         </div>
 
     </main>
 
-    <script type="module" src="admin.js"></script>
+
+
+    <!-- FOOTER -->
+
+    <footer class="footer">
+
+        <div class="container">
+
+            <div class="footer-bottom">
+
+                <p>
+                    &copy; 2026 ChemistBoys.
+                    All rights reserved.
+                </p>
+
+            </div>
+
+        </div>
+
+    </footer>
+
+
+
+    <!-- ADMIN JAVASCRIPT -->
+
+    <script
+        type="module"
+        src="admin.js"
+    ></script>
+
 
 </body>
+
 </html>
