@@ -1,175 +1,437 @@
-document.addEventListener("DOMContentLoaded", function () {
+import { auth, authReady, db } from "./firebase.js";
+
+import {
+    collection,
+    query,
+    where,
+    onSnapshot
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+
+const ADMIN_UID = "gtTvd6XSgqXVaIrp67cM6gEJP0u2";
+
+
+document.addEventListener("DOMContentLoaded", async function () {
 
     const ordersContainer =
         document.getElementById("ordersContainer");
-
-
-    /* =========================================
-       LOAD ORDERS FROM LOCAL STORAGE
-    ========================================= */
-
-    let orders =
-        JSON.parse(
-            localStorage.getItem("orders")
-        ) || [];
-
-
-    /* =========================================
-       CHECK ORDERS CONTAINER
-    ========================================= */
 
     if (!ordersContainer) {
         return;
     }
 
 
-    /* =========================================
-       NO ORDERS
-    ========================================= */
+    // Wait for Firebase authentication
+    await authReady;
 
-    if (
-        !Array.isArray(orders) ||
-        orders.length === 0
-    ) {
+
+    const user = auth.currentUser;
+
+
+    // User not logged in
+    if (!user) {
 
         ordersContainer.innerHTML = `
-
             <div class="empty-orders">
+                <div class="empty-orders-icon">🔐</div>
 
-                <div class="empty-orders-icon">
-                    📦
-                </div>
-
-                <h2>
-                    No Orders Yet
-                </h2>
+                <h2>Please Login</h2>
 
                 <p>
-                    You haven't placed any orders yet.
+                    Please login to view your orders.
                 </p>
 
-                <a
-                    href="index.html"
-                    class="shop-btn"
-                >
-                    🛍️ Start Shopping
+                <a href="login.html" class="shop-btn">
+                    🔑 Login
                 </a>
-
             </div>
-
         `;
 
         return;
     }
 
 
-    /* =========================================
-       NEWEST ORDER FIRST
-    ========================================= */
+    // =========================================
+    // FIRESTORE ORDER QUERY
+    // =========================================
 
-    orders.sort(function (a, b) {
-
-        const dateA =
-            a.orderDateISO ||
-            a.orderDate ||
-            "";
-
-        const dateB =
-            b.orderDateISO ||
-            b.orderDate ||
-            "";
-
-        return String(dateB)
-            .localeCompare(String(dateA));
-
-    });
+    let ordersQuery;
 
 
-    /* =========================================
-       CLEAR OLD CONTENT
-    ========================================= */
+    if (user.uid === ADMIN_UID) {
 
-    ordersContainer.innerHTML = "";
+        // Admin can see all orders
+        ordersQuery =
+            query(
+                collection(db, "orders")
+            );
 
+    } else {
 
-    /* =========================================
-       DISPLAY EACH ORDER
-    ========================================= */
+        // Customer can see only their orders
+        ordersQuery =
+            query(
+                collection(db, "orders"),
+                where("userId", "==", user.uid)
+            );
 
-    orders.forEach(function (order) {
-
-
-        /* =====================================
-           ORDER CARD
-        ===================================== */
-
-        const orderCard =
-            document.createElement("div");
-
-        orderCard.className =
-            "order-card";
+    }
 
 
-        /* =====================================
-           ITEMS HTML
-        ===================================== */
+    // =========================================
+    // REAL-TIME ORDERS
+    // =========================================
 
-        let itemsHTML = "";
+    onSnapshot(
+        ordersQuery,
 
+        function (snapshot) {
 
-        if (
-            Array.isArray(order.items) &&
-            order.items.length > 0
-        ) {
-
-            order.items.forEach(function (item) {
-
-                const itemName =
-                    item.name ||
-                    "Medicine";
+            let orders = [];
 
 
-                const itemPrice =
-                    Number(item.price) || 0;
+            snapshot.forEach(function (doc) {
+
+                orders.push({
+                    firestoreId: doc.id,
+                    ...doc.data()
+                });
+
+            });
 
 
-                const quantity =
-                    Number(item.quantity) || 1;
+            // Newest first
+            orders.sort(function (a, b) {
+
+                const dateA =
+                    a.createdAt?.seconds ||
+                    0;
+
+                const dateB =
+                    b.createdAt?.seconds ||
+                    0;
+
+                return dateB - dateA;
+
+            });
 
 
-                const itemTotal =
-                    itemPrice * quantity;
+            // No orders
+            if (orders.length === 0) {
 
+                ordersContainer.innerHTML = `
 
-                itemsHTML += `
+                    <div class="empty-orders">
 
-                    <div class="order-item">
+                        <div class="empty-orders-icon">
+                            📦
+                        </div>
 
-                        <span>
-                            ${itemName}
-                            × ${quantity}
-                        </span>
+                        <h2>
+                            No Orders Yet
+                        </h2>
 
-                        <strong>
-                            ₹${itemTotal}
-                        </strong>
+                        <p>
+                            You haven't placed any orders yet.
+                        </p>
+
+                        <a
+                            href="index.html"
+                            class="shop-btn"
+                        >
+                            🛍️ Start Shopping
+                        </a>
 
                     </div>
 
                 `;
 
+                return;
+            }
+
+
+            // Clear container
+            ordersContainer.innerHTML = "";
+
+
+            // =====================================
+            // DISPLAY ORDERS
+            // =====================================
+
+            orders.forEach(function (order) {
+
+                const orderCard =
+                    document.createElement("div");
+
+                orderCard.className =
+                    "order-card";
+
+
+                // =================================
+                // ITEMS
+                // =================================
+
+                let itemsHTML = "";
+
+
+                if (
+                    Array.isArray(order.items) &&
+                    order.items.length > 0
+                ) {
+
+                    order.items.forEach(function (item) {
+
+                        const itemName =
+                            item.name ||
+                            "Medicine";
+
+                        const itemPrice =
+                            Number(item.price) || 0;
+
+                        const quantity =
+                            Number(item.quantity) || 1;
+
+                        const itemTotal =
+                            itemPrice * quantity;
+
+
+                        itemsHTML += `
+
+                            <div class="order-item">
+
+                                <span>
+                                    ${itemName}
+                                    × ${quantity}
+                                </span>
+
+                                <strong>
+                                    ₹${itemTotal}
+                                </strong>
+
+                            </div>
+
+                        `;
+
+                    });
+
+                } else {
+
+                    itemsHTML = `
+
+                        <div class="order-item">
+
+                            <span>
+                                No item details available
+                            </span>
+
+                        </div>
+
+                    `;
+
+                }
+
+
+                // =================================
+                // STATUS
+                // =================================
+
+                const status =
+                    order.status ||
+                    "Processing";
+
+
+                // =================================
+                // PAYMENT
+                // =================================
+
+                let paymentText =
+                    "Pending";
+
+
+                if (
+                    order.paymentMethod === "cod"
+                ) {
+
+                    paymentText =
+                        "Cash on Delivery";
+
+                }
+                else if (
+                    order.paymentMethod === "online" ||
+                    order.paymentMethod === "upi"
+                ) {
+
+                    if (
+                        order.paymentStatus === "Paid"
+                    ) {
+
+                        paymentText =
+                            "Paid Online";
+
+                    }
+                    else {
+
+                        paymentText =
+                            "Online Payment - Pending";
+
+                    }
+
+                }
+
+
+                // =================================
+                // TOTAL
+                // =================================
+
+                const total =
+                    Number(order.total) || 0;
+
+
+                // =================================
+                // CARD
+                // =================================
+
+                orderCard.innerHTML = `
+
+                    <div class="order-header">
+
+                        <div class="order-id">
+
+                            Order #${
+                                order.id ||
+                                order.firestoreId ||
+                                "N/A"
+                            }
+
+                        </div>
+
+
+                        <div class="order-status">
+
+                            ${status}
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="order-info">
+
+                        <p>
+
+                            📅
+
+                            <strong>
+                                Order Date:
+                            </strong>
+
+                            ${order.orderDate || "N/A"}
+
+                        </p>
+
+
+                        <p>
+
+                            🕐
+
+                            <strong>
+                                Order Time:
+                            </strong>
+
+                            ${order.orderTime || "N/A"}
+
+                        </p>
+
+
+                        <p>
+
+                            🚚
+
+                            <strong>
+                                Expected Delivery:
+                            </strong>
+
+                            ${order.deliveryDate || "N/A"}
+
+                        </p>
+
+
+                        <p>
+
+                            💳
+
+                            <strong>
+                                Payment:
+                            </strong>
+
+                            ${paymentText}
+
+                        </p>
+
+
+                        <p>
+
+                            📦
+
+                            <strong>
+                                Order Status:
+                            </strong>
+
+                            ${status}
+
+                        </p>
+
+                    </div>
+
+
+                    <div class="order-items">
+
+                        ${itemsHTML}
+
+                    </div>
+
+
+                    <div class="order-total">
+
+                        Total:
+                        ₹${total}
+
+                    </div>
+
+                `;
+
+
+                ordersContainer.appendChild(
+                    orderCard
+                );
+
             });
 
-        }
-        else {
+        },
 
-            itemsHTML = `
+        function (error) {
 
-                <div class="order-item">
+            console.error(
+                "Firestore Orders Error:",
+                error
+            );
 
-                    <span>
-                        No item details available
-                    </span>
+
+            ordersContainer.innerHTML = `
+
+                <div class="empty-orders">
+
+                    <div class="empty-orders-icon">
+                        ⚠️
+                    </div>
+
+                    <h2>
+                        Unable to Load Orders
+                    </h2>
+
+                    <p>
+                        ${error.message}
+                    </p>
 
                 </div>
 
@@ -177,197 +439,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         }
 
-
-        /* =====================================
-           STATUS
-        ===================================== */
-
-        const status =
-            order.status ||
-            "Processing";
-
-
-        /* =====================================
-           PAYMENT
-        ===================================== */
-
-        let paymentText =
-            "Pending";
-
-
-        if (
-            order.paymentMethod === "cod"
-        ) {
-
-            paymentText =
-                "Cash on Delivery";
-
-        }
-        else if (
-            order.paymentMethod === "online"
-        ) {
-
-            if (
-                order.paymentStatus === "Paid"
-            ) {
-
-                paymentText =
-                    "Paid Online";
-
-            }
-            else {
-
-                paymentText =
-                    "Online Payment - Pending";
-
-            }
-
-        }
-        else {
-
-            paymentText =
-                "Not Selected";
-
-        }
-
-
-        /* =====================================
-           TOTAL
-        ===================================== */
-
-        const total =
-            Number(order.total) || 0;
-
-
-        /* =====================================
-           ORDER CARD HTML
-        ===================================== */
-
-        orderCard.innerHTML = `
-
-            <div class="order-header">
-
-
-                <div class="order-id">
-
-                    Order #${order.id || "N/A"}
-
-                </div>
-
-
-                <div class="order-status">
-
-                    ${status}
-
-                </div>
-
-
-            </div>
-
-
-
-            <div class="order-info">
-
-
-                <p>
-
-                    📅
-
-                    <strong>
-                        Order Date:
-                    </strong>
-
-                    ${order.orderDate || "N/A"}
-
-                </p>
-
-
-
-                <p>
-
-                    🕐
-
-                    <strong>
-                        Order Time:
-                    </strong>
-
-                    ${order.orderTime || "N/A"}
-
-                </p>
-
-
-
-                <p>
-
-                    🚚
-
-                    <strong>
-                        Expected Delivery:
-                    </strong>
-
-                    ${order.deliveryDate || "N/A"}
-
-                </p>
-
-
-
-                <p>
-
-                    💳
-
-                    <strong>
-                        Payment:
-                    </strong>
-
-                    ${paymentText}
-
-                </p>
-
-
-
-                <p>
-
-                    📦
-
-                    <strong>
-                        Order Status:
-                    </strong>
-
-                    ${status}
-
-                </p>
-
-
-            </div>
-
-
-
-            <div class="order-items">
-
-                ${itemsHTML}
-
-            </div>
-
-
-
-            <div class="order-total">
-
-                Total:
-                ₹${total}
-
-            </div>
-
-        `;
-
-
-        /* =====================================
-           ADD TO PAGE
-        ===================================== */
-
-        ordersContainer.appendChild(
-            orderCard
-        );
-
-    });
+    );
 
 });
