@@ -5,14 +5,11 @@
 
 /* =========================================================
    FIREBASE LOGIN CHECK
-   Firebase auth state ready hone ke baad hi user check hoga
 ========================================================= */
 
 async function requireLogin() {
 
     try {
-
-        /* Wait for Firebase to restore the auth state */
 
         if (window.firebaseAuthReady) {
 
@@ -21,15 +18,11 @@ async function requireLogin() {
         }
 
 
-        /* Get current Firebase user */
-
         const user =
             window.firebaseAuth
                 ? window.firebaseAuth.currentUser
                 : null;
 
-
-        /* User is not logged in */
 
         if (!user) {
 
@@ -44,8 +37,6 @@ async function requireLogin() {
 
         }
 
-
-        /* User is logged in */
 
         return true;
 
@@ -71,6 +62,139 @@ async function requireLogin() {
 
 window.requireLogin =
     requireLogin;
+
+
+/* =========================================================
+   INSTANT CART COUNT
+========================================================= */
+
+function updateCartCountInstant() {
+
+    try {
+
+        let cart =
+            JSON.parse(
+                localStorage.getItem(
+                    "chemistboys_cart"
+                )
+            );
+
+
+        /*
+         * Old cart key compatibility
+         */
+
+        if (!Array.isArray(cart)) {
+
+            cart =
+                JSON.parse(
+                    localStorage.getItem(
+                        "chemistCart"
+                    )
+                );
+
+        }
+
+
+        if (!Array.isArray(cart)) {
+
+            cart = [];
+
+        }
+
+
+        const count =
+            cart.reduce(
+                function (total, item) {
+
+                    return (
+                        total +
+                        Number(
+                            item.quantity || 1
+                        )
+                    );
+
+                },
+                0
+            );
+
+
+        /*
+         * Update every possible cart count
+         */
+
+        const cartCount =
+            document.getElementById(
+                "cartCount"
+            );
+
+        if (cartCount) {
+
+            cartCount.textContent =
+                count;
+
+        }
+
+
+        /*
+         * If there are multiple cart count
+         * elements on the page
+         */
+
+        document
+            .querySelectorAll(
+                ".cart-count"
+            )
+            .forEach(
+                function (element) {
+
+                    element.textContent =
+                        count;
+
+                }
+            );
+
+
+        /*
+         * Update Cart button if it contains
+         * a number in the text
+         */
+
+        const cartButtons =
+            document.querySelectorAll(
+                "[href='cart.html']"
+            );
+
+
+        cartButtons.forEach(
+            function (button) {
+
+                const badge =
+                    button.querySelector(
+                        ".cart-count"
+                    );
+
+                if (badge) {
+
+                    badge.textContent =
+                        count;
+
+                }
+
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Cart count update error:",
+            error
+        );
+
+    }
+
+}
 
 
 /* =========================================================
@@ -179,8 +303,15 @@ document.addEventListener(
 
                 productsGrid.innerHTML = `
                     <div class="no-products">
-                        <h3>😔 No products found</h3>
-                        <p>Try another search or filter.</p>
+
+                        <h3>
+                            😔 No products found
+                        </h3>
+
+                        <p>
+                            Try another search or filter.
+                        </p>
+
                     </div>
                 `;
 
@@ -233,21 +364,27 @@ document.addEventListener(
 
 
                             <div class="product-rating">
+
                                 ⭐ ${product.rating}
+
                             </div>
 
 
                             <div class="product-price">
 
                                 <span class="current-price">
+
                                     ₹${product.price}
+
                                 </span>
 
                                 ${
                                     product.oldPrice
                                         ? `
                                             <span class="old-price">
+
                                                 ₹${product.oldPrice}
+
                                             </span>
                                         `
                                         : ""
@@ -261,7 +398,9 @@ document.addEventListener(
                                 class="add-cart-btn"
                                 data-product-id="${product.id}"
                             >
+
                                 🛒 Add to Cart
+
                             </button>
 
                         </div>
@@ -368,7 +507,9 @@ document.addEventListener(
                     function (product) {
 
                         return (
-                            Number(product.price) <=
+                            Number(
+                                product.price
+                            ) <=
                             maxPrice
                         );
 
@@ -613,14 +754,65 @@ document.addEventListener(
                     );
 
 
+                /*
+                 * IMPORTANT:
+                 * ID ko direct cart me bhejne ke bajay
+                 * poora product object bhej rahe hain.
+                 */
+
+                const product =
+                    products.find(
+                        function (item) {
+
+                            return (
+                                Number(item.id) ===
+                                productId
+                            );
+
+                        }
+                    );
+
+
+                if (!product) {
+
+                    console.error(
+                        "❌ Product not found:",
+                        productId
+                    );
+
+                    return;
+
+                }
+
+
                 if (
                     typeof window.addToCart ===
                     "function"
                 ) {
 
+                    /*
+                     * Complete product object
+                     */
+
                     window.addToCart(
-                        productId
+                        product
                     );
+
+
+                    /*
+                     * Cart count ko immediately
+                     * update karo.
+                     */
+
+                    setTimeout(
+                        function () {
+
+                            updateCartCountInstant();
+
+                        },
+                        50
+                    );
+
 
                 } else {
 
@@ -641,6 +833,28 @@ document.addEventListener(
         displayProducts(
             products
         );
+
+
+        /* =====================================================
+           INITIAL CART COUNT
+        ===================================================== */
+
+        updateCartCountInstant();
+
+
+    }
+);
+
+
+/* =========================================================
+   UPDATE CART COUNT WHEN STORAGE CHANGES
+========================================================= */
+
+window.addEventListener(
+    "storage",
+    function () {
+
+        updateCartCountInstant();
 
     }
 );
