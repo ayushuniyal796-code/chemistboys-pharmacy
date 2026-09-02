@@ -1,5 +1,5 @@
 /* =========================================================
-   CHEMISTBOYS - CART JAVASCRIPT
+   CHEMISTBOYS - CART.JS
    ========================================================= */
 
 import {
@@ -13,7 +13,7 @@ import {
 
 
 /* =========================================================
-   CART SETTINGS
+   CART KEYS
    ========================================================= */
 
 const CART_KEY = "chemistboys_cart";
@@ -28,25 +28,17 @@ function getCart() {
 
     try {
 
-        let cart =
-            JSON.parse(
-                localStorage.getItem(CART_KEY)
-            );
+        let cart = JSON.parse(
+            localStorage.getItem(CART_KEY)
+        );
 
-        if (
-            Array.isArray(cart) &&
-            cart.length > 0
-        ) {
+        if (Array.isArray(cart)) {
             return cart;
         }
 
-
-        /* Old key compatibility */
-
-        cart =
-            JSON.parse(
-                localStorage.getItem(OLD_CART_KEY)
-            );
+        cart = JSON.parse(
+            localStorage.getItem(OLD_CART_KEY)
+        );
 
         if (Array.isArray(cart)) {
             return cart;
@@ -76,8 +68,6 @@ function saveCart(cart) {
         JSON.stringify(cart)
     );
 
-    /* Keep old key synchronized */
-
     localStorage.setItem(
         OLD_CART_KEY,
         JSON.stringify(cart)
@@ -87,15 +77,32 @@ function saveCart(cart) {
 
 
 /* =========================================================
-   SHOW MESSAGE
+   SHOW CART MESSAGE
    ========================================================= */
 
-function showCartMessage(
-    message,
-    type = "success"
-) {
+function showCartMessage(message, type = "success") {
 
-    /* Remove previous message */
+    /*
+     * IMPORTANT:
+     * Agar empty cart message hai,
+     * to sirf wahi message show hoga.
+     */
+
+    if (
+        typeof message === "string" &&
+        message
+            .toLowerCase()
+            .includes("your cart is empty")
+    ) {
+
+        message = "Your cart is empty";
+
+        type = "error";
+
+    }
+
+
+    /* Remove old message */
 
     const oldMessage =
         document.querySelector(
@@ -107,7 +114,7 @@ function showCartMessage(
     }
 
 
-    /* Create message */
+    /* Create new message */
 
     const messageBox =
         document.createElement("div");
@@ -116,105 +123,86 @@ function showCartMessage(
         "cart-message";
 
 
-    const background =
+    /* Icon */
+
+    const icon =
+        type === "error"
+            ? "⚠️"
+            : "✓";
+
+
+    messageBox.innerHTML = `
+
+        <div
+            style="
+                font-size:22px;
+                margin-bottom:5px;
+            "
+        >
+            ${icon}
+        </div>
+
+        <div>
+            ${message}
+        </div>
+
+    `;
+
+
+    /* Message styling */
+
+    messageBox.style.position =
+        "fixed";
+
+    messageBox.style.left =
+        "50%";
+
+    messageBox.style.bottom =
+        "80px";
+
+    messageBox.style.transform =
+        "translateX(-50%)";
+
+    messageBox.style.zIndex =
+        "999999";
+
+    messageBox.style.width =
+        "max-content";
+
+    messageBox.style.maxWidth =
+        "85%";
+
+    messageBox.style.padding =
+        "16px 25px";
+
+    messageBox.style.borderRadius =
+        "14px";
+
+    messageBox.style.background =
         type === "error"
             ? "#d9534f"
             : "#078f7d";
 
+    messageBox.style.color =
+        "white";
 
-    messageBox.innerHTML = `
-        <span
-            style="
-                font-size:20px;
-                display:block;
-                margin-bottom:5px;
-            "
-        >
-            ${type === "error" ? "⚠️" : "✓"}
-        </span>
+    messageBox.style.textAlign =
+        "center";
 
-        <span>
-            ${message}
-        </span>
-    `;
+    messageBox.style.fontSize =
+        "16px";
 
+    messageBox.style.fontWeight =
+        "700";
 
-    messageBox.style.cssText = `
-        position: fixed;
+    messageBox.style.lineHeight =
+        "1.4";
 
-        left: 50%;
-
-        bottom: 80px;
-
-        transform: translateX(-50%);
-
-        z-index: 99999;
-
-        width: max-content;
-
-        max-width: 85%;
-
-        padding: 16px 24px;
-
-        border-radius: 14px;
-
-        background: ${background};
-
-        color: white;
-
-        text-align: center;
-
-        font-size: 16px;
-
-        font-weight: 700;
-
-        line-height: 1.4;
-
-        box-shadow:
-            0 10px 30px
-            rgba(0, 0, 0, 0.25);
-
-        animation:
-            cartMessageIn
-            0.3s ease;
-    `;
+    messageBox.style.boxShadow =
+        "0 10px 30px rgba(0,0,0,0.25)";
 
 
-    /* Animation */
-
-    const style =
-        document.createElement("style");
-
-    style.textContent = `
-
-        @keyframes cartMessageIn {
-
-            from {
-
-                opacity: 0;
-
-                transform:
-                    translateX(-50%)
-                    translateY(20px);
-
-            }
-
-            to {
-
-                opacity: 1;
-
-                transform:
-                    translateX(-50%)
-                    translateY(0);
-
-            }
-
-        }
-
-    `;
-
-    document.head.appendChild(style);
-
+    /* Add to page */
 
     document.body.appendChild(
         messageBox
@@ -225,8 +213,13 @@ function showCartMessage(
 
     setTimeout(() => {
 
-        if (messageBox) {
+        if (
+            messageBox &&
+            messageBox.parentNode
+        ) {
+
             messageBox.remove();
+
         }
 
     }, 2500);
@@ -240,13 +233,21 @@ function showCartMessage(
 
 function updateCartCount() {
 
-    const cart = getCart();
+    const cart =
+        getCart();
 
     const count =
         cart.reduce(
-            (total, item) =>
-                total +
-                Number(item.quantity || 1),
+            (total, item) => {
+
+                return (
+                    total +
+                    Number(
+                        item.quantity || 1
+                    )
+                );
+
+            },
             0
         );
 
@@ -274,11 +275,10 @@ function updateCartCount() {
 function getProductPrice(item) {
 
     let price =
-        Number(item.price || 0);
+        Number(
+            item.price || 0
+        );
 
-
-    /* If price is missing,
-       find product from products.js */
 
     if (
         price <= 0 &&
@@ -296,7 +296,9 @@ function getProductPrice(item) {
         if (product) {
 
             price =
-                Number(product.price || 0);
+                Number(
+                    product.price || 0
+                );
 
         }
 
@@ -378,19 +380,26 @@ function renderCart() {
 
 
         if (totalItems) {
-            totalItems.textContent = "0";
+
+            totalItems.textContent =
+                "0";
+
         }
 
 
         if (subtotalElement) {
+
             subtotalElement.textContent =
                 "₹0";
+
         }
 
 
         if (grandTotalElement) {
+
             grandTotalElement.textContent =
                 "₹0";
+
         }
 
 
@@ -402,7 +411,7 @@ function renderCart() {
 
 
     /* =====================================================
-       CART HAS PRODUCTS
+       CART HAS ITEMS
        ===================================================== */
 
     let totalItemsCount = 0;
@@ -455,7 +464,7 @@ function renderCart() {
                     alt="${item.name || "Product"}"
                     class="cart-item-image"
                     onerror="
-                        this.style.display='none'
+                        this.style.display='none';
                     "
                 >
 
@@ -538,7 +547,7 @@ function renderCart() {
 
 
     /* =====================================================
-       UPDATE SUMMARY
+       UPDATE TOTALS
        ===================================================== */
 
     if (totalItems) {
@@ -594,7 +603,7 @@ function addToCart(product) {
 
 
     /* =====================================================
-       PRODUCT ALREADY EXISTS
+       PRODUCT ALREADY IN CART
        ===================================================== */
 
     if (existingIndex !== -1) {
@@ -615,9 +624,11 @@ function addToCart(product) {
 
         cart.push({
 
-            id: product.id,
+            id:
+                product.id,
 
-            name: product.name,
+            name:
+                product.name,
 
             price:
                 Number(
@@ -627,19 +638,20 @@ function addToCart(product) {
             image:
                 product.image || "",
 
-            quantity: 1
+            quantity:
+                1
 
         });
 
     }
 
 
+    /* Save cart */
+
     saveCart(cart);
 
 
-    /* IMPORTANT:
-       Only ADD TO CART gives
-       success message */
+    /* ONLY ADD TO CART SHOWS SUCCESS */
 
     showCartMessage(
         "Product successfully added to cart",
@@ -669,7 +681,9 @@ function changeQuantity(
         index < 0 ||
         index >= cart.length
     ) {
+
         return;
+
     }
 
 
@@ -679,7 +693,7 @@ function changeQuantity(
         ) + change;
 
 
-    /* Quantity minimum = 1 */
+    /* Minimum quantity = 1 */
 
     if (
         cart[index].quantity < 1
@@ -698,7 +712,7 @@ function changeQuantity(
 
 
 /* =========================================================
-   REMOVE PRODUCT
+   REMOVE FROM CART
    ========================================================= */
 
 function removeFromCart(index) {
@@ -711,11 +725,13 @@ function removeFromCart(index) {
         index < 0 ||
         index >= cart.length
     ) {
+
         return;
+
     }
 
 
-    const removedProduct =
+    const product =
         cart[index];
 
 
@@ -729,7 +745,7 @@ function removeFromCart(index) {
 
 
     showCartMessage(
-        `${removedProduct.name || "Product"} removed from cart`,
+        `${product.name || "Product"} removed from cart`,
         "success"
     );
 
@@ -743,9 +759,7 @@ function removeFromCart(index) {
    CHECKOUT
    ========================================================= */
 
-async function handleCheckout(
-    event
-) {
+async function handleCheckout(event) {
 
     if (event) {
 
@@ -765,9 +779,8 @@ async function handleCheckout(
     if (cart.length === 0) {
 
         /*
-         * IMPORTANT:
-         * NO alert()
-         * NO success message
+         * NO ALERT
+         * NO SUCCESS MESSAGE
          */
 
         showCartMessage(
@@ -781,7 +794,7 @@ async function handleCheckout(
 
 
     /* =====================================================
-       AUTH CHECK
+       FIREBASE LOGIN CHECK
        ===================================================== */
 
     await authReady;
@@ -819,27 +832,33 @@ async function handleCheckout(
 
 
 /* =========================================================
-   EVENT LISTENERS
+   CLICK EVENTS
    ========================================================= */
 
 document.addEventListener(
     "click",
-    function (event) {
+    function(event) {
 
 
         /* =================================================
-           QUANTITY PLUS
+           PLUS
            ================================================= */
 
         if (
-            event.target.matches(
+            event.target.closest(
                 ".quantity-plus"
             )
         ) {
 
+            const button =
+                event.target.closest(
+                    ".quantity-plus"
+                );
+
+
             const index =
                 Number(
-                    event.target.dataset.index
+                    button.dataset.index
                 );
 
 
@@ -855,18 +874,24 @@ document.addEventListener(
 
 
         /* =================================================
-           QUANTITY MINUS
+           MINUS
            ================================================= */
 
         if (
-            event.target.matches(
+            event.target.closest(
                 ".quantity-minus"
             )
         ) {
 
+            const button =
+                event.target.closest(
+                    ".quantity-minus"
+                );
+
+
             const index =
                 Number(
-                    event.target.dataset.index
+                    button.dataset.index
                 );
 
 
@@ -882,18 +907,24 @@ document.addEventListener(
 
 
         /* =================================================
-           REMOVE BUTTON
+           REMOVE
            ================================================= */
 
         if (
-            event.target.matches(
+            event.target.closest(
                 ".remove-btn"
             )
         ) {
 
+            const button =
+                event.target.closest(
+                    ".remove-btn"
+                );
+
+
             const index =
                 Number(
-                    event.target.dataset.index
+                    button.dataset.index
                 );
 
 
@@ -908,7 +939,7 @@ document.addEventListener(
 
 
         /* =================================================
-           CHECKOUT BUTTON
+           CHECKOUT
            ================================================= */
 
         if (
@@ -928,12 +959,12 @@ document.addEventListener(
 
 
 /* =========================================================
-   AUTH STATE
+   FIREBASE AUTH STATE
    ========================================================= */
 
 onAuthStateChanged(
     auth,
-    () => {
+    function() {
 
         renderCart();
 
@@ -949,7 +980,7 @@ onAuthStateChanged(
 
 document.addEventListener(
     "DOMContentLoaded",
-    async () => {
+    async function() {
 
         await authReady;
 
@@ -962,12 +993,12 @@ document.addEventListener(
 
 
 /* =========================================================
-   LISTEN FOR CART CHANGES
+   STORAGE CHANGE
    ========================================================= */
 
 window.addEventListener(
     "storage",
-    () => {
+    function() {
 
         renderCart();
 
@@ -995,7 +1026,7 @@ window.showCartMessage =
 
 
 /* =========================================================
-   INITIAL RENDER
+   INITIAL LOAD
    ========================================================= */
 
 renderCart();
