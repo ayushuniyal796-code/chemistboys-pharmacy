@@ -3,9 +3,9 @@ import { auth, authReady, db } from "./firebase.js";
 import {
     collection,
     getDocs,
-    setDoc,
-    deleteDoc,
-    doc
+    doc,
+    updateDoc,
+    deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 import {
@@ -14,820 +14,525 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-// ==========================================
-// ADMIN UID
-// ==========================================
-
 const ADMIN_UID = "gtTvd6XSgqXVaIrp67cM6gEJP0u2";
 
 
-// ==========================================
-// HTML ELEMENTS
-// ==========================================
+// ===============================
+// PAGE LOAD
+// ===============================
 
-const adminContent = document.getElementById("adminContent");
-const accessDenied = document.getElementById("accessDenied");
+document.addEventListener("DOMContentLoaded", async function () {
 
-const ordersContainer = document.getElementById("ordersContainer");
-const loading = document.getElementById("loading");
-const noOrders = document.getElementById("noOrders");
+    await authReady;
 
-const totalOrders = document.getElementById("totalOrders");
-const pendingOrders = document.getElementById("pendingOrders");
-const acceptedOrders = document.getElementById("acceptedOrders");
-
-const searchOrders = document.getElementById("searchOrders");
-const logoutBtn = document.getElementById("logoutBtn");
-
-
-// ==========================================
-// ALL ORDERS
-// ==========================================
-
-let allOrders = [];
-
-
-// ==========================================
-// WAIT FOR FIREBASE AUTH
-// ==========================================
-
-await authReady;
-
-
-// ==========================================
-// AUTH CHECK
-// ==========================================
-
-onAuthStateChanged(auth, async (user) => {
+    const user = auth.currentUser;
 
     // Not logged in
     if (!user) {
-
         window.location.href = "login.html";
         return;
     }
 
-
-    // Logged in but NOT admin
+    // Not admin
     if (user.uid !== ADMIN_UID) {
+        document.body.innerHTML = `
+            <div style="
+                text-align:center;
+                padding:60px 20px;
+                font-family:Arial;
+            ">
+                <h1>🚫 Access Denied</h1>
+                <p>You are not authorized to access the Admin Panel.</p>
 
-        if (adminContent) {
-            adminContent.style.display = "none";
-        }
-
-        if (accessDenied) {
-            accessDenied.style.display = "block";
-        }
-
+                <button onclick="logoutAdmin()" style="
+                    padding:12px 25px;
+                    border:none;
+                    border-radius:8px;
+                    background:#dc3545;
+                    color:white;
+                    cursor:pointer;
+                ">
+                    Logout
+                </button>
+            </div>
+        `;
         return;
     }
 
-
-    // ======================================
-    // ADMIN VERIFIED
-    // ======================================
-
-    if (accessDenied) {
-        accessDenied.style.display = "none";
-    }
-
-    if (adminContent) {
-        adminContent.style.display = "block";
-    }
-
-
-    // Load orders
-    await loadOrders();
-
+    // Admin hai → orders load karo
+    loadOrders();
 });
 
 
-// ==========================================
+// ===============================
 // LOAD ORDERS
-// ==========================================
+// ===============================
 
 async function loadOrders() {
 
-    if (loading) {
-        loading.style.display = "block";
-    }
+    const ordersContainer =
+        document.getElementById("ordersContainer");
 
-    if (noOrders) {
-        noOrders.style.display = "none";
-    }
+    if (!ordersContainer) return;
 
-    if (ordersContainer) {
-        ordersContainer.innerHTML = "";
-    }
-
+    ordersContainer.innerHTML = `
+        <p style="text-align:center;">
+            Loading orders...
+        </p>
+    `;
 
     try {
 
-        const ordersRef = collection(db, "orders");
+        const snapshot =
+            await getDocs(collection(db, "orders"));
 
-        const snapshot = await getDocs(ordersRef);
+        if (snapshot.empty) {
+
+            ordersContainer.innerHTML = `
+                <div style="
+                    text-align:center;
+                    padding:40px;
+                ">
+                    <h2>📦 No Orders Yet</h2>
+                    <p>Customer orders will appear here.</p>
+                </div>
+            `;
+
+            return;
+        }
 
 
-        // Empty array
-        allOrders = [];
+        let orders = [];
 
-
-        // ==================================
-        // GET EVERY FIRESTORE DOCUMENT
-        // ==================================
-
-        snapshot.forEach((orderDoc) => {
+        snapshot.forEach(function (orderDoc) {
 
             const data = orderDoc.data();
 
-            allOrders.push({
+            orders.push({
 
-                // VERY IMPORTANT
-                // This is the real Firestore document ID
-                id: orderDoc.id,
+                // IMPORTANT:
+                // This is the REAL Firestore document ID
+                firestoreId: orderDoc.id,
 
+                // Customer ka custom order ID
                 ...data
-
             });
 
         });
 
 
-        // ==================================
-        // SORT NEWEST FIRST
-        // ==================================
+        // Newest first
+        orders.sort(function (a, b) {
 
-        allOrders.sort((a, b) => {
+            const dateA =
+                a.createdAt?.seconds || 0;
 
-            return getOrderTime(b) - getOrderTime(a);
+            const dateB =
+                b.createdAt?.seconds || 0;
+
+            return dateB - dateA;
 
         });
 
 
-        if (loading) {
-            loading.style.display = "none";
-        }
+        ordersContainer.innerHTML = "";
 
 
-        updateDashboard();
+        orders.forEach(function (order) {
 
-        displayOrders(allOrders);
+            const card =
+                document.createElement("div");
+
+            card.className = "admin-order-card";
+
+
+            // ===============================
+            // ITEMS
+            // ===============================
+
+            let itemsHTML = "";
+
+            if (
+                Array.isArray(order.items) &&
+                order.items.length > 0
+            ) {
+
+                order.items.forEach(function (item) {
+
+                    const name =
+                        item.name || "Medicine";
+
+                    const price =
+                        Number(item.price) || 0;
+
+                    const quantity =
+                        Number(item.quantity) || 1;
+
+                    const itemTotal =
+                        price * quantity;
+
+
+                    itemsHTML += `
+                        <div style="
+                            display:flex;
+                            justify-content:space-between;
+                            padding:6px 0;
+                            border-bottom:1px solid #eee;
+                        ">
+                            <span>
+                                ${name} × ${quantity}
+                            </span>
+
+                            <strong>
+                                ₹${itemTotal}
+                            </strong>
+                        </div>
+                    `;
+                });
+
+            } else {
+
+                itemsHTML = `
+                    <p>No item details available</p>
+                `;
+            }
+
+
+            // ===============================
+            // STATUS
+            // ===============================
+
+            const status =
+                order.status || "Processing";
+
+
+            // ===============================
+            // PAYMENT
+            // ===============================
+
+            let paymentText =
+                "Pending";
+
+
+            if (order.paymentMethod === "cod") {
+
+                paymentText =
+                    "Cash on Delivery";
+
+            }
+
+            else if (
+                order.paymentMethod === "upi" ||
+                order.paymentMethod === "online"
+            ) {
+
+                if (
+                    order.paymentStatus === "Paid"
+                ) {
+
+                    paymentText =
+                        "Paid Online";
+
+                } else {
+
+                    paymentText =
+                        "Online Payment - Pending";
+                }
+            }
+
+
+            // ===============================
+            // TOTAL
+            // ===============================
+
+            const total =
+                Number(order.total) || 0;
+
+
+            // ===============================
+            // CARD
+            // ===============================
+
+            card.innerHTML = `
+
+                <div style="
+                    padding:20px;
+                    margin-bottom:20px;
+                    border-radius:12px;
+                    background:white;
+                    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+                ">
+
+                    <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        align-items:center;
+                        margin-bottom:15px;
+                    ">
+
+                        <h2 style="margin:0;">
+                            Order #${order.id || "N/A"}
+                        </h2>
+
+                        <span style="
+                            padding:6px 12px;
+                            border-radius:20px;
+                            background:${
+                                status === "Accepted"
+                                ? "#d4edda"
+                                : "#fff3cd"
+                            };
+                        ">
+                            ${status}
+                        </span>
+
+                    </div>
+
+
+                    <hr>
+
+
+                    <h3>👤 Customer Details</h3>
+
+                    <p>
+                        <strong>Name:</strong>
+                        ${order.customerName || "N/A"}
+                    </p>
+
+                    <p>
+                        <strong>Email:</strong>
+                        ${order.email || "N/A"}
+                    </p>
+
+                    <p>
+                        <strong>Phone:</strong>
+                        ${order.phone || "N/A"}
+                    </p>
+
+                    <p>
+                        <strong>Address:</strong>
+                        ${order.address || "N/A"}
+                    </p>
+
+                    <p>
+                        <strong>City:</strong>
+                        ${order.city || "N/A"}
+                    </p>
+
+                    <p>
+                        <strong>Pincode:</strong>
+                        ${order.pincode || "N/A"}
+                    </p>
+
+
+                    <hr>
+
+
+                    <h3>📦 Order Details</h3>
+
+                    <p>
+                        <strong>Order Date:</strong>
+                        ${order.orderDate || "N/A"}
+                    </p>
+
+                    <p>
+                        <strong>Order Time:</strong>
+                        ${order.orderTime || "N/A"}
+                    </p>
+
+                    <p>
+                        <strong>Expected Delivery:</strong>
+                        ${order.deliveryDate || "N/A"}
+                    </p>
+
+                    <p>
+                        <strong>Payment:</strong>
+                        ${paymentText}
+                    </p>
+
+
+                    <h3>🛒 Items</h3>
+
+                    <div>
+                        ${itemsHTML}
+                    </div>
+
+
+                    <h2 style="
+                        margin-top:15px;
+                    ">
+                        Total: ₹${total}
+                    </h2>
+
+
+                    <div style="
+                        display:flex;
+                        gap:10px;
+                        margin-top:15px;
+                    ">
+
+                        ${
+                            status !== "Accepted"
+                            ? `
+                                <button
+                                    class="accept-order-btn"
+                                    data-firestore-id="${order.firestoreId}"
+                                    style="
+                                        padding:10px 18px;
+                                        border:none;
+                                        border-radius:7px;
+                                        background:#28a745;
+                                        color:white;
+                                        cursor:pointer;
+                                    "
+                                >
+                                    ✅ Accept Order
+                                </button>
+                            `
+                            : `
+                                <button
+                                    disabled
+                                    style="
+                                        padding:10px 18px;
+                                        border:none;
+                                        border-radius:7px;
+                                        background:#6c757d;
+                                        color:white;
+                                    "
+                                >
+                                    ✅ Accepted
+                                </button>
+                            `
+                        }
+
+
+                        <button
+                            class="delete-order-btn"
+                            data-firestore-id="${order.firestoreId}"
+                            style="
+                                padding:10px 18px;
+                                border:none;
+                                border-radius:7px;
+                                background:#dc3545;
+                                color:white;
+                                cursor:pointer;
+                            "
+                        >
+                            🗑️ Delete
+                        </button>
+
+                    </div>
+
+                </div>
+            `;
+
+
+            ordersContainer.appendChild(card);
+
+        });
+
+
+        // ===============================
+        // ACCEPT BUTTONS
+        // ===============================
+
+        document
+            .querySelectorAll(".accept-order-btn")
+            .forEach(function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        const firestoreId =
+                            this.dataset.firestoreId;
+
+                        acceptOrder(firestoreId);
+
+                    }
+                );
+
+            });
+
+
+        // ===============================
+        // DELETE BUTTONS
+        // ===============================
+
+        document
+            .querySelectorAll(".delete-order-btn")
+            .forEach(function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        const firestoreId =
+                            this.dataset.firestoreId;
+
+                        deleteOrder(firestoreId);
+
+                    }
+                );
+
+            });
 
 
     } catch (error) {
 
-        console.error("Firestore load error:", error);
-
-
-        if (loading) {
-            loading.style.display = "none";
-        }
-
-
-        if (ordersContainer) {
-
-            ordersContainer.innerHTML = `
-
-                <div class="order-card">
-
-                    <h3>❌ Failed to load orders</h3>
-
-                    <p>
-                        ${escapeHTML(error.message)}
-                    </p>
-
-                </div>
-
-            `;
-
-        }
-
-    }
-
-}
-
-
-// ==========================================
-// GET ORDER TIME
-// ==========================================
-
-function getOrderTime(order) {
-
-    if (!order || !order.createdAt) {
-        return 0;
-    }
-
-
-    // Firestore Timestamp
-    if (
-        typeof order.createdAt.toMillis === "function"
-    ) {
-
-        return order.createdAt.toMillis();
-
-    }
-
-
-    // JavaScript Date
-    if (order.createdAt instanceof Date) {
-
-        return order.createdAt.getTime();
-
-    }
-
-
-    // String / number
-    const date = new Date(order.createdAt);
-
-    if (!isNaN(date.getTime())) {
-
-        return date.getTime();
-
-    }
-
-
-    return 0;
-
-}
-
-
-// ==========================================
-// DASHBOARD
-// ==========================================
-
-function updateDashboard() {
-
-    const total = allOrders.length;
-
-
-    const pending = allOrders.filter(order => {
-
-        const status =
-            String(order.status || "Pending")
-                .toLowerCase();
-
-        return status === "pending";
-
-    }).length;
-
-
-    const accepted = allOrders.filter(order => {
-
-        const status =
-            String(order.status || "")
-                .toLowerCase();
-
-        return status === "accepted";
-
-    }).length;
-
-
-    if (totalOrders) {
-        totalOrders.textContent = total;
-    }
-
-    if (pendingOrders) {
-        pendingOrders.textContent = pending;
-    }
-
-    if (acceptedOrders) {
-        acceptedOrders.textContent = accepted;
-    }
-
-}
-
-
-// ==========================================
-// DISPLAY ORDERS
-// ==========================================
-
-function displayOrders(orders) {
-
-    if (!ordersContainer) {
-        return;
-    }
-
-
-    ordersContainer.innerHTML = "";
-
-
-    if (!orders || orders.length === 0) {
-
-        if (noOrders) {
-            noOrders.style.display = "block";
-        }
-
-        return;
-
-    }
-
-
-    if (noOrders) {
-        noOrders.style.display = "none";
-    }
-
-
-    orders.forEach(order => {
-
-        const card = createOrderCard(order);
-
-        ordersContainer.appendChild(card);
-
-    });
-
-}
-
-
-// ==========================================
-// CREATE ORDER CARD
-// ==========================================
-
-function createOrderCard(order) {
-
-    const card = document.createElement("div");
-
-    card.className = "order-card";
-
-
-    // ======================================
-    // STATUS
-    // ======================================
-
-    const status =
-        String(order.status || "Pending");
-
-
-    const statusLower =
-        status.toLowerCase();
-
-
-    const statusClass =
-        statusLower === "accepted"
-            ? "accepted"
-            : "pending";
-
-
-    // ======================================
-    // CUSTOMER DETAILS
-    // ======================================
-
-    const customerName =
-        order.customerName ||
-        order.name ||
-        "N/A";
-
-
-    const customerEmail =
-        order.customerEmail ||
-        order.email ||
-        "N/A";
-
-
-    const customerPhone =
-        order.customerPhone ||
-        order.phone ||
-        "N/A";
-
-
-    const customerAddress =
-        order.customerAddress ||
-        order.address ||
-        "N/A";
-
-
-    const customerCity =
-        order.customerCity ||
-        order.city ||
-        "N/A";
-
-
-    const customerPincode =
-        order.customerPincode ||
-        order.pincode ||
-        "N/A";
-
-
-    // ======================================
-    // PAYMENT
-    // ======================================
-
-    const paymentMethod =
-        order.paymentMethod ||
-        "N/A";
-
-
-    const paymentStatus =
-        order.paymentStatus ||
-        "Pending";
-
-
-    // ======================================
-    // DATE
-    // ======================================
-
-    const orderDate =
-        formatDate(order.createdAt);
-
-
-    // ======================================
-    // PRODUCTS
-    // ======================================
-
-    let itemsHTML = "";
-
-
-    if (
-        Array.isArray(order.items) &&
-        order.items.length > 0
-    ) {
-
-        order.items.forEach(item => {
-
-            const itemName =
-                item.name ||
-                item.title ||
-                "Product";
-
-
-            const quantity =
-                Number(item.quantity) || 1;
-
-
-            const price =
-                Number(item.price) || 0;
-
-
-            const itemTotal =
-                price * quantity;
-
-
-            itemsHTML += `
-
-                <div class="item">
-
-                    <span>
-                        ${escapeHTML(itemName)}
-                        × ${quantity}
-                    </span>
-
-                    <span>
-                        ₹${itemTotal.toFixed(2)}
-                    </span>
-
-                </div>
-
-            `;
-
-        });
-
-    } else {
-
-        itemsHTML = `
-
-            <div class="item">
-
-                <span>
-                    No item information available
-                </span>
-
+        console.error(
+            "Error loading orders:",
+            error
+        );
+
+        ordersContainer.innerHTML = `
+            <div style="
+                text-align:center;
+                padding:30px;
+                color:red;
+            ">
+                <h2>❌ Error Loading Orders</h2>
+                <p>
+                    ${error.message}
+                </p>
             </div>
-
         `;
-
     }
-
-
-    // ======================================
-    // TOTAL
-    // ======================================
-
-    const totalAmount =
-        Number(
-            order.grandTotal ??
-            order.total ??
-            order.amount ??
-            0
-        );
-
-
-    // ======================================
-    // CARD HTML
-    // ======================================
-
-    card.innerHTML = `
-
-        <div class="order-top">
-
-            <div>
-
-                <div class="order-id">
-
-                    Order ID:
-                    ${escapeHTML(order.id)}
-
-                </div>
-
-                <small>
-
-                    ${escapeHTML(orderDate)}
-
-                </small>
-
-            </div>
-
-
-            <span class="status ${statusClass}">
-
-                ${escapeHTML(status)}
-
-            </span>
-
-        </div>
-
-
-        <div class="customer-info">
-
-
-            <div class="info-box">
-
-                <strong>
-                    Customer Name
-                </strong>
-
-                ${escapeHTML(customerName)}
-
-            </div>
-
-
-            <div class="info-box">
-
-                <strong>
-                    Email
-                </strong>
-
-                ${escapeHTML(customerEmail)}
-
-            </div>
-
-
-            <div class="info-box">
-
-                <strong>
-                    Phone
-                </strong>
-
-                ${escapeHTML(customerPhone)}
-
-            </div>
-
-
-            <div class="info-box">
-
-                <strong>
-                    City
-                </strong>
-
-                ${escapeHTML(customerCity)}
-
-            </div>
-
-
-            <div class="info-box">
-
-                <strong>
-                    Pincode
-                </strong>
-
-                ${escapeHTML(customerPincode)}
-
-            </div>
-
-
-            <div class="info-box">
-
-                <strong>
-                    Payment
-                </strong>
-
-                ${escapeHTML(paymentMethod)}
-
-                -
-
-                ${escapeHTML(paymentStatus)}
-
-            </div>
-
-
-            <div
-                class="info-box"
-                style="grid-column: 1 / -1;"
-            >
-
-                <strong>
-                    Address
-                </strong>
-
-                ${escapeHTML(customerAddress)}
-
-            </div>
-
-
-        </div>
-
-
-        <div class="items">
-
-            <h3>
-                🛒 Ordered Products
-            </h3>
-
-            ${itemsHTML}
-
-        </div>
-
-
-        <div class="order-bottom">
-
-
-            <div class="total">
-
-                Total:
-                ₹${totalAmount.toFixed(2)}
-
-            </div>
-
-
-            <div class="actions">
-
-
-                <button
-                    class="accept-btn"
-                    type="button"
-                    ${statusLower === "accepted"
-                        ? "disabled"
-                        : ""}
-                >
-
-                    ${
-                        statusLower === "accepted"
-                            ? "✓ Accepted"
-                            : "✓ Accept Order"
-                    }
-
-                </button>
-
-
-                <button
-                    class="delete-btn"
-                    type="button"
-                >
-
-                    🗑️ Delete
-
-                </button>
-
-
-            </div>
-
-
-        </div>
-
-    `;
-
-
-    // ======================================
-    // ACCEPT BUTTON
-    // ======================================
-
-    const acceptButton =
-        card.querySelector(".accept-btn");
-
-
-    if (acceptButton) {
-
-        acceptButton.addEventListener(
-            "click",
-            () => {
-
-                acceptOrder(order);
-
-            }
-        );
-
-    }
-
-
-    // ======================================
-    // DELETE BUTTON
-    // ======================================
-
-    const deleteButton =
-        card.querySelector(".delete-btn");
-
-
-    if (deleteButton) {
-
-        deleteButton.addEventListener(
-            "click",
-            () => {
-
-                deleteOrder(order);
-
-            }
-        );
-
-    }
-
-
-    return card;
-
 }
 
 
-// ==========================================
+// ===============================
 // ACCEPT ORDER
-// ==========================================
+// ===============================
 
-async function acceptOrder(order) {
+async function acceptOrder(firestoreId) {
 
-    if (!order || !order.id) {
+    if (!firestoreId) {
 
-        alert("❌ Order ID not found.");
+        alert("Invalid Firestore Order ID");
 
-        return;
-
-    }
-
-
-    const confirmed =
-        confirm(
-            "Are you sure you want to accept this order?"
-        );
-
-
-    if (!confirmed) {
         return;
     }
 
 
     try {
 
-        // ==================================
-        // GET REAL FIRESTORE DOCUMENT
-        // ==================================
-
-        const orderRef =
+        await updateDoc(
             doc(
                 db,
                 "orders",
-                String(order.id)
-            );
-
-
-        // ==================================
-        // UPDATE STATUS
-        // ==================================
-
-        await setDoc(
-            orderRef,
+                firestoreId
+            ),
             {
                 status: "Accepted"
-            },
-            {
-                merge: true
             }
         );
 
 
-        // ==================================
-        // UPDATE LOCAL ARRAY
-        // ==================================
+        alert("✅ Order Accepted");
 
-        const localOrder =
-            allOrders.find(
-                item => item.id === order.id
-            );
-
-
-        if (localOrder) {
-
-            localOrder.status = "Accepted";
-
-        }
-
-
-        // ==================================
-        // UPDATE UI
-        // ==================================
-
-        updateDashboard();
-
-        displayOrders(allOrders);
-
-
-        alert(
-            "✅ Order accepted successfully!"
-        );
+        // Reload orders
+        loadOrders();
 
 
     } catch (error) {
@@ -837,71 +542,51 @@ async function acceptOrder(order) {
             error
         );
 
-
         alert(
-            "❌ Failed to accept order:\n\n" +
+            "❌ Failed to accept order: " +
             error.message
         );
-
     }
-
 }
 
 
-// ==========================================
+// ===============================
 // DELETE ORDER
-// ==========================================
+// ===============================
 
-async function deleteOrder(order) {
+async function deleteOrder(firestoreId) {
 
-    if (!order || !order.id) {
+    if (!firestoreId) {
 
-        alert("❌ Order ID not found.");
+        alert("Invalid Order ID");
 
         return;
-
     }
 
 
-    const confirmed =
+    const confirmDelete =
         confirm(
-            "Are you sure you want to permanently delete this order?"
+            "Are you sure you want to delete this order?"
         );
 
 
-    if (!confirmed) {
-        return;
-    }
+    if (!confirmDelete) return;
 
 
     try {
 
-        const orderRef =
+        await deleteDoc(
             doc(
                 db,
                 "orders",
-                String(order.id)
-            );
-
-
-        await deleteDoc(orderRef);
-
-
-        // Remove locally
-        allOrders =
-            allOrders.filter(
-                item => item.id !== order.id
-            );
-
-
-        updateDashboard();
-
-        displayOrders(allOrders);
-
-
-        alert(
-            "🗑️ Order deleted successfully!"
+                firestoreId
+            )
         );
+
+
+        alert("🗑️ Order Deleted");
+
+        loadOrders();
 
 
     } catch (error) {
@@ -911,214 +596,32 @@ async function deleteOrder(order) {
             error
         );
 
-
         alert(
-            "❌ Failed to delete order:\n\n" +
+            "❌ Failed to delete order: " +
             error.message
         );
-
     }
-
 }
 
 
-// ==========================================
-// SEARCH
-// ==========================================
-
-if (searchOrders) {
-
-    searchOrders.addEventListener(
-        "input",
-        () => {
-
-            const search =
-                searchOrders.value
-                    .toLowerCase()
-                    .trim();
-
-
-            if (!search) {
-
-                displayOrders(allOrders);
-
-                return;
-
-            }
-
-
-            const filtered =
-                allOrders.filter(order => {
-
-                    const searchableText = `
-
-                        ${order.id || ""}
-
-                        ${order.customerName ||
-                            order.name || ""}
-
-                        ${order.customerEmail ||
-                            order.email || ""}
-
-                        ${order.customerPhone ||
-                            order.phone || ""}
-
-                        ${order.customerCity ||
-                            order.city || ""}
-
-                        ${order.customerPincode ||
-                            order.pincode || ""}
-
-                        ${order.status || ""}
-
-                        ${order.paymentMethod || ""}
-
-                    `.toLowerCase();
-
-
-                    return searchableText.includes(
-                        search
-                    );
-
-                });
-
-
-            displayOrders(filtered);
-
-        }
-    );
-
-}
-
-
-// ==========================================
+// ===============================
 // LOGOUT
-// ==========================================
+// ===============================
 
-if (logoutBtn) {
+window.logoutAdmin = async function () {
 
-    logoutBtn.addEventListener(
-        "click",
-        async () => {
+    try {
 
-            try {
+        await signOut(auth);
 
-                await signOut(auth);
+        window.location.href =
+            "login.html";
 
-                window.location.href =
-                    "login.html";
+    } catch (error) {
 
-            } catch (error) {
-
-                console.error(
-                    "Logout error:",
-                    error
-                );
-
-                alert(
-                    "❌ Logout failed."
-                );
-
-            }
-
-        }
-    );
-
-}
-
-
-// ==========================================
-// FORMAT DATE
-// ==========================================
-
-function formatDate(timestamp) {
-
-    if (!timestamp) {
-
-        return "Date not available";
-
-    }
-
-
-    let date;
-
-
-    // Firestore Timestamp
-    if (
-        typeof timestamp.toDate === "function"
-    ) {
-
-        date = timestamp.toDate();
-
-    }
-
-    // Date object
-    else if (timestamp instanceof Date) {
-
-        date = timestamp;
-
-    }
-
-    // String / number
-    else {
-
-        date = new Date(timestamp);
-
-    }
-
-
-    if (isNaN(date.getTime())) {
-
-        return "Date not available";
-
-    }
-
-
-    return date.toLocaleString(
-        "en-IN",
-        {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit"
-        }
-    );
-
-}
-
-
-// ==========================================
-// SECURITY
-// ==========================================
-
-function escapeHTML(value) {
-
-    return String(value ?? "")
-
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-
-        .replace(
-            /</g,
-            "&lt;"
-        )
-
-        .replace(
-            />/g,
-            "&gt;"
-        )
-
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-
-        .replace(
-            /'/g,
-            "&#039;"
+        console.error(
+            "Logout error:",
+            error
         );
-
-}
+    }
+};
