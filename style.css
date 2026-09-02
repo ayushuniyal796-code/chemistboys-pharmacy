@@ -1909,55 +1909,6 @@ body::after {
 .products-grid .product-card .add-cart-btn:hover {
     background: #087c6b !important;
 }
-
-/* =========================================================
-   CART REMOVE BUTTON - MOBILE FIX
-========================================================= */
-
-.cart-product .remove-btn {
-    width: 150px;
-    min-width: 150px;
-    height: 52px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-
-    padding: 0 18px;
-
-    border-radius: 12px;
-
-    white-space: nowrap;
-    overflow: hidden;
-
-    font-size: 16px;
-    font-weight: 700;
-
-    cursor: pointer;
-}
-
-
-/* Mobile */
-
-@media (max-width: 768px) {
-
-    .cart-product {
-        grid-template-columns: 1fr auto;
-        gap: 14px;
-    }
-
-    .cart-product .remove-btn {
-        grid-column: 1 / -1;
-
-        justify-self: end;
-
-        width: 150px;
-        min-width: 150px;
-        height: 52px;
-    }
-
-}
 /* =========================================================
    CART REMOVE BUTTON - FINAL FIX
 ========================================================= */
