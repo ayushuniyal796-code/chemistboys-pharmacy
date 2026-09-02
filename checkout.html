@@ -2,30 +2,18 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Checkout - ChemistBoys</title>
 
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
-
+    <link rel="stylesheet" href="style.css">
 </head>
-
 
 <body>
 
-
-    <!-- =================================================
-         HEADER
-    ================================================== -->
+    <!-- ================= HEADER ================= -->
 
     <header class="header">
 
@@ -33,19 +21,11 @@
 
             <div class="header-top">
 
-
-                <!-- LOGO -->
-
-                <a
-                    href="index.html"
-                    class="logo-link"
-                >
+                <a href="index.html" class="logo-link">
 
                     <div class="logo">
 
-                        <span class="logo-icon">
-                            💊
-                        </span>
+                        <span class="logo-icon">💊</span>
 
                         <span class="logo-text">
                             ChemistBoys
@@ -55,23 +35,13 @@
 
                 </a>
 
-
-                <!-- HEADER ACTIONS -->
-
                 <div class="header-actions">
 
-                    <a
-                        href="index.html"
-                        class="account-btn"
-                    >
+                    <a href="index.html" class="account-btn">
                         🏠 Home
                     </a>
 
-
-                    <a
-                        href="orders.html"
-                        class="account-btn"
-                    >
+                    <a href="orders.html" class="account-btn">
                         📦 My Orders
                     </a>
 
@@ -84,50 +54,27 @@
 
             <nav class="navbar">
 
-                <a
-                    href="index.html"
-                    class="nav-link"
-                >
+                <a href="index.html" class="nav-link">
                     Home
                 </a>
 
-
-                <a
-                    href="index.html#products"
-                    class="nav-link"
-                >
+                <a href="index.html#products" class="nav-link">
                     All Medicines
                 </a>
 
-
-                <a
-                    href="index.html#vitamins"
-                    class="nav-link"
-                >
+                <a href="index.html#vitamins" class="nav-link">
                     Vitamins
                 </a>
 
-
-                <a
-                    href="index.html#firstaid"
-                    class="nav-link"
-                >
+                <a href="index.html#firstaid" class="nav-link">
                     First Aid
                 </a>
 
-
-                <a
-                    href="index.html#offers"
-                    class="nav-link"
-                >
+                <a href="index.html#offers" class="nav-link">
                     Offers
                 </a>
 
-
-                <a
-                    href="about.html"
-                    class="nav-link"
-                >
+                <a href="about.html" class="nav-link">
                     About
                 </a>
 
@@ -138,38 +85,26 @@
     </header>
 
 
-
-    <!-- =================================================
-         CHECKOUT PAGE
-    ================================================== -->
+    <!-- ================= CHECKOUT ================= -->
 
     <main class="cart-page">
 
         <div class="container">
-
-
-            <!-- PAGE TITLE -->
 
             <h1 class="cart-title">
                 🛒 Checkout
             </h1>
 
 
-
             <div class="cart-layout">
 
 
-                <!-- =================================================
-                     LEFT SIDE
-                     CUSTOMER DETAILS + CART ITEMS
-                ================================================== -->
+                <!-- ================= LEFT SIDE ================= -->
 
                 <div>
 
 
-                    <!-- =================================================
-                         CUSTOMER DETAILS
-                    ================================================== -->
+                    <!-- CUSTOMER DETAILS -->
 
                     <div class="cart-card">
 
@@ -178,9 +113,7 @@
                         </h2>
 
 
-                        <form
-                            id="checkoutForm"
-                        >
+                        <form id="checkoutForm">
 
 
                             <!-- NAME -->
@@ -202,7 +135,6 @@
                             </div>
 
 
-
                             <!-- EMAIL -->
 
                             <div class="form-group">
@@ -222,7 +154,6 @@
                             </div>
 
 
-
                             <!-- PHONE -->
 
                             <div class="form-group">
@@ -238,11 +169,11 @@
                                     placeholder="Enter 10-digit mobile number"
                                     pattern="[0-9]{10}"
                                     maxlength="10"
+                                    inputmode="numeric"
                                     required
                                 >
 
                             </div>
-
 
 
                             <!-- ADDRESS -->
@@ -264,7 +195,6 @@
                             </div>
 
 
-
                             <!-- CITY -->
 
                             <div class="form-group">
@@ -284,7 +214,6 @@
                             </div>
 
 
-
                             <!-- PINCODE -->
 
                             <div class="form-group">
@@ -300,6 +229,7 @@
                                     placeholder="6-digit pincode"
                                     pattern="[0-9]{6}"
                                     maxlength="6"
+                                    inputmode="numeric"
                                     required
                                 >
 
@@ -311,10 +241,7 @@
                     </div>
 
 
-
-                    <!-- =================================================
-                         CART ITEMS
-                    ================================================== -->
+                    <!-- ================= CART ITEMS ================= -->
 
                     <div class="cart-card">
 
@@ -322,20 +249,16 @@
                             🛍️ Your Items
                         </h2>
 
-
                         <div id="checkoutItems">
 
-                            <!-- Products loaded by checkout.js -->
+                            <!-- checkout.js will load products here -->
 
                         </div>
 
                     </div>
 
 
-
-                    <!-- =================================================
-                         PAYMENT METHOD
-                    ================================================== -->
+                    <!-- ================= PAYMENT ================= -->
 
                     <div class="cart-card">
 
@@ -369,32 +292,59 @@
                                     📱 UPI
                                 </option>
 
-                                <option value="card">
-                                    💳 Debit / Credit Card
-                                </option>
-
                             </select>
+
+                        </div>
+
+
+                        <!-- UPI INFORMATION -->
+
+                        <div
+                            id="upiInfo"
+                            style="
+                                display:none;
+                                margin-top:15px;
+                                padding:15px;
+                                border-radius:10px;
+                                background:#f0fff4;
+                                border:1px solid #c6f6d5;
+                            "
+                        >
+
+                            <strong>
+                                📱 UPI Payment
+                            </strong>
+
+                            <p style="margin:8px 0;">
+                                Pay securely using your UPI app.
+                            </p>
+
+                            <p style="margin:8px 0;">
+                                UPI ID:
+                                <strong>
+                                    ayushuniyal.cyberlab@fam
+                                </strong>
+                            </p>
+
+                            <small>
+                                Payment amount will be shown when you
+                                continue with UPI.
+                            </small>
 
                         </div>
 
                     </div>
 
-
                 </div>
 
 
-
-                <!-- =================================================
-                     RIGHT SIDE
-                     ORDER SUMMARY
-                ================================================== -->
+                <!-- ================= RIGHT SIDE ================= -->
 
                 <div class="cart-card">
 
                     <h2>
                         🛒 Order Summary
                     </h2>
-
 
 
                     <!-- SUBTOTAL -->
@@ -412,7 +362,6 @@
                     </div>
 
 
-
                     <!-- DELIVERY -->
 
                     <div class="summary-row">
@@ -428,16 +377,12 @@
                     </div>
 
 
-
-                    <!-- SEPARATOR -->
-
                     <div
                         style="
                             border-top:1px solid #e5e5e5;
                             margin:18px 0;
                         "
                     ></div>
-
 
 
                     <!-- TOTAL -->
@@ -455,10 +400,7 @@
                     </div>
 
 
-
-                    <!-- =================================================
-                         PLACE ORDER
-                    ================================================== -->
+                    <!-- PLACE ORDER -->
 
                     <button
                         type="submit"
@@ -476,8 +418,7 @@
                     </button>
 
 
-
-                    <!-- BACK TO CART -->
+                    <!-- BACK -->
 
                     <a
                         href="cart.html"
@@ -495,10 +436,7 @@
     </main>
 
 
-
-    <!-- =================================================
-         FOOTER
-    ================================================== -->
+    <!-- ================= FOOTER ================= -->
 
     <footer class="footer">
 
@@ -518,23 +456,18 @@
     </footer>
 
 
+    <!-- ================= JAVASCRIPT ================= -->
 
-    <!-- =================================================
-         JAVASCRIPT
-    ================================================== -->
-
-    <!-- IMPORTANT:
-         products.js must load BEFORE checkout.js
-         so checkout.js can find product prices.
-    -->
+    <!-- Products FIRST -->
 
     <script src="products.js"></script>
+
+    <!-- Checkout JS AFTER products.js -->
 
     <script
         type="module"
         src="checkout.js"
     ></script>
-
 
 </body>
 
