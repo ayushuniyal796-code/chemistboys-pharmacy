@@ -1909,11 +1909,19 @@ body::after {
 .products-grid .product-card .add-cart-btn:hover {
     background: #087c6b !important;
 }
-/* =========================================================
-   CART REMOVE BUTTON - FINAL FIX
-========================================================= */
+/* =====================================================
+   CART REMOVE BUTTON - FINAL
+===================================================== */
 
-.cart-item .remove-btn {
+.cart-item-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    gap: 12px !important;
+    min-width: 150px !important;
+}
+
+.cart-item-actions .remove-btn {
     width: 150px !important;
     min-width: 150px !important;
     height: 52px !important;
@@ -1922,32 +1930,34 @@ body::after {
     align-items: center !important;
     justify-content: center !important;
 
-    padding: 0 15px !important;
-    margin: 12px 0 0 0 !important;
+    padding: 0 16px !important;
+    margin: 0 !important;
 
     border-radius: 12px !important;
 
     white-space: nowrap !important;
-    overflow: hidden !important;
+    overflow: visible !important;
 
     font-size: 16px !important;
     font-weight: 700 !important;
 
-    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
 }
 
 
-/* Mobile */
+/* MOBILE */
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
 
-    .cart-item .remove-btn {
+    .cart-item-actions {
+        min-width: 150px !important;
+        align-items: flex-end !important;
+    }
+
+    .cart-item-actions .remove-btn {
         width: 150px !important;
         min-width: 150px !important;
         height: 52px !important;
-
-        margin-left: 0 !important;
-        margin-right: auto !important;
     }
 
 }
