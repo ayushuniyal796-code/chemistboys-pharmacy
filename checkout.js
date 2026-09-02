@@ -1,23 +1,24 @@
-/* CHEMISTBOYS - CHECKOUT + FAMPAY UPI */
+/* CHEMISTBOYS - CHECKOUT + FAMPAY UPI + FIRESTORE */
 
-import { auth, authReady } from "./firebase.js";
+import { auth, authReady, db } from "./firebase.js";
 
 import {
     onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
+import {
+    collection,
+    addDoc,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
 
 const CART_KEY = "chemistboys_cart";
 const OLD_CART_KEY = "chemistCart";
 
-
-// Tumhari FamPay UPI ID
-const UPI_ID =
-    "ayushuniyal.cyberlab@fam";
-
+const UPI_ID = "ayushuniyal.cyberlab@fam";
 
 let currentUser = null;
-
 
 
 // ================= CART =================
@@ -33,8 +34,7 @@ function getCart() {
         if (!data)
             return [];
 
-        const cart =
-            JSON.parse(data);
+        const cart = JSON.parse(data);
 
         return Array.isArray(cart)
             ? cart
@@ -42,15 +42,11 @@ function getCart() {
 
     } catch (error) {
 
-        console.error(
-            "Cart loading error:",
-            error
-        );
+        console.error("Cart loading error:", error);
 
         return [];
     }
 }
-
 
 
 // ================= PRODUCT PRICE =================
@@ -71,8 +67,7 @@ function findProduct(id) {
 
 function getPrice(item) {
 
-    const cartPrice =
-        Number(item.price);
+    const cartPrice = Number(item.price);
 
     if (
         Number.isFinite(cartPrice) &&
@@ -82,10 +77,7 @@ function getPrice(item) {
         return cartPrice;
     }
 
-
-    const product =
-        findProduct(item.id);
-
+    const product = findProduct(item.id);
 
     if (
         product &&
@@ -95,10 +87,8 @@ function getPrice(item) {
         return Number(product.price);
     }
 
-
     return 0;
 }
-
 
 
 // ================= USER DETAILS =================
@@ -108,18 +98,11 @@ function fillUserDetails() {
     if (!currentUser)
         return;
 
-
     const nameInput =
-        document.getElementById(
-            "customerName"
-        );
-
+        document.getElementById("customerName");
 
     const emailInput =
-        document.getElementById(
-            "customerEmail"
-        );
-
+        document.getElementById("customerEmail");
 
     if (
         nameInput &&
@@ -131,7 +114,6 @@ function fillUserDetails() {
             currentUser.email ||
             "";
     }
-
 
     if (
         emailInput &&
@@ -145,42 +127,26 @@ function fillUserDetails() {
 }
 
 
-
 // ================= SHOW CART =================
 
 function renderCheckoutCart() {
 
     const container =
-        document.getElementById(
-            "checkoutItems"
-        );
-
+        document.getElementById("checkoutItems");
 
     const subtotalElement =
-        document.getElementById(
-            "subtotal"
-        );
-
+        document.getElementById("subtotal");
 
     const totalElement =
-        document.getElementById(
-            "grandTotal"
-        );
-
+        document.getElementById("grandTotal");
 
     const deliveryElement =
-        document.getElementById(
-            "deliveryCharge"
-        );
-
+        document.getElementById("deliveryCharge");
 
     if (!container)
         return;
 
-
-    const cart =
-        getCart();
-
+    const cart = getCart();
 
     if (!cart.length) {
 
@@ -198,35 +164,24 @@ function renderCheckoutCart() {
 
         `;
 
-
         if (subtotalElement)
-            subtotalElement.textContent =
-                "₹0";
-
+            subtotalElement.textContent = "₹0";
 
         if (totalElement)
-            totalElement.textContent =
-                "₹0";
-
+            totalElement.textContent = "₹0";
 
         if (deliveryElement)
-            deliveryElement.textContent =
-                "FREE";
-
+            deliveryElement.textContent = "FREE";
 
         return;
     }
 
-
     let subtotal = 0;
-
 
     container.innerHTML =
         cart.map(item => {
 
-            const price =
-                getPrice(item);
-
+            const price = getPrice(item);
 
             const quantity =
                 Math.max(
@@ -234,13 +189,10 @@ function renderCheckoutCart() {
                     Number(item.quantity) || 1
                 );
 
-
             const itemTotal =
                 price * quantity;
 
-
             subtotal += itemTotal;
-
 
             return `
 
@@ -249,25 +201,17 @@ function renderCheckoutCart() {
                     <div>
 
                         <div class="checkout-item-name">
-
                             ${item.name || "Medicine"}
-
                         </div>
 
-
                         <div class="checkout-item-quantity">
-
                             Quantity: ${quantity}
-
                         </div>
 
                     </div>
 
-
                     <div class="checkout-item-price">
-
                         ₹${itemTotal}
-
                     </div>
 
                 </div>
@@ -276,22 +220,18 @@ function renderCheckoutCart() {
 
         }).join("");
 
-
     if (subtotalElement)
         subtotalElement.textContent =
             `₹${subtotal}`;
-
 
     if (deliveryElement)
         deliveryElement.textContent =
             "FREE";
 
-
     if (totalElement)
         totalElement.textContent =
             `₹${subtotal}`;
 }
-
 
 
 // ================= ORDER ID =================
@@ -305,19 +245,15 @@ function generateOrderId() {
 }
 
 
-
 // ================= DELIVERY DATE =================
 
 function getDeliveryDate() {
 
-    const date =
-        new Date();
-
+    const date = new Date();
 
     date.setDate(
         date.getDate() + 3
     );
-
 
     return date.toLocaleDateString(
         "en-IN",
@@ -330,7 +266,6 @@ function getDeliveryDate() {
 }
 
 
-
 // ================= SUCCESS SOUND =================
 
 function playSuccessSound() {
@@ -341,69 +276,55 @@ function playSuccessSound() {
             window.AudioContext ||
             window.webkitAudioContext;
 
-
         if (!AudioContext)
             return;
-
 
         const audio =
             new AudioContext();
 
-
         const oscillator =
             audio.createOscillator();
-
 
         const gain =
             audio.createGain();
 
-
-        oscillator.type =
-            "sine";
-
+        oscillator.type = "sine";
 
         oscillator.frequency.setValueAtTime(
             523.25,
             audio.currentTime
         );
 
-
         oscillator.frequency.setValueAtTime(
             659.25,
             audio.currentTime + 0.12
         );
-
 
         oscillator.frequency.setValueAtTime(
             783.99,
             audio.currentTime + 0.24
         );
 
-
         gain.gain.setValueAtTime(
             0.0001,
             audio.currentTime
         );
-
 
         gain.gain.exponentialRampToValueAtTime(
             0.25,
             audio.currentTime + 0.03
         );
 
-
         gain.gain.exponentialRampToValueAtTime(
             0.0001,
             audio.currentTime + 0.55
         );
-
 
         oscillator.connect(gain);
 
         gain.connect(
             audio.destination
         );
-
 
         oscillator.start();
 
@@ -421,7 +342,6 @@ function playSuccessSound() {
 }
 
 
-
 // ================= ORDER SUCCESS =================
 
 function showOrderSuccess(
@@ -431,36 +351,28 @@ function showOrderSuccess(
 
     playSuccessSound();
 
-
     const overlay =
         document.createElement("div");
 
-
     overlay.id =
         "orderSuccessOverlay";
-
 
     overlay.innerHTML = `
 
         <div class="success-box">
 
             <div class="success-tick">
-
                 ✓
-
             </div>
-
 
             <h2>
                 Order Successful!
             </h2>
 
-
             <p>
                 Your order has been placed
                 successfully.
             </p>
-
 
             <p>
                 <strong>
@@ -469,14 +381,12 @@ function showOrderSuccess(
                 ${orderId}
             </p>
 
-
             <p>
                 <strong>
                     Payment:
                 </strong>
                 ${paymentStatus}
             </p>
-
 
             <button
                 id="viewOrdersBtn"
@@ -491,10 +401,8 @@ function showOrderSuccess(
 
     `;
 
-
     const style =
         document.createElement("style");
-
 
     style.textContent = `
 
@@ -519,7 +427,6 @@ function showOrderSuccess(
 
         }
 
-
         .success-box {
 
             background: white;
@@ -538,7 +445,6 @@ function showOrderSuccess(
                 rgba(0,0,0,.3);
 
         }
-
 
         .success-tick {
 
@@ -566,7 +472,6 @@ function showOrderSuccess(
 
         }
 
-
         .success-box h2 {
 
             color: #15803d;
@@ -574,7 +479,6 @@ function showOrderSuccess(
             margin-bottom: 10px;
 
         }
-
 
         .success-box button {
 
@@ -602,18 +506,12 @@ function showOrderSuccess(
 
     `;
 
-
     document.head.appendChild(style);
 
-    document.body.appendChild(
-        overlay
-    );
-
+    document.body.appendChild(overlay);
 
     document
-        .getElementById(
-            "viewOrdersBtn"
-        )
+        .getElementById("viewOrdersBtn")
         ?.addEventListener(
             "click",
             () => {
@@ -624,7 +522,6 @@ function showOrderSuccess(
             }
         );
 }
-
 
 
 // ================= UPI PAYMENT =================
@@ -639,14 +536,11 @@ function showUpiPayment(
             "upiPaymentOverlay"
         );
 
-
     if (oldOverlay)
         oldOverlay.remove();
 
-
     const transactionNote =
         `ChemistBoys ${orderData.id}`;
-
 
     const upiUrl =
         `upi://pay?` +
@@ -656,14 +550,11 @@ function showUpiPayment(
         `&cu=INR` +
         `&tn=${encodeURIComponent(transactionNote)}`;
 
-
     const overlay =
         document.createElement("div");
 
-
     overlay.id =
         "upiPaymentOverlay";
-
 
     overlay.innerHTML = `
 
@@ -674,25 +565,16 @@ function showUpiPayment(
                 id="upiCloseBtn"
                 type="button"
             >
-
                 ×
-
             </button>
 
-
             <div class="upi-icon">
-
                 📱
-
             </div>
 
-
             <h2>
-
                 Pay via UPI
-
             </h2>
-
 
             <p>
 
@@ -706,15 +588,11 @@ function showUpiPayment(
 
             </p>
 
-
             <div class="upi-id-box">
 
                 ${UPI_ID}
 
             </div>
-
-
-            <!-- PAY BUTTON -->
 
             <a
                 class="upi-pay-btn"
@@ -725,7 +603,6 @@ function showUpiPayment(
                 via UPI
 
             </a>
-
 
             <p class="upi-note">
 
@@ -739,10 +616,8 @@ function showUpiPayment(
 
     `;
 
-
     const style =
         document.createElement("style");
-
 
     style.textContent = `
 
@@ -767,7 +642,6 @@ function showUpiPayment(
 
         }
 
-
         .upi-box {
 
             position: relative;
@@ -789,7 +663,6 @@ function showUpiPayment(
 
         }
 
-
         .upi-close {
 
             position: absolute;
@@ -810,13 +683,9 @@ function showUpiPayment(
 
         }
 
-
         .upi-icon {
-
             font-size: 42px;
-
         }
-
 
         .upi-box h2 {
 
@@ -825,7 +694,6 @@ function showUpiPayment(
             margin: 8px 0;
 
         }
-
 
         .upi-id-box {
 
@@ -847,7 +715,6 @@ function showUpiPayment(
             word-break: break-all;
 
         }
-
 
         .upi-pay-btn {
 
@@ -879,7 +746,6 @@ function showUpiPayment(
 
         }
 
-
         .upi-note {
 
             font-size: 13px;
@@ -892,20 +758,12 @@ function showUpiPayment(
 
     `;
 
-
     document.head.appendChild(style);
 
-    document.body.appendChild(
-        overlay
-    );
-
-
-    // CLOSE BUTTON
+    document.body.appendChild(overlay);
 
     document
-        .getElementById(
-            "upiCloseBtn"
-        )
+        .getElementById("upiCloseBtn")
         ?.addEventListener(
             "click",
             () => {
@@ -917,10 +775,48 @@ function showUpiPayment(
 }
 
 
+// ================= FIRESTORE SAVE =================
+
+async function saveOrderToFirestore(order) {
+
+    try {
+
+        const firestoreOrder = {
+
+            ...order,
+
+            createdAt: serverTimestamp()
+
+        };
+
+        const docRef =
+            await addDoc(
+                collection(db, "orders"),
+                firestoreOrder
+            );
+
+        console.log(
+            "Order saved to Firestore:",
+            docRef.id
+        );
+
+        return docRef.id;
+
+    } catch (error) {
+
+        console.error(
+            "Firestore order save error:",
+            error
+        );
+
+        throw error;
+    }
+}
+
 
 // ================= SAVE ORDER =================
 
-function finishOrder(
+async function finishOrder(
     order,
     paymentStatus
 ) {
@@ -928,40 +824,48 @@ function finishOrder(
     order.paymentStatus =
         paymentStatus;
 
+    try {
 
-    const orders =
-        JSON.parse(
-            localStorage.getItem(
-                "orders"
-            ) || "[]"
+        // Save centrally in Firestore
+        await saveOrderToFirestore(order);
+
+        // Also keep local copy for existing orders page
+        const orders =
+            JSON.parse(
+                localStorage.getItem("orders") ||
+                "[]"
+            );
+
+        orders.push(order);
+
+        localStorage.setItem(
+            "orders",
+            JSON.stringify(orders)
         );
 
+        // Clear cart
+        localStorage.removeItem(CART_KEY);
 
-    orders.push(order);
+        localStorage.removeItem(OLD_CART_KEY);
 
+        // Show success
+        showOrderSuccess(
+            order.id,
+            paymentStatus
+        );
 
-    localStorage.setItem(
-        "orders",
-        JSON.stringify(orders)
-    );
+    } catch (error) {
 
+        alert(
+            "Order could not be saved. Please try again."
+        );
 
-    localStorage.removeItem(
-        CART_KEY
-    );
-
-
-    localStorage.removeItem(
-        OLD_CART_KEY
-    );
-
-
-    showOrderSuccess(
-        order.id,
-        paymentStatus
-    );
+        console.error(
+            "Order save failed:",
+            error
+        );
+    }
 }
-
 
 
 // ================= PLACE ORDER =================
@@ -970,9 +874,7 @@ async function placeOrder(event) {
 
     event.preventDefault();
 
-
     await authReady;
-
 
     if (!auth.currentUser) {
 
@@ -982,10 +884,7 @@ async function placeOrder(event) {
         return;
     }
 
-
-    const cart =
-        getCart();
-
+    const cart = getCart();
 
     if (!cart.length) {
 
@@ -996,12 +895,10 @@ async function placeOrder(event) {
         return;
     }
 
-
     const form =
         document.getElementById(
             "checkoutForm"
         );
-
 
     if (!form.checkValidity()) {
 
@@ -1010,12 +907,10 @@ async function placeOrder(event) {
         return;
     }
 
-
     const paymentMethod =
         document.getElementById(
             "paymentMethod"
         )?.value;
-
 
     if (!paymentMethod) {
 
@@ -1025,7 +920,6 @@ async function placeOrder(event) {
 
         return;
     }
-
 
     const orderItems =
         cart.map(item => ({
@@ -1046,7 +940,6 @@ async function placeOrder(event) {
 
         }));
 
-
     const total =
         orderItems.reduce(
             (sum, item) =>
@@ -1056,7 +949,6 @@ async function placeOrder(event) {
             0
         );
 
-
     if (total <= 0) {
 
         alert(
@@ -1065,7 +957,6 @@ async function placeOrder(event) {
 
         return;
     }
-
 
     const order = {
 
@@ -1077,44 +968,32 @@ async function placeOrder(event) {
 
         customerName:
             document
-                .getElementById(
-                    "customerName"
-                )
+                .getElementById("customerName")
                 ?.value.trim(),
 
         email:
             document
-                .getElementById(
-                    "customerEmail"
-                )
+                .getElementById("customerEmail")
                 ?.value.trim(),
 
         phone:
             document
-                .getElementById(
-                    "customerPhone"
-                )
+                .getElementById("customerPhone")
                 ?.value.trim(),
 
         address:
             document
-                .getElementById(
-                    "customerAddress"
-                )
+                .getElementById("customerAddress")
                 ?.value.trim(),
 
         city:
             document
-                .getElementById(
-                    "customerCity"
-                )
+                .getElementById("customerCity")
                 ?.value.trim(),
 
         pincode:
             document
-                .getElementById(
-                    "customerPincode"
-                )
+                .getElementById("customerPincode")
                 ?.value.trim(),
 
         paymentMethod,
@@ -1129,15 +1008,11 @@ async function placeOrder(event) {
 
         orderDate:
             new Date()
-                .toLocaleDateString(
-                    "en-IN"
-                ),
+                .toLocaleDateString("en-IN"),
 
         orderTime:
             new Date()
-                .toLocaleTimeString(
-                    "en-IN"
-                ),
+                .toLocaleTimeString("en-IN"),
 
         orderDateISO:
             new Date()
@@ -1152,21 +1027,56 @@ async function placeOrder(event) {
     };
 
 
-
     // ================= UPI =================
 
     if (
         paymentMethod === "upi"
     ) {
 
-        showUpiPayment(
-            total,
-            order
-        );
+        /*
+         * Order is stored as Pending.
+         * Payment is NOT automatically verified.
+         */
+
+        try {
+
+            await saveOrderToFirestore(order);
+
+            const orders =
+                JSON.parse(
+                    localStorage.getItem("orders") ||
+                    "[]"
+                );
+
+            orders.push(order);
+
+            localStorage.setItem(
+                "orders",
+                JSON.stringify(orders)
+            );
+
+            localStorage.removeItem(CART_KEY);
+            localStorage.removeItem(OLD_CART_KEY);
+
+            showUpiPayment(
+                total,
+                order
+            );
+
+        } catch (error) {
+
+            console.error(
+                "UPI order save error:",
+                error
+            );
+
+            alert(
+                "Unable to create order. Please try again."
+            );
+        }
 
         return;
     }
-
 
 
     // ================= COD =================
@@ -1175,14 +1085,13 @@ async function placeOrder(event) {
         paymentMethod === "cod"
     ) {
 
-        finishOrder(
+        await finishOrder(
             order,
             "Cash on Delivery - Pending"
         );
 
         return;
     }
-
 
 
     // ================= CARD =================
@@ -1200,7 +1109,6 @@ async function placeOrder(event) {
 }
 
 
-
 // ================= FIREBASE AUTH =================
 
 onAuthStateChanged(
@@ -1210,13 +1118,11 @@ onAuthStateChanged(
         currentUser =
             user;
 
-
         if (user)
             fillUserDetails();
 
     }
 );
-
 
 
 // ================= PAGE LOAD =================
@@ -1227,7 +1133,6 @@ document.addEventListener(
 
         await authReady;
 
-
         if (!auth.currentUser) {
 
             window.location.href =
@@ -1236,17 +1141,12 @@ document.addEventListener(
             return;
         }
 
-
         fillUserDetails();
-
 
         renderCheckoutCart();
 
-
         document
-            .getElementById(
-                "checkoutForm"
-            )
+            .getElementById("checkoutForm")
             ?.addEventListener(
                 "submit",
                 placeOrder
