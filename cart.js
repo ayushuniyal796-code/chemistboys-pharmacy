@@ -12,12 +12,30 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-/* =========================================================
-   CART KEYS
-   ========================================================= */
-
 const CART_KEY = "chemistboys_cart";
 const OLD_CART_KEY = "chemistCart";
+
+
+/* =========================================================
+   FIND PRODUCT FROM PRODUCTS.JS
+   ========================================================= */
+
+function findProduct(productOrId) {
+
+    if (!Array.isArray(window.products)) {
+        return null;
+    }
+
+    const id =
+        typeof productOrId === "object"
+            ? productOrId.id
+            : productOrId;
+
+    return window.products.find(
+        product =>
+            String(product.id) === String(id)
+    ) || null;
+}
 
 
 /* =========================================================
@@ -28,21 +46,62 @@ function getCart() {
 
     try {
 
-        let cart = JSON.parse(
-            localStorage.getItem(CART_KEY)
-        );
+        let cart =
+            JSON.parse(
+                localStorage.getItem(CART_KEY)
+            );
 
-        if (Array.isArray(cart)) {
-            return cart;
+        if (!Array.isArray(cart)) {
+
+            cart =
+                JSON.parse(
+                    localStorage.getItem(OLD_CART_KEY)
+                );
+
         }
 
-        cart = JSON.parse(
-            localStorage.getItem(OLD_CART_KEY)
-        );
-
-        if (Array.isArray(cart)) {
-            return cart;
+        if (!Array.isArray(cart)) {
+            return [];
         }
+
+
+        /*
+         * IMPORTANT:
+         * Purane galat cart items ko
+         * products.js ke original data se repair karo.
+         */
+
+        cart = cart.map(item => {
+
+            const product =
+                findProduct(item.id);
+
+            if (!product) {
+                return item;
+            }
+
+            return {
+
+                id: product.id,
+
+                name: product.name,
+
+                price: Number(product.price),
+
+                image: product.image || "",
+
+                quantity:
+                    Math.max(
+                        1,
+                        Number(item.quantity || 1)
+                    )
+
+            };
+
+        });
+
+
+        return cart;
 
     } catch (error) {
 
@@ -51,9 +110,10 @@ function getCart() {
             error
         );
 
+        return [];
+
     }
 
-    return [];
 }
 
 
@@ -77,16 +137,13 @@ function saveCart(cart) {
 
 
 /* =========================================================
-   SHOW CART MESSAGE
+   CART MESSAGE
    ========================================================= */
 
-function showCartMessage(message, type = "success") {
-
-    /*
-     * IMPORTANT:
-     * Agar empty cart message hai,
-     * to sirf wahi message show hoga.
-     */
+function showCartMessage(
+    message,
+    type = "success"
+) {
 
     if (
         typeof message === "string" &&
@@ -102,8 +159,6 @@ function showCartMessage(message, type = "success") {
     }
 
 
-    /* Remove old message */
-
     const oldMessage =
         document.querySelector(
             ".cart-message"
@@ -114,16 +169,12 @@ function showCartMessage(message, type = "success") {
     }
 
 
-    /* Create new message */
-
     const messageBox =
         document.createElement("div");
 
     messageBox.className =
         "cart-message";
 
-
-    /* Icon */
 
     const icon =
         type === "error"
@@ -149,77 +200,40 @@ function showCartMessage(message, type = "success") {
     `;
 
 
-    /* Message styling */
-
-    messageBox.style.position =
-        "fixed";
-
-    messageBox.style.left =
-        "50%";
-
-    messageBox.style.bottom =
-        "80px";
-
+    messageBox.style.position = "fixed";
+    messageBox.style.left = "50%";
+    messageBox.style.bottom = "80px";
     messageBox.style.transform =
         "translateX(-50%)";
-
-    messageBox.style.zIndex =
-        "999999";
-
-    messageBox.style.width =
-        "max-content";
-
-    messageBox.style.maxWidth =
-        "85%";
-
-    messageBox.style.padding =
-        "16px 25px";
-
-    messageBox.style.borderRadius =
-        "14px";
+    messageBox.style.zIndex = "999999";
+    messageBox.style.width = "max-content";
+    messageBox.style.maxWidth = "85%";
+    messageBox.style.padding = "16px 25px";
+    messageBox.style.borderRadius = "14px";
 
     messageBox.style.background =
         type === "error"
             ? "#d9534f"
             : "#078f7d";
 
-    messageBox.style.color =
-        "white";
-
-    messageBox.style.textAlign =
-        "center";
-
-    messageBox.style.fontSize =
-        "16px";
-
-    messageBox.style.fontWeight =
-        "700";
-
-    messageBox.style.lineHeight =
-        "1.4";
-
+    messageBox.style.color = "white";
+    messageBox.style.textAlign = "center";
+    messageBox.style.fontSize = "16px";
+    messageBox.style.fontWeight = "700";
+    messageBox.style.lineHeight = "1.4";
     messageBox.style.boxShadow =
         "0 10px 30px rgba(0,0,0,0.25)";
 
-
-    /* Add to page */
 
     document.body.appendChild(
         messageBox
     );
 
 
-    /* Remove after 2.5 seconds */
-
     setTimeout(() => {
 
-        if (
-            messageBox &&
-            messageBox.parentNode
-        ) {
-
+        if (messageBox.parentNode) {
             messageBox.remove();
-
         }
 
     }, 2500);
@@ -233,8 +247,7 @@ function showCartMessage(message, type = "success") {
 
 function updateCartCount() {
 
-    const cart =
-        getCart();
+    const cart = getCart();
 
     const count =
         cart.reduce(
@@ -257,12 +270,8 @@ function updateCartCount() {
             "cartCount"
         );
 
-
     if (cartCount) {
-
-        cartCount.textContent =
-            count;
-
+        cartCount.textContent = count;
     }
 
 }
@@ -274,38 +283,20 @@ function updateCartCount() {
 
 function getProductPrice(item) {
 
-    let price =
-        Number(
-            item.price || 0
+    const product =
+        findProduct(item.id);
+
+    if (product) {
+
+        return Number(
+            product.price || 0
         );
-
-
-    if (
-        price <= 0 &&
-        Array.isArray(window.products)
-    ) {
-
-        const product =
-            window.products.find(
-                p =>
-                    String(p.id) ===
-                    String(item.id)
-            );
-
-
-        if (product) {
-
-            price =
-                Number(
-                    product.price || 0
-                );
-
-        }
 
     }
 
-
-    return price;
+    return Number(
+        item.price || 0
+    );
 
 }
 
@@ -316,8 +307,7 @@ function getProductPrice(item) {
 
 function renderCart() {
 
-    const cart =
-        getCart();
+    const cart = getCart();
 
 
     const cartItems =
@@ -325,18 +315,15 @@ function renderCart() {
             "cartItems"
         );
 
-
     const totalItems =
         document.getElementById(
             "totalItems"
         );
 
-
     const subtotalElement =
         document.getElementById(
             "subtotal"
         );
-
 
     const grandTotalElement =
         document.getElementById(
@@ -359,9 +346,7 @@ function renderCart() {
 
             <div class="empty-cart">
 
-                <div
-                    class="empty-cart-icon"
-                >
+                <div class="empty-cart-icon">
                     🛒
                 </div>
 
@@ -380,26 +365,15 @@ function renderCart() {
 
 
         if (totalItems) {
-
-            totalItems.textContent =
-                "0";
-
+            totalItems.textContent = "0";
         }
-
 
         if (subtotalElement) {
-
-            subtotalElement.textContent =
-                "₹0";
-
+            subtotalElement.textContent = "₹0";
         }
 
-
         if (grandTotalElement) {
-
-            grandTotalElement.textContent =
-                "₹0";
-
+            grandTotalElement.textContent = "₹0";
         }
 
 
@@ -411,7 +385,7 @@ function renderCart() {
 
 
     /* =====================================================
-       CART HAS ITEMS
+       CART HAS PRODUCTS
        ===================================================== */
 
     let totalItemsCount = 0;
@@ -426,13 +400,37 @@ function renderCart() {
         (item, index) => {
 
             const quantity =
-                Number(
-                    item.quantity || 1
+                Math.max(
+                    1,
+                    Number(
+                        item.quantity || 1
+                    )
                 );
 
 
+            const product =
+                findProduct(item.id);
+
+
+            const name =
+                product
+                    ? product.name
+                    : (
+                        item.name ||
+                        "Product"
+                    );
+
+
             const price =
-                getProductPrice(item);
+                product
+                    ? Number(product.price)
+                    : Number(item.price || 0);
+
+
+            const image =
+                product
+                    ? (product.image || "")
+                    : (item.image || "");
 
 
             const itemTotal =
@@ -442,16 +440,12 @@ function renderCart() {
             totalItemsCount +=
                 quantity;
 
-
             subtotal +=
                 itemTotal;
 
 
             const cartItem =
-                document.createElement(
-                    "div"
-                );
-
+                document.createElement("div");
 
             cartItem.className =
                 "cart-item";
@@ -460,8 +454,8 @@ function renderCart() {
             cartItem.innerHTML = `
 
                 <img
-                    src="${item.image || ""}"
-                    alt="${item.name || "Product"}"
+                    src="${image}"
+                    alt="${name}"
                     class="cart-item-image"
                     onerror="
                         this.style.display='none';
@@ -474,7 +468,7 @@ function renderCart() {
                 >
 
                     <h3>
-                        ${item.name || "Product"}
+                        ${name}
                     </h3>
 
 
@@ -546,10 +540,6 @@ function renderCart() {
     );
 
 
-    /* =====================================================
-       UPDATE TOTALS
-       ===================================================== */
-
     if (totalItems) {
 
         totalItems.textContent =
@@ -583,10 +573,26 @@ function renderCart() {
    ADD TO CART
    ========================================================= */
 
-function addToCart(product) {
+function addToCart(productOrId) {
+
+    /*
+     * Product object bhi chalega
+     * aur product ID bhi.
+     */
+
+    const product =
+        findProduct(productOrId);
+
 
     if (!product) {
+
+        console.error(
+            "Product not found:",
+            productOrId
+        );
+
         return;
+
     }
 
 
@@ -602,10 +608,6 @@ function addToCart(product) {
         );
 
 
-    /* =====================================================
-       PRODUCT ALREADY IN CART
-       ===================================================== */
-
     if (existingIndex !== -1) {
 
         cart[existingIndex].quantity =
@@ -613,45 +615,46 @@ function addToCart(product) {
                 cart[existingIndex].quantity || 1
             ) + 1;
 
+
+        /*
+         * Product details ko fresh rakho.
+         */
+
+        cart[existingIndex].name =
+            product.name;
+
+        cart[existingIndex].price =
+            Number(product.price);
+
+        cart[existingIndex].image =
+            product.image || "";
+
     }
 
-
-    /* =====================================================
-       NEW PRODUCT
-       ===================================================== */
 
     else {
 
         cart.push({
 
-            id:
-                product.id,
+            id: product.id,
 
-            name:
-                product.name,
+            name: product.name,
 
             price:
-                Number(
-                    product.price || 0
-                ),
+                Number(product.price),
 
             image:
                 product.image || "",
 
-            quantity:
-                1
+            quantity: 1
 
         });
 
     }
 
 
-    /* Save cart */
-
     saveCart(cart);
 
-
-    /* ONLY ADD TO CART SHOWS SUCCESS */
 
     showCartMessage(
         "Product successfully added to cart",
@@ -681,9 +684,7 @@ function changeQuantity(
         index < 0 ||
         index >= cart.length
     ) {
-
         return;
-
     }
 
 
@@ -692,8 +693,6 @@ function changeQuantity(
             cart[index].quantity || 1
         ) + change;
 
-
-    /* Minimum quantity = 1 */
 
     if (
         cart[index].quantity < 1
@@ -725,9 +724,7 @@ function removeFromCart(index) {
         index < 0 ||
         index >= cart.length
     ) {
-
         return;
-
     }
 
 
@@ -762,9 +759,7 @@ function removeFromCart(index) {
 async function handleCheckout(event) {
 
     if (event) {
-
         event.preventDefault();
-
     }
 
 
@@ -772,16 +767,7 @@ async function handleCheckout(event) {
         getCart();
 
 
-    /* =====================================================
-       EMPTY CART
-       ===================================================== */
-
     if (cart.length === 0) {
-
-        /*
-         * NO ALERT
-         * NO SUCCESS MESSAGE
-         */
 
         showCartMessage(
             "Your cart is empty",
@@ -792,10 +778,6 @@ async function handleCheckout(event) {
 
     }
 
-
-    /* =====================================================
-       FIREBASE LOGIN CHECK
-       ===================================================== */
 
     await authReady;
 
@@ -821,10 +803,6 @@ async function handleCheckout(event) {
     }
 
 
-    /* =====================================================
-       GO TO CHECKOUT
-       ===================================================== */
-
     window.location.href =
         "checkout.html";
 
@@ -840,117 +818,85 @@ document.addEventListener(
     function(event) {
 
 
-        /* =================================================
-           PLUS
-           ================================================= */
+        /* PLUS */
 
-        if (
+        const plusButton =
             event.target.closest(
                 ".quantity-plus"
-            )
-        ) {
+            );
 
-            const button =
-                event.target.closest(
-                    ".quantity-plus"
-                );
-
+        if (plusButton) {
 
             const index =
                 Number(
-                    button.dataset.index
+                    plusButton.dataset.index
                 );
-
 
             changeQuantity(
                 index,
                 1
             );
 
-
             return;
 
         }
 
 
-        /* =================================================
-           MINUS
-           ================================================= */
+        /* MINUS */
 
-        if (
+        const minusButton =
             event.target.closest(
                 ".quantity-minus"
-            )
-        ) {
+            );
 
-            const button =
-                event.target.closest(
-                    ".quantity-minus"
-                );
-
+        if (minusButton) {
 
             const index =
                 Number(
-                    button.dataset.index
+                    minusButton.dataset.index
                 );
-
 
             changeQuantity(
                 index,
                 -1
             );
 
-
             return;
 
         }
 
 
-        /* =================================================
-           REMOVE
-           ================================================= */
+        /* REMOVE */
 
-        if (
+        const removeButton =
             event.target.closest(
                 ".remove-btn"
-            )
-        ) {
+            );
 
-            const button =
-                event.target.closest(
-                    ".remove-btn"
-                );
-
+        if (removeButton) {
 
             const index =
                 Number(
-                    button.dataset.index
+                    removeButton.dataset.index
                 );
 
-
-            removeFromCart(
-                index
-            );
-
+            removeFromCart(index);
 
             return;
 
         }
 
 
-        /* =================================================
-           CHECKOUT
-           ================================================= */
+        /* CHECKOUT */
 
-        if (
+        const checkoutButton =
             event.target.closest(
                 "#checkoutBtn"
-            )
-        ) {
-
-            handleCheckout(
-                event
             );
+
+        if (checkoutButton) {
+
+            handleCheckout(event);
 
         }
 
@@ -959,7 +905,7 @@ document.addEventListener(
 
 
 /* =========================================================
-   FIREBASE AUTH STATE
+   FIREBASE AUTH
    ========================================================= */
 
 onAuthStateChanged(
@@ -1021,14 +967,5 @@ window.renderCart =
 window.updateCartCount =
     updateCartCount;
 
-window.showCartMessage =
-    showCartMessage;
-
-
-/* =========================================================
-   INITIAL LOAD
-   ========================================================= */
-
-renderCart();
-
-updateCartCount();
+window.getCart =
+    getCart;
