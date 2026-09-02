@@ -3,7 +3,7 @@ import { auth, authReady, db } from "./firebase.js";
 import {
     collection,
     getDocs,
-    updateDoc,
+    setDoc,
     deleteDoc,
     doc
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
@@ -14,16 +14,16 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-// ===============================
+// ==========================================
 // ADMIN UID
-// ===============================
+// ==========================================
 
 const ADMIN_UID = "gtTvd6XSgqXVaIrp67cM6gEJP0u2";
 
 
-// ===============================
+// ==========================================
 // HTML ELEMENTS
-// ===============================
+// ==========================================
 
 const adminContent = document.getElementById("adminContent");
 const accessDenied = document.getElementById("accessDenied");
@@ -40,21 +40,27 @@ const searchOrders = document.getElementById("searchOrders");
 const logoutBtn = document.getElementById("logoutBtn");
 
 
-// ===============================
-// STORE ORDERS
-// ===============================
+// ==========================================
+// ALL ORDERS
+// ==========================================
 
 let allOrders = [];
 
 
-// ===============================
-// CHECK ADMIN LOGIN
-// ===============================
+// ==========================================
+// WAIT FOR FIREBASE AUTH
+// ==========================================
 
 await authReady;
 
+
+// ==========================================
+// AUTH CHECK
+// ==========================================
+
 onAuthStateChanged(auth, async (user) => {
 
+    // Not logged in
     if (!user) {
 
         window.location.href = "login.html";
@@ -62,70 +68,106 @@ onAuthStateChanged(auth, async (user) => {
     }
 
 
-    // Check admin UID
-
+    // Logged in but NOT admin
     if (user.uid !== ADMIN_UID) {
 
-        adminContent.style.display = "none";
-        accessDenied.style.display = "block";
+        if (adminContent) {
+            adminContent.style.display = "none";
+        }
+
+        if (accessDenied) {
+            accessDenied.style.display = "block";
+        }
 
         return;
     }
 
 
-    // Admin verified
+    // ======================================
+    // ADMIN VERIFIED
+    // ======================================
 
-    accessDenied.style.display = "none";
-    adminContent.style.display = "block";
+    if (accessDenied) {
+        accessDenied.style.display = "none";
+    }
 
+    if (adminContent) {
+        adminContent.style.display = "block";
+    }
+
+
+    // Load orders
     await loadOrders();
 
 });
 
 
-// ===============================
-// LOAD ORDERS FROM FIRESTORE
-// ===============================
+// ==========================================
+// LOAD ORDERS
+// ==========================================
 
 async function loadOrders() {
 
-    loading.style.display = "block";
-    noOrders.style.display = "none";
-    ordersContainer.innerHTML = "";
+    if (loading) {
+        loading.style.display = "block";
+    }
+
+    if (noOrders) {
+        noOrders.style.display = "none";
+    }
+
+    if (ordersContainer) {
+        ordersContainer.innerHTML = "";
+    }
+
 
     try {
 
-        const ordersSnapshot = await getDocs(
-            collection(db, "orders")
-        );
+        const ordersRef = collection(db, "orders");
+
+        const snapshot = await getDocs(ordersRef);
 
 
+        // Empty array
         allOrders = [];
 
 
-        ordersSnapshot.forEach((orderDoc) => {
+        // ==================================
+        // GET EVERY FIRESTORE DOCUMENT
+        // ==================================
+
+        snapshot.forEach((orderDoc) => {
+
+            const data = orderDoc.data();
 
             allOrders.push({
+
+                // VERY IMPORTANT
+                // This is the real Firestore document ID
                 id: orderDoc.id,
-                ...orderDoc.data()
+
+                ...data
+
             });
 
         });
 
 
-        // Newest orders first
+        // ==================================
+        // SORT NEWEST FIRST
+        // ==================================
 
         allOrders.sort((a, b) => {
 
-            const dateA = getOrderTime(a);
-            const dateB = getOrderTime(b);
-
-            return dateB - dateA;
+            return getOrderTime(b) - getOrderTime(a);
 
         });
 
 
-        loading.style.display = "none";
+        if (loading) {
+            loading.style.display = "none";
+        }
+
 
         updateDashboard();
 
@@ -134,44 +176,73 @@ async function loadOrders() {
 
     } catch (error) {
 
-        console.error("Error loading orders:", error);
+        console.error("Firestore load error:", error);
 
-        loading.style.display = "none";
 
-        ordersContainer.innerHTML = `
-            <div class="order-card">
-                <h3>❌ Failed to load orders</h3>
-                <p>${escapeHTML(error.message)}</p>
-            </div>
-        `;
+        if (loading) {
+            loading.style.display = "none";
+        }
+
+
+        if (ordersContainer) {
+
+            ordersContainer.innerHTML = `
+
+                <div class="order-card">
+
+                    <h3>❌ Failed to load orders</h3>
+
+                    <p>
+                        ${escapeHTML(error.message)}
+                    </p>
+
+                </div>
+
+            `;
+
+        }
 
     }
 
 }
 
 
-// ===============================
+// ==========================================
 // GET ORDER TIME
-// ===============================
+// ==========================================
 
 function getOrderTime(order) {
 
-    if (!order.createdAt) {
+    if (!order || !order.createdAt) {
         return 0;
     }
 
 
     // Firestore Timestamp
+    if (
+        typeof order.createdAt.toMillis === "function"
+    ) {
 
-    if (typeof order.createdAt.toMillis === "function") {
         return order.createdAt.toMillis();
+
     }
 
 
     // JavaScript Date
-
     if (order.createdAt instanceof Date) {
+
         return order.createdAt.getTime();
+
+    }
+
+
+    // String / number
+    const date = new Date(order.createdAt);
+
+    if (!isNaN(date.getTime())) {
+
+        return date.getTime();
+
     }
 
 
@@ -180,9 +251,9 @@ function getOrderTime(order) {
 }
 
 
-// ===============================
-// DASHBOARD COUNTS
-// ===============================
+// ==========================================
+// DASHBOARD
+// ==========================================
 
 function updateDashboard() {
 
@@ -191,45 +262,69 @@ function updateDashboard() {
 
     const pending = allOrders.filter(order => {
 
-        return String(order.status || "Pending").toLowerCase()
-            === "pending";
+        const status =
+            String(order.status || "Pending")
+                .toLowerCase();
+
+        return status === "pending";
 
     }).length;
 
 
     const accepted = allOrders.filter(order => {
 
-        return String(order.status || "").toLowerCase()
-            === "accepted";
+        const status =
+            String(order.status || "")
+                .toLowerCase();
+
+        return status === "accepted";
 
     }).length;
 
 
-    totalOrders.textContent = total;
-    pendingOrders.textContent = pending;
-    acceptedOrders.textContent = accepted;
+    if (totalOrders) {
+        totalOrders.textContent = total;
+    }
+
+    if (pendingOrders) {
+        pendingOrders.textContent = pending;
+    }
+
+    if (acceptedOrders) {
+        acceptedOrders.textContent = accepted;
+    }
 
 }
 
 
-// ===============================
+// ==========================================
 // DISPLAY ORDERS
-// ===============================
+// ==========================================
 
 function displayOrders(orders) {
+
+    if (!ordersContainer) {
+        return;
+    }
+
 
     ordersContainer.innerHTML = "";
 
 
-    if (orders.length === 0) {
+    if (!orders || orders.length === 0) {
 
-        noOrders.style.display = "block";
+        if (noOrders) {
+            noOrders.style.display = "block";
+        }
+
         return;
 
     }
 
 
-    noOrders.style.display = "none";
+    if (noOrders) {
+        noOrders.style.display = "none";
+    }
 
 
     orders.forEach(order => {
@@ -243,9 +338,9 @@ function displayOrders(orders) {
 }
 
 
-// ===============================
+// ==========================================
 // CREATE ORDER CARD
-// ===============================
+// ==========================================
 
 function createOrderCard(order) {
 
@@ -254,76 +349,133 @@ function createOrderCard(order) {
     card.className = "order-card";
 
 
-    const status = order.status || "Pending";
+    // ======================================
+    // STATUS
+    // ======================================
+
+    const status =
+        String(order.status || "Pending");
+
+
+    const statusLower =
+        status.toLowerCase();
+
 
     const statusClass =
-        status.toLowerCase() === "accepted"
+        statusLower === "accepted"
             ? "accepted"
             : "pending";
 
 
-    const orderDate = formatDate(order.createdAt);
-
-
-    // Customer information
+    // ======================================
+    // CUSTOMER DETAILS
+    // ======================================
 
     const customerName =
-        order.customerName || order.name || "N/A";
+        order.customerName ||
+        order.name ||
+        "N/A";
+
 
     const customerEmail =
-        order.customerEmail || order.email || "N/A";
+        order.customerEmail ||
+        order.email ||
+        "N/A";
+
 
     const customerPhone =
-        order.customerPhone || order.phone || "N/A";
+        order.customerPhone ||
+        order.phone ||
+        "N/A";
+
 
     const customerAddress =
-        order.customerAddress || order.address || "N/A";
+        order.customerAddress ||
+        order.address ||
+        "N/A";
+
 
     const customerCity =
-        order.customerCity || order.city || "N/A";
+        order.customerCity ||
+        order.city ||
+        "N/A";
+
 
     const customerPincode =
-        order.customerPincode || order.pincode || "N/A";
+        order.customerPincode ||
+        order.pincode ||
+        "N/A";
 
 
-    // Payment information
+    // ======================================
+    // PAYMENT
+    // ======================================
 
     const paymentMethod =
-        order.paymentMethod || "N/A";
+        order.paymentMethod ||
+        "N/A";
+
 
     const paymentStatus =
-        order.paymentStatus || "Pending";
+        order.paymentStatus ||
+        "Pending";
 
 
-    // Items
+    // ======================================
+    // DATE
+    // ======================================
+
+    const orderDate =
+        formatDate(order.createdAt);
+
+
+    // ======================================
+    // PRODUCTS
+    // ======================================
 
     let itemsHTML = "";
 
 
-    if (Array.isArray(order.items) && order.items.length > 0) {
+    if (
+        Array.isArray(order.items) &&
+        order.items.length > 0
+    ) {
 
         order.items.forEach(item => {
 
             const itemName =
-                item.name || item.title || "Product";
+                item.name ||
+                item.title ||
+                "Product";
+
 
             const quantity =
                 Number(item.quantity) || 1;
 
+
             const price =
                 Number(item.price) || 0;
 
+
+            const itemTotal =
+                price * quantity;
+
+
             itemsHTML += `
+
                 <div class="item">
+
                     <span>
                         ${escapeHTML(itemName)}
                         × ${quantity}
                     </span>
 
                     <span>
-                        ₹${(price * quantity).toFixed(2)}
+                        ₹${itemTotal.toFixed(2)}
                     </span>
+
                 </div>
+
             `;
 
         });
@@ -331,15 +483,23 @@ function createOrderCard(order) {
     } else {
 
         itemsHTML = `
+
             <div class="item">
-                <span>No item information available</span>
+
+                <span>
+                    No item information available
+                </span>
+
             </div>
+
         `;
 
     }
 
 
-    // Total
+    // ======================================
+    // TOTAL
+    // ======================================
 
     const totalAmount =
         Number(
@@ -350,22 +510,36 @@ function createOrderCard(order) {
         );
 
 
+    // ======================================
+    // CARD HTML
+    // ======================================
+
     card.innerHTML = `
 
         <div class="order-top">
 
             <div>
+
                 <div class="order-id">
-                    Order ID: ${escapeHTML(order.id)}
+
+                    Order ID:
+                    ${escapeHTML(order.id)}
+
                 </div>
 
                 <small>
-                    ${orderDate}
+
+                    ${escapeHTML(orderDate)}
+
                 </small>
+
             </div>
 
+
             <span class="status ${statusClass}">
+
                 ${escapeHTML(status)}
+
             </span>
 
         </div>
@@ -373,48 +547,99 @@ function createOrderCard(order) {
 
         <div class="customer-info">
 
+
             <div class="info-box">
-                <strong>Customer Name</strong>
+
+                <strong>
+                    Customer Name
+                </strong>
+
                 ${escapeHTML(customerName)}
+
             </div>
 
+
             <div class="info-box">
-                <strong>Email</strong>
+
+                <strong>
+                    Email
+                </strong>
+
                 ${escapeHTML(customerEmail)}
+
             </div>
 
+
             <div class="info-box">
-                <strong>Phone</strong>
+
+                <strong>
+                    Phone
+                </strong>
+
                 ${escapeHTML(customerPhone)}
+
             </div>
 
+
             <div class="info-box">
-                <strong>City</strong>
+
+                <strong>
+                    City
+                </strong>
+
                 ${escapeHTML(customerCity)}
+
             </div>
 
+
             <div class="info-box">
-                <strong>Pincode</strong>
+
+                <strong>
+                    Pincode
+                </strong>
+
                 ${escapeHTML(customerPincode)}
+
             </div>
+
 
             <div class="info-box">
-                <strong>Payment</strong>
+
+                <strong>
+                    Payment
+                </strong>
+
                 ${escapeHTML(paymentMethod)}
-                - ${escapeHTML(paymentStatus)}
+
+                -
+
+                ${escapeHTML(paymentStatus)}
+
             </div>
 
-            <div class="info-box" style="grid-column: 1 / -1;">
-                <strong>Address</strong>
+
+            <div
+                class="info-box"
+                style="grid-column: 1 / -1;"
+            >
+
+                <strong>
+                    Address
+                </strong>
+
                 ${escapeHTML(customerAddress)}
+
             </div>
+
 
         </div>
 
 
         <div class="items">
 
-            <h3>🛒 Ordered Products</h3>
+            <h3>
+                🛒 Ordered Products
+            </h3>
 
             ${itemsHTML}
 
@@ -423,39 +648,56 @@ function createOrderCard(order) {
 
         <div class="order-bottom">
 
+
             <div class="total">
-                Total: ₹${totalAmount.toFixed(2)}
+
+                Total:
+                ₹${totalAmount.toFixed(2)}
+
             </div>
 
 
             <div class="actions">
 
+
                 <button
                     class="accept-btn"
-                    data-id="${escapeHTML(order.id)}"
-                    ${status.toLowerCase() === "accepted" ? "disabled" : ""}
+                    type="button"
+                    ${statusLower === "accepted"
+                        ? "disabled"
+                        : ""}
                 >
-                    ${status.toLowerCase() === "accepted"
-                        ? "✓ Accepted"
-                        : "✓ Accept Order"}
+
+                    ${
+                        statusLower === "accepted"
+                            ? "✓ Accepted"
+                            : "✓ Accept Order"
+                    }
+
                 </button>
 
 
                 <button
                     class="delete-btn"
-                    data-id="${escapeHTML(order.id)}"
+                    type="button"
                 >
+
                     🗑️ Delete
+
                 </button>
 
+
             </div>
+
 
         </div>
 
     `;
 
 
-    // Accept button
+    // ======================================
+    // ACCEPT BUTTON
+    // ======================================
 
     const acceptButton =
         card.querySelector(".accept-btn");
@@ -463,16 +705,21 @@ function createOrderCard(order) {
 
     if (acceptButton) {
 
-        acceptButton.addEventListener("click", () => {
+        acceptButton.addEventListener(
+            "click",
+            () => {
 
-            acceptOrder(order.id);
+                acceptOrder(order);
 
-        });
+            }
+        );
 
     }
 
 
-    // Delete button
+    // ======================================
+    // DELETE BUTTON
+    // ======================================
 
     const deleteButton =
         card.querySelector(".delete-btn");
@@ -480,11 +727,14 @@ function createOrderCard(order) {
 
     if (deleteButton) {
 
-        deleteButton.addEventListener("click", () => {
+        deleteButton.addEventListener(
+            "click",
+            () => {
 
-            deleteOrder(order.id);
+                deleteOrder(order);
 
-        });
+            }
+        );
 
     }
 
@@ -494,14 +744,25 @@ function createOrderCard(order) {
 }
 
 
-// ===============================
+// ==========================================
 // ACCEPT ORDER
-// ===============================
+// ==========================================
 
-async function acceptOrder(orderId) {
+async function acceptOrder(order) {
+
+    if (!order || !order.id) {
+
+        alert("❌ Order ID not found.");
+
+        return;
+
+    }
+
 
     const confirmed =
-        confirm("Are you sure you want to accept this order?");
+        confirm(
+            "Are you sure you want to accept this order?"
+        );
 
 
     if (!confirmed) {
@@ -511,39 +772,74 @@ async function acceptOrder(orderId) {
 
     try {
 
-        await updateDoc(
-            doc(db, "orders", orderId),
+        // ==================================
+        // GET REAL FIRESTORE DOCUMENT
+        // ==================================
+
+        const orderRef =
+            doc(
+                db,
+                "orders",
+                String(order.id)
+            );
+
+
+        // ==================================
+        // UPDATE STATUS
+        // ==================================
+
+        await setDoc(
+            orderRef,
             {
                 status: "Accepted"
+            },
+            {
+                merge: true
             }
         );
 
 
-        // Update local data
+        // ==================================
+        // UPDATE LOCAL ARRAY
+        // ==================================
 
-        const order =
-            allOrders.find(item => item.id === orderId);
+        const localOrder =
+            allOrders.find(
+                item => item.id === order.id
+            );
 
 
-        if (order) {
-            order.status = "Accepted";
+        if (localOrder) {
+
+            localOrder.status = "Accepted";
+
         }
 
 
+        // ==================================
+        // UPDATE UI
+        // ==================================
+
         updateDashboard();
-
-
-        // Refresh display
 
         displayOrders(allOrders);
 
 
+        alert(
+            "✅ Order accepted successfully!"
+        );
+
+
     } catch (error) {
 
-        console.error("Accept order error:", error);
+        console.error(
+            "Accept order error:",
+            error
+        );
+
 
         alert(
-            "Failed to accept order: " +
+            "❌ Failed to accept order:\n\n" +
             error.message
         );
 
@@ -552,11 +848,20 @@ async function acceptOrder(orderId) {
 }
 
 
-// ===============================
+// ==========================================
 // DELETE ORDER
-// ===============================
+// ==========================================
 
-async function deleteOrder(orderId) {
+async function deleteOrder(order) {
+
+    if (!order || !order.id) {
+
+        alert("❌ Order ID not found.");
+
+        return;
+
+    }
+
 
     const confirmed =
         confirm(
@@ -571,16 +876,21 @@ async function deleteOrder(orderId) {
 
     try {
 
-        await deleteDoc(
-            doc(db, "orders", orderId)
-        );
+        const orderRef =
+            doc(
+                db,
+                "orders",
+                String(order.id)
+            );
 
 
-        // Remove from local array
+        await deleteDoc(orderRef);
 
+
+        // Remove locally
         allOrders =
             allOrders.filter(
-                order => order.id !== orderId
+                item => item.id !== order.id
             );
 
 
@@ -589,12 +899,21 @@ async function deleteOrder(orderId) {
         displayOrders(allOrders);
 
 
+        alert(
+            "🗑️ Order deleted successfully!"
+        );
+
+
     } catch (error) {
 
-        console.error("Delete order error:", error);
+        console.error(
+            "Delete order error:",
+            error
+        );
+
 
         alert(
-            "Failed to delete order: " +
+            "❌ Failed to delete order:\n\n" +
             error.message
         );
 
@@ -603,100 +922,145 @@ async function deleteOrder(orderId) {
 }
 
 
-// ===============================
-// SEARCH ORDERS
-// ===============================
+// ==========================================
+// SEARCH
+// ==========================================
 
-searchOrders.addEventListener("input", () => {
+if (searchOrders) {
 
-    const search =
-        searchOrders.value
-            .toLowerCase()
-            .trim();
+    searchOrders.addEventListener(
+        "input",
+        () => {
 
-
-    if (!search) {
-
-        displayOrders(allOrders);
-        return;
-
-    }
+            const search =
+                searchOrders.value
+                    .toLowerCase()
+                    .trim();
 
 
-    const filtered =
-        allOrders.filter(order => {
+            if (!search) {
 
-            const text = `
+                displayOrders(allOrders);
 
-                ${order.id || ""}
+                return;
 
-                ${order.customerName || order.name || ""}
-
-                ${order.customerEmail || order.email || ""}
-
-                ${order.customerPhone || order.phone || ""}
-
-                ${order.customerCity || order.city || ""}
-
-                ${order.status || ""}
-
-            `.toLowerCase();
+            }
 
 
-            return text.includes(search);
+            const filtered =
+                allOrders.filter(order => {
 
-        });
+                    const searchableText = `
+
+                        ${order.id || ""}
+
+                        ${order.customerName ||
+                            order.name || ""}
+
+                        ${order.customerEmail ||
+                            order.email || ""}
+
+                        ${order.customerPhone ||
+                            order.phone || ""}
+
+                        ${order.customerCity ||
+                            order.city || ""}
+
+                        ${order.customerPincode ||
+                            order.pincode || ""}
+
+                        ${order.status || ""}
+
+                        ${order.paymentMethod || ""}
+
+                    `.toLowerCase();
 
 
-    displayOrders(filtered);
+                    return searchableText.includes(
+                        search
+                    );
 
-});
+                });
 
 
-// ===============================
+            displayOrders(filtered);
+
+        }
+    );
+
+}
+
+
+// ==========================================
 // LOGOUT
-// ===============================
+// ==========================================
 
-logoutBtn.addEventListener("click", async () => {
+if (logoutBtn) {
 
-    try {
+    logoutBtn.addEventListener(
+        "click",
+        async () => {
 
-        await signOut(auth);
+            try {
 
-        window.location.href = "login.html";
+                await signOut(auth);
 
-    } catch (error) {
+                window.location.href =
+                    "login.html";
 
-        console.error("Logout error:", error);
+            } catch (error) {
 
-    }
+                console.error(
+                    "Logout error:",
+                    error
+                );
 
-});
+                alert(
+                    "❌ Logout failed."
+                );
+
+            }
+
+        }
+    );
+
+}
 
 
-// ===============================
+// ==========================================
 // FORMAT DATE
-// ===============================
+// ==========================================
 
 function formatDate(timestamp) {
 
     if (!timestamp) {
+
         return "Date not available";
+
     }
 
 
     let date;
 
 
-    if (typeof timestamp.toDate === "function") {
+    // Firestore Timestamp
+    if (
+        typeof timestamp.toDate === "function"
+    ) {
 
         date = timestamp.toDate();
 
-    } else if (timestamp instanceof Date) {
+    }
+
+    // Date object
+    else if (timestamp instanceof Date) {
 
         date = timestamp;
 
-    } else {
+    }
+
+    // String / number
+    else {
 
         date = new Date(timestamp);
 
@@ -704,35 +1068,57 @@ function formatDate(timestamp) {
 
 
     if (isNaN(date.getTime())) {
+
         return "Date not available";
+
     }
 
 
-    return date.toLocaleString("en-IN", {
-
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-
-        hour: "2-digit",
-        minute: "2-digit"
-
-    });
+    return date.toLocaleString(
+        "en-IN",
+        {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        }
+    );
 
 }
 
 
-// ===============================
-// SECURITY: ESCAPE HTML
-// ===============================
+// ==========================================
+// SECURITY
+// ==========================================
 
 function escapeHTML(value) {
 
     return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
 }
