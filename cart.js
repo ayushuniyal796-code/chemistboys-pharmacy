@@ -1,16 +1,18 @@
 /* =========================================================
-   CHEMISTBOYS - CART.JS
-   Complete Firebase + Cart + Calculation System
+   CHEMISTBOYS - CART
+   Single Firebase Auth + Cart Rendering + Price Recovery
 ========================================================= */
 
-import {
-    auth,
-    authReady
-} from "./firebase.js";
+import { auth, authReady } from "./firebase.js";
+import { onAuthStateChanged } from
+    "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-import {
-    onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+/* =========================================================
+   GLOBAL VARIABLES
+========================================================= */
+
+let currentUser = null;
 
 
 /* =========================================================
@@ -22,18 +24,19 @@ function getCart() {
     try {
 
         const cart = JSON.parse(
-            localStorage.getItem("chemistboys_cart")
+            localStorage.getItem("chemistCart")
         );
 
         return Array.isArray(cart) ? cart : [];
 
     } catch (error) {
 
-        console.error("Cart error:", error);
+        console.error("Cart read error:", error);
 
         return [];
 
     }
+
 }
 
 
@@ -44,7 +47,7 @@ function getCart() {
 function saveCart(cart) {
 
     localStorage.setItem(
-        "chemistboys_cart",
+        "chemistCart",
         JSON.stringify(cart)
     );
 
@@ -52,7 +55,60 @@ function saveCart(cart) {
 
 
 /* =========================================================
-   CART COUNT
+   GET PRODUCT FROM products.js
+========================================================= */
+
+function findProduct(productId) {
+
+    const products =
+        Array.isArray(window.products)
+            ? window.products
+            : [];
+
+    return products.find(
+        product => String(product.id) === String(productId)
+    );
+
+}
+
+
+/* =========================================================
+   GET CORRECT PRICE
+   - First use cart price
+   - If price is 0/missing, recover from products.js
+========================================================= */
+
+function getCorrectPrice(item) {
+
+    const product = findProduct(item.id);
+
+    const cartPrice = Number(item.price);
+
+    if (
+        Number.isFinite(cartPrice) &&
+        cartPrice > 0
+    ) {
+
+        return cartPrice;
+
+    }
+
+    if (
+        product &&
+        Number(product.price) > 0
+    ) {
+
+        return Number(product.price);
+
+    }
+
+    return 0;
+
+}
+
+
+/* =========================================================
+   UPDATE CART COUNT
 ========================================================= */
 
 function updateCartCount() {
@@ -60,18 +116,14 @@ function updateCartCount() {
     const cart = getCart();
 
     const count = cart.reduce(
-        function (total, item) {
-
-            return total + Number(item.quantity || 1);
-
-        },
+        (total, item) =>
+            total + Number(item.quantity || 1),
         0
     );
 
-
     document
-        .querySelectorAll("#cartCount, .cart-count")
-        .forEach(function (element) {
+        .querySelectorAll(".cart-count")
+        .forEach(element => {
 
             element.textContent = count;
 
@@ -84,63 +136,59 @@ function updateCartCount() {
    SUCCESS MESSAGE
 ========================================================= */
 
-function showCartMessage(productName) {
+function showCartMessage(productName = "Product") {
 
-    let message =
+    const oldMessage =
         document.getElementById("cartSuccessMessage");
 
-
-    if (!message) {
-
-        message = document.createElement("div");
-
-        message.id = "cartSuccessMessage";
-
-        message.style.position = "fixed";
-        message.style.left = "50%";
-        message.style.bottom = "25px";
-        message.style.transform = "translateX(-50%)";
-        message.style.background = "#0ca88f";
-        message.style.color = "#ffffff";
-        message.style.padding = "14px 24px";
-        message.style.borderRadius = "12px";
-        message.style.fontSize = "15px";
-        message.style.fontWeight = "600";
-        message.style.boxShadow =
-            "0 8px 25px rgba(0,0,0,0.15)";
-        message.style.zIndex = "9999";
-        message.style.opacity = "0";
-        message.style.transition =
-            "opacity 0.3s ease, transform 0.3s ease";
-
-        document.body.appendChild(message);
-
+    if (oldMessage) {
+        oldMessage.remove();
     }
 
+    const message =
+        document.createElement("div");
+
+    message.id = "cartSuccessMessage";
 
     message.textContent =
-        "✓ " + productName + " successfully added to cart";
+        `✓ ${productName} successfully added to cart`;
 
+    message.style.cssText = `
+        position: fixed;
+        left: 50%;
+        bottom: 25px;
+        transform: translateX(-50%);
+        background: #087c6b;
+        color: white;
+        padding: 13px 22px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+        z-index: 99999;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+    `;
 
-    message.style.opacity = "1";
-    message.style.transform =
-        "translateX(-50%) translateY(-5px)";
+    document.body.appendChild(message);
 
+    requestAnimationFrame(() => {
 
-    clearTimeout(
-        window.cartMessageTimer
-    );
+        message.style.opacity = "1";
 
+    });
 
-    window.cartMessageTimer =
-        setTimeout(function () {
+    setTimeout(() => {
 
-            message.style.opacity = "0";
+        message.style.opacity = "0";
 
-            message.style.transform =
-                "translateX(-50%) translateY(10px)";
+        setTimeout(() => {
 
-        }, 2500);
+            message.remove();
+
+        }, 300);
+
+    }, 2500);
 
 }
 
@@ -151,17 +199,7 @@ function showCartMessage(productName) {
 
 function addToCart(productId) {
 
-    const products =
-        window.products || [];
-
-
-    const product =
-        products.find(function (item) {
-
-            return Number(item.id) === Number(productId);
-
-        });
-
+    const product = findProduct(productId);
 
     if (!product) {
 
@@ -174,22 +212,24 @@ function addToCart(productId) {
 
     }
 
-
     const cart = getCart();
 
-
     const existingItem =
-        cart.find(function (item) {
-
-            return Number(item.id) === Number(productId);
-
-        });
-
+        cart.find(
+            item =>
+                String(item.id) === String(productId)
+        );
 
     if (existingItem) {
 
         existingItem.quantity =
             Number(existingItem.quantity || 1) + 1;
+
+        /*
+         * Repair old cart item if its price was 0
+         */
+        existingItem.price =
+            Number(product.price);
 
     } else {
 
@@ -208,7 +248,6 @@ function addToCart(productId) {
         });
 
     }
-
 
     saveCart(cart);
 
@@ -229,13 +268,10 @@ function removeFromCart(productId) {
 
     let cart = getCart();
 
-
-    cart = cart.filter(function (item) {
-
-        return Number(item.id) !== Number(productId);
-
-    });
-
+    cart = cart.filter(
+        item =>
+            String(item.id) !== String(productId)
+    );
 
     saveCart(cart);
 
@@ -254,26 +290,18 @@ function changeQuantity(productId, change) {
 
     const cart = getCart();
 
-
     const item =
-        cart.find(function (product) {
-
-            return Number(product.id) === Number(productId);
-
-        });
-
+        cart.find(
+            cartItem =>
+                String(cartItem.id) === String(productId)
+        );
 
     if (!item) {
-
         return;
-
     }
 
-
     item.quantity =
-        Number(item.quantity || 1) +
-        Number(change);
-
+        Number(item.quantity || 1) + Number(change);
 
     if (item.quantity <= 0) {
 
@@ -283,6 +311,21 @@ function changeQuantity(productId, change) {
 
     }
 
+    /*
+     * Repair price if old cart item has 0/missing price
+     */
+
+    const product = findProduct(productId);
+
+    if (
+        product &&
+        Number(item.price) <= 0
+    ) {
+
+        item.price =
+            Number(product.price);
+
+    }
 
     saveCart(cart);
 
@@ -294,210 +337,19 @@ function changeQuantity(productId, change) {
 
 
 /* =========================================================
-   RENDER CART ITEMS
-========================================================= */
-
-function renderCart() {
-
-    const cartItems =
-        document.getElementById("cartItems");
-
-
-    if (!cartItems) {
-
-        return;
-
-    }
-
-
-    const cart = getCart();
-
-
-    /* EMPTY CART */
-
-    if (cart.length === 0) {
-
-        cartItems.innerHTML = `
-
-            <div class="empty-cart">
-
-                <div style="
-                    font-size:50px;
-                    margin-bottom:15px;
-                ">
-                    🛒
-                </div>
-
-                <h3>Your cart is empty</h3>
-
-                <p>Add some products to your cart.</p>
-
-                <a
-                    href="index.html"
-                    class="continue-btn"
-                >
-                    ← Continue Shopping
-                </a>
-
-            </div>
-
-        `;
-
-
-        updateSummary(0, 0);
-
-        return;
-
-    }
-
-
-    let totalItems = 0;
-
-    let subtotal = 0;
-
-
-    cartItems.innerHTML = "";
-
-
-    cart.forEach(function (item) {
-
-        const quantity =
-            Number(item.quantity || 1);
-
-        const price =
-            Number(item.price || 0);
-
-        const itemTotal =
-            price * quantity;
-
-
-        totalItems += quantity;
-
-        subtotal += itemTotal;
-
-
-        const itemElement =
-            document.createElement("div");
-
-
-        itemElement.className =
-            "cart-item";
-
-
-        itemElement.innerHTML = `
-
-            <div class="cart-item-image">
-
-                <img
-                    src="${item.image || ""}"
-                    alt="${item.name || "Product"}"
-                    style="
-                        width:90px;
-                        height:75px;
-                        object-fit:contain;
-                        border-radius:10px;
-                    "
-                >
-
-            </div>
-
-
-            <div class="cart-item-info">
-
-                <h3>
-                    ${item.name || "Product"}
-                </h3>
-
-
-                <p>
-                    ₹${price}
-                </p>
-
-
-                <div class="quantity-controls">
-
-                    <button
-                        type="button"
-                        class="quantity-btn"
-                        data-action="decrease"
-                        data-id="${item.id}"
-                    >
-                        −
-                    </button>
-
-
-                    <span class="quantity">
-                        ${quantity}
-                    </span>
-
-
-                    <button
-                        type="button"
-                        class="quantity-btn"
-                        data-action="increase"
-                        data-id="${item.id}"
-                    >
-                        +
-                    </button>
-
-                </div>
-
-            </div>
-
-
-            <div class="cart-item-total">
-
-                <strong>
-                    ₹${itemTotal}
-                </strong>
-
-
-                <button
-                    type="button"
-                    class="remove-cart-btn"
-                    data-id="${item.id}"
-                >
-                    Remove
-                </button>
-
-            </div>
-
-        `;
-
-
-        cartItems.appendChild(itemElement);
-
-    });
-
-
-    updateSummary(
-        totalItems,
-        subtotal
-    );
-
-}
-
-
-/* =========================================================
    UPDATE ORDER SUMMARY
 ========================================================= */
 
-function updateSummary(
-    totalItems,
-    subtotal
-) {
+function updateSummary(totalItems, subtotal) {
 
     const totalItemsElement =
         document.getElementById("totalItems");
 
-
     const subtotalElement =
         document.getElementById("subtotal");
 
-
     const deliveryElement =
         document.getElementById("deliveryCharge");
-
 
     const grandTotalElement =
         document.getElementById("grandTotal");
@@ -514,36 +366,27 @@ function updateSummary(
     if (subtotalElement) {
 
         subtotalElement.textContent =
-            "₹" + subtotal;
+            `₹${subtotal}`;
 
     }
 
 
     /*
-       Free delivery for all orders
-    */
-
-    const deliveryCharge = 0;
-
+     * Free delivery
+     */
 
     if (deliveryElement) {
 
         deliveryElement.textContent =
-            deliveryCharge === 0
-                ? "FREE"
-                : "₹" + deliveryCharge;
+            "FREE";
 
     }
-
-
-    const grandTotal =
-        subtotal + deliveryCharge;
 
 
     if (grandTotalElement) {
 
         grandTotalElement.textContent =
-            "₹" + grandTotal;
+            `₹${subtotal}`;
 
     }
 
@@ -551,26 +394,362 @@ function updateSummary(
 
 
 /* =========================================================
-   CART ITEM BUTTONS
+   RENDER CART
+========================================================= */
+
+function renderCart() {
+
+    const cartItemsContainer =
+        document.getElementById("cartItems");
+
+    if (!cartItemsContainer) {
+
+        return;
+
+    }
+
+    let cart = getCart();
+
+
+    /*
+     * Repair old cart prices automatically
+     */
+
+    let cartChanged = false;
+
+    cart = cart.map(item => {
+
+        const correctPrice =
+            getCorrectPrice(item);
+
+        if (
+            Number(item.price) !== correctPrice
+        ) {
+
+            item.price = correctPrice;
+
+            cartChanged = true;
+
+        }
+
+        if (!item.quantity || Number(item.quantity) < 1) {
+
+            item.quantity = 1;
+
+            cartChanged = true;
+
+        }
+
+        return item;
+
+    });
+
+
+    if (cartChanged) {
+
+        saveCart(cart);
+
+    }
+
+
+    /* =====================================================
+       EMPTY CART
+    ===================================================== */
+
+    if (cart.length === 0) {
+
+        cartItemsContainer.innerHTML = `
+            <div style="
+                text-align:center;
+                padding:40px 20px;
+                color:#666;
+            ">
+                <div style="
+                    font-size:45px;
+                    margin-bottom:10px;
+                ">
+                    🛒
+                </div>
+
+                <h3 style="margin-bottom:8px;">
+                    Your cart is empty
+                </h3>
+
+                <p>
+                    Add some products to your cart.
+                </p>
+            </div>
+        `;
+
+        updateSummary(0, 0);
+
+        updateCartCount();
+
+        return;
+
+    }
+
+
+    /* =====================================================
+       CALCULATE TOTALS
+    ===================================================== */
+
+    let totalItems = 0;
+
+    let subtotal = 0;
+
+
+    /* =====================================================
+       CREATE CART ITEMS
+    ===================================================== */
+
+    cartItemsContainer.innerHTML =
+        cart.map(item => {
+
+            const price =
+                getCorrectPrice(item);
+
+            const quantity =
+                Number(item.quantity || 1);
+
+            const itemTotal =
+                price * quantity;
+
+            totalItems += quantity;
+
+            subtotal += itemTotal;
+
+
+            return `
+                <div class="cart-item">
+
+                    <div class="cart-item-image">
+
+                        <img
+                            src="${item.image || ""}"
+                            alt="${item.name || "Product"}"
+                            onerror="
+                                this.style.display='none';
+                            "
+                        >
+
+                    </div>
+
+
+                    <div class="cart-item-details">
+
+                        <h3>
+                            ${item.name || "Product"}
+                        </h3>
+
+                        <div class="cart-item-price">
+                            ₹${price}
+                        </div>
+
+
+                        <div class="cart-item-actions">
+
+                            <div class="quantity-control">
+
+                                <button
+                                    type="button"
+                                    class="quantity-btn"
+                                    data-action="decrease"
+                                    data-id="${item.id}"
+                                >
+                                    −
+                                </button>
+
+                                <span class="quantity">
+                                    ${quantity}
+                                </span>
+
+                                <button
+                                    type="button"
+                                    class="quantity-btn"
+                                    data-action="increase"
+                                    data-id="${item.id}"
+                                >
+                                    +
+                                </button>
+
+                            </div>
+
+
+                            <button
+                                type="button"
+                                class="remove-cart-btn"
+                                data-id="${item.id}"
+                            >
+                                Remove
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="cart-item-total">
+
+                        ₹${itemTotal}
+
+                    </div>
+
+                </div>
+            `;
+
+        })
+        .join("");
+
+
+    /* =====================================================
+       UPDATE SUMMARY
+    ===================================================== */
+
+    updateSummary(
+        totalItems,
+        subtotal
+    );
+
+
+    updateCartCount();
+
+}
+
+
+/* =========================================================
+   AUTH STATE
+========================================================= */
+
+onAuthStateChanged(
+    auth,
+    user => {
+
+        currentUser = user;
+
+        window.currentFirebaseUser =
+            user;
+
+        updateCheckoutButton();
+
+    }
+);
+
+
+/* =========================================================
+   UPDATE CHECKOUT BUTTON
+========================================================= */
+
+function updateCheckoutButton() {
+
+    const checkoutButton =
+        document.getElementById("checkoutBtn");
+
+    if (!checkoutButton) {
+
+        return;
+
+    }
+
+    if (currentUser) {
+
+        checkoutButton.textContent =
+            "🛒 Buy Now";
+
+    } else {
+
+        checkoutButton.textContent =
+            "🔐 Login to Buy";
+
+    }
+
+}
+
+
+/* =========================================================
+   CHECKOUT BUTTON
+========================================================= */
+
+async function handleCheckout(event) {
+
+    event.preventDefault();
+
+    /*
+     * Wait for Firebase Auth to finish loading
+     */
+
+    await authReady;
+
+    const user =
+        auth.currentUser;
+
+
+    /*
+     * User is not logged in
+     */
+
+    if (!user) {
+
+        window.location.href =
+            "login.html";
+
+        return;
+
+    }
+
+
+    /*
+     * Check cart
+     */
+
+    const cart =
+        getCart();
+
+    if (cart.length === 0) {
+
+        showCartMessage(
+            "Your cart is empty"
+        );
+
+        return;
+
+    }
+
+
+    /*
+     * Go to checkout
+     */
+
+    window.location.href =
+        "checkout.html";
+
+}
+
+
+/* =========================================================
+   EVENT LISTENERS
 ========================================================= */
 
 document.addEventListener(
     "click",
-    function (event) {
+    event => {
+
+        /* =================================================
+           QUANTITY BUTTON
+        ================================================= */
 
         const quantityButton =
-            event.target.closest(".quantity-btn");
-
+            event.target.closest(
+                ".quantity-btn"
+            );
 
         if (quantityButton) {
 
             const productId =
                 quantityButton.dataset.id;
 
-
             const action =
                 quantityButton.dataset.action;
-
 
             if (action === "increase") {
 
@@ -579,7 +758,9 @@ document.addEventListener(
                     1
                 );
 
-            } else {
+            }
+
+            if (action === "decrease") {
 
                 changeQuantity(
                     productId,
@@ -593,193 +774,66 @@ document.addEventListener(
         }
 
 
+        /* =================================================
+           REMOVE BUTTON
+        ================================================= */
+
         const removeButton =
             event.target.closest(
                 ".remove-cart-btn"
             );
-
 
         if (removeButton) {
 
             const productId =
                 removeButton.dataset.id;
 
-
-            removeFromCart(
-                productId
-            );
+            removeFromCart(productId);
 
             return;
 
         }
 
-    }
-);
 
-
-/* =========================================================
-   ADD TO CART BUTTON
-========================================================= */
-
-document.addEventListener(
-    "click",
-    function (event) {
+        /* =================================================
+           ADD TO CART BUTTON
+        ================================================= */
 
         const addButton =
             event.target.closest(
                 ".add-cart-btn"
             );
 
+        if (addButton) {
 
-        if (!addButton) {
+            const productId =
+                addButton.dataset.id;
 
-            return;
+            if (productId) {
 
-        }
-
-
-        const productId =
-            addButton.dataset.productId;
-
-
-        addToCart(productId);
-
-    }
-);
-
-
-/* =========================================================
-   FIREBASE AUTH
-========================================================= */
-
-let currentUser = null;
-
-
-onAuthStateChanged(
-    auth,
-    function (user) {
-
-        currentUser =
-            user || null;
-
-
-        window.currentFirebaseUser =
-            currentUser;
-
-
-        updateCheckoutButton();
-
-    }
-);
-
-
-/* =========================================================
-   CHECKOUT BUTTON
-========================================================= */
-
-function updateCheckoutButton() {
-
-    const checkoutButtons =
-        document.querySelectorAll(
-            "#checkoutBtn, .checkout-btn"
-        );
-
-
-    checkoutButtons.forEach(
-        function (button) {
-
-            if (currentUser) {
-
-                button.textContent =
-                    "🛒 Buy Now";
-
-                button.disabled =
-                    false;
-
-                button.dataset.loggedIn =
-                    "true";
-
-            } else {
-
-                button.textContent =
-                    "🔐 Login to Buy";
-
-                button.disabled =
-                    false;
-
-                button.dataset.loggedIn =
-                    "false";
+                addToCart(productId);
 
             }
 
+            return;
+
         }
-    );
-
-}
 
 
-/* =========================================================
-   CHECKOUT CLICK
-========================================================= */
-
-document.addEventListener(
-    "click",
-    async function (event) {
+        /* =================================================
+           CHECKOUT BUTTON
+        ================================================= */
 
         const checkoutButton =
             event.target.closest(
-                "#checkoutBtn, .checkout-btn"
+                "#checkoutBtn"
             );
 
+        if (checkoutButton) {
 
-        if (!checkoutButton) {
-
-            return;
-
-        }
-
-
-        event.preventDefault();
-
-
-        /* Wait for Firebase */
-
-        await authReady;
-
-
-        const user =
-            auth.currentUser;
-
-
-        if (!user) {
-
-            window.location.href =
-                "login.html";
-
-            return;
+            handleCheckout(event);
 
         }
-
-
-        /* Check cart */
-
-        const cart =
-            getCart();
-
-
-        if (cart.length === 0) {
-
-            showCartMessage(
-                "Your cart is empty"
-            );
-
-            return;
-
-        }
-
-
-        window.location.href =
-            "checkout.html";
 
     }
 );
@@ -789,35 +843,17 @@ document.addEventListener(
    INITIAL LOAD
 ========================================================= */
 
-document.addEventListener(
-    "DOMContentLoaded",
-    async function () {
+updateCartCount();
 
-        await authReady;
+renderCart();
 
-        currentUser =
-            auth.currentUser;
-
-
-        updateCartCount();
-
-        renderCart();
-
-        updateCheckoutButton();
-
-    }
-);
+updateCheckoutButton();
 
 
 /* =========================================================
    GLOBAL FUNCTIONS
+   script.js can call addToCart()
 ========================================================= */
-
-window.getCart =
-    getCart;
-
-window.saveCart =
-    saveCart;
 
 window.addToCart =
     addToCart;
