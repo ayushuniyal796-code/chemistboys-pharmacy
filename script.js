@@ -17,7 +17,6 @@ async function requireLogin() {
 
         }
 
-
         const user =
             window.firebaseAuth
                 ? window.firebaseAuth.currentUser
@@ -58,33 +57,42 @@ async function requireLogin() {
 }
 
 
-/* Make requireLogin available to other scripts */
-
 window.requireLogin =
     requireLogin;
 
 
 /* =========================================================
-   INSTANT CART COUNT
+   GET CART COUNT
 ========================================================= */
 
-function updateCartCountInstant() {
+function getCurrentCartCount() {
+
+    let cart = [];
+
 
     try {
 
-        let cart =
+        cart =
             JSON.parse(
                 localStorage.getItem(
                     "chemistboys_cart"
                 )
             );
 
+    } catch (error) {
 
-        /*
-         * Old cart key compatibility
-         */
+        cart = [];
 
-        if (!Array.isArray(cart)) {
+    }
+
+
+    /*
+     * Old cart key compatibility
+     */
+
+    if (!Array.isArray(cart)) {
+
+        try {
 
             cart =
                 JSON.parse(
@@ -93,108 +101,111 @@ function updateCartCountInstant() {
                     )
                 );
 
-        }
-
-
-        if (!Array.isArray(cart)) {
+        } catch (error) {
 
             cart = [];
 
         }
 
+    }
 
-        const count =
-            cart.reduce(
-                function (total, item) {
 
-                    return (
-                        total +
-                        Number(
-                            item.quantity || 1
-                        )
-                    );
+    if (!Array.isArray(cart)) {
 
-                },
-                0
+        cart = [];
+
+    }
+
+
+    return cart.reduce(
+        function (total, item) {
+
+            return (
+                total +
+                Number(
+                    item.quantity || 1
+                )
             );
 
+        },
+        0
+    );
 
-        /*
-         * Update every possible cart count
-         */
-
-        const cartCount =
-            document.getElementById(
-                "cartCount"
-            );
-
-        if (cartCount) {
-
-            cartCount.textContent =
-                count;
-
-        }
+}
 
 
-        /*
-         * If there are multiple cart count
-         * elements on the page
-         */
+/* =========================================================
+   UPDATE CART BADGE IMMEDIATELY
+========================================================= */
 
-        document
-            .querySelectorAll(
-                ".cart-count"
-            )
-            .forEach(
-                function (element) {
+function updateCartCountInstant() {
 
-                    element.textContent =
-                        count;
-
-                }
-            );
+    const count =
+        getCurrentCartCount();
 
 
-        /*
-         * Update Cart button if it contains
-         * a number in the text
-         */
+    /*
+     * Main cart count
+     */
 
-        const cartButtons =
-            document.querySelectorAll(
-                "[href='cart.html']"
-            );
+    const cartCount =
+        document.getElementById(
+            "cartCount"
+        );
 
 
-        cartButtons.forEach(
-            function (button) {
+    if (cartCount) {
 
-                const badge =
-                    button.querySelector(
-                        ".cart-count"
-                    );
+        cartCount.textContent =
+            count;
 
-                if (badge) {
+    }
 
-                    badge.textContent =
-                        count;
 
-                }
+    /*
+     * Other cart count elements
+     */
+
+    document
+        .querySelectorAll(
+            ".cart-count"
+        )
+        .forEach(
+            function (element) {
+
+                element.textContent =
+                    count;
 
             }
         );
 
 
-    } catch (error) {
+    /*
+     * Elements having data-cart-count
+     */
 
-        console.error(
-            "❌ Cart count update error:",
-            error
+    document
+        .querySelectorAll(
+            "[data-cart-count]"
+        )
+        .forEach(
+            function (element) {
+
+                element.textContent =
+                    count;
+
+            }
         );
 
-    }
-
 }
+
+
+/*
+ * Make it available to other files
+ */
+
+window.updateCartCountInstant =
+    updateCartCountInstant;
 
 
 /* =========================================================
@@ -639,7 +650,7 @@ document.addEventListener(
             );
 
 
-            /* Live search */
+            /* LIVE SEARCH */
 
             searchInput.addEventListener(
                 "input",
@@ -755,9 +766,8 @@ document.addEventListener(
 
 
                 /*
-                 * IMPORTANT:
-                 * ID ko direct cart me bhejne ke bajay
-                 * poora product object bhej rahe hain.
+                 * Product ID se complete
+                 * product object nikalo.
                  */
 
                 const product =
@@ -785,14 +795,14 @@ document.addEventListener(
                 }
 
 
+                /*
+                 * Cart.js ka addToCart
+                 */
+
                 if (
                     typeof window.addToCart ===
                     "function"
                 ) {
-
-                    /*
-                     * Complete product object
-                     */
 
                     window.addToCart(
                         product
@@ -800,9 +810,28 @@ document.addEventListener(
 
 
                     /*
-                     * Cart count ko immediately
-                     * update karo.
+                     * IMPORTANT:
+                     * Cart.js localStorage save
+                     * karne ke immediately baad
+                     * badge update.
                      */
+
+                    updateCartCountInstant();
+
+
+                    /*
+                     * Extra sync — kisi bhi
+                     * timing issue ko avoid karne ke liye.
+                     */
+
+                    requestAnimationFrame(
+                        function () {
+
+                            updateCartCountInstant();
+
+                        }
+                    );
+
 
                     setTimeout(
                         function () {
@@ -814,7 +843,29 @@ document.addEventListener(
                     );
 
 
-                } else {
+                    setTimeout(
+                        function () {
+
+                            updateCartCountInstant();
+
+                        },
+                        150
+                    );
+
+
+                    setTimeout(
+                        function () {
+
+                            updateCartCountInstant();
+
+                        },
+                        300
+                    );
+
+                }
+
+
+                else {
 
                     console.error(
                         "❌ addToCart function not found."
@@ -841,17 +892,30 @@ document.addEventListener(
 
         updateCartCountInstant();
 
+    }
+);
+
+
+/* =========================================================
+   STORAGE CHANGE
+========================================================= */
+
+window.addEventListener(
+    "storage",
+    function () {
+
+        updateCartCountInstant();
 
     }
 );
 
 
 /* =========================================================
-   UPDATE CART COUNT WHEN STORAGE CHANGES
+   CUSTOM CART UPDATE EVENT
 ========================================================= */
 
 window.addEventListener(
-    "storage",
+    "cartUpdated",
     function () {
 
         updateCartCountInstant();
