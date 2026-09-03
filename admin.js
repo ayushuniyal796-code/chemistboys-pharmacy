@@ -2,758 +2,546 @@ import { auth, authReady, db } from "./firebase.js";
 
 import {
     collection,
-    getDocs,
+    query,
+    orderBy,
+    onSnapshot,
     doc,
-    updateDoc,
-    deleteDoc
+    updateDoc
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 import {
+    onAuthStateChanged,
     signOut
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
 const ADMIN_UID = "gtTvd6XSgqXVaIrp67cM6gEJP0u2";
 
+const ordersContainer = document.getElementById("ordersContainer");
 
-// ======================================================
-// PAGE LOAD
-// ======================================================
 
-document.addEventListener("DOMContentLoaded", async function () {
+// ===============================
+// AUTH CHECK
+// ===============================
 
-    await authReady;
+await authReady;
 
-    const user = auth.currentUser;
+onAuthStateChanged(auth, (user) => {
 
-    // User login nahi hai
     if (!user) {
-        window.location.href = "login.html";
+        window.location.href = "auth.html";
         return;
     }
 
-    // Admin nahi hai
     if (user.uid !== ADMIN_UID) {
 
-        document.body.innerHTML = `
-            <div style="
-                text-align:center;
-                padding:60px 20px;
-                font-family:Arial;
-            ">
-
-                <h1>🚫 Access Denied</h1>
-
-                <p>
-                    You are not authorized to access the Admin Panel.
-                </p>
-
-                <button
-                    onclick="logoutAdmin()"
-                    style="
-                        padding:12px 25px;
-                        border:none;
-                        border-radius:8px;
-                        background:#dc3545;
-                        color:white;
-                        cursor:pointer;
-                    "
-                >
-                    Logout
-                </button>
-
+        ordersContainer.innerHTML = `
+            <div class="loading">
+                <h2>❌ Access Denied</h2>
+                <p>You are not authorized to access Admin Panel.</p>
             </div>
         `;
 
         return;
     }
 
-    // Admin hai
     loadOrders();
-
 });
 
 
-// ======================================================
+// ===============================
 // LOAD ORDERS
-// ======================================================
+// ===============================
 
-async function loadOrders() {
+function loadOrders() {
 
-    const ordersContainer =
-        document.getElementById("ordersContainer");
+    const ordersQuery = query(
+        collection(db, "orders"),
+        orderBy("orderDateISO", "desc")
+    );
 
-    if (!ordersContainer) return;
+    onSnapshot(
+        ordersQuery,
+        (snapshot) => {
 
+            if (snapshot.empty) {
 
-    ordersContainer.innerHTML = `
-        <p style="
-            text-align:center;
-            padding:30px;
-        ">
-            Loading orders...
-        </p>
-    `;
-
-
-    try {
-
-        const snapshot =
-            await getDocs(
-                collection(db, "orders")
-            );
-
-
-        // No orders
-        if (snapshot.empty) {
-
-            ordersContainer.innerHTML = `
-                <div style="
-                    text-align:center;
-                    padding:40px;
-                ">
-
-                    <h2>📦 No Orders Yet</h2>
-
-                    <p>
-                        Customer orders will appear here.
-                    </p>
-
-                </div>
-            `;
-
-            return;
-        }
-
-
-        let orders = [];
-
-
-        snapshot.forEach(function (orderDoc) {
-
-            const data = orderDoc.data();
-
-            orders.push({
-
-                // Real Firestore document ID
-                firestoreId: orderDoc.id,
-
-                // All order data
-                ...data
-
-            });
-
-        });
-
-
-        // ==================================================
-        // NEWEST ORDER FIRST
-        // ==================================================
-
-        orders.sort(function (a, b) {
-
-            const dateA =
-                a.createdAt?.seconds || 0;
-
-            const dateB =
-                b.createdAt?.seconds || 0;
-
-            return dateB - dateA;
-
-        });
-
-
-        ordersContainer.innerHTML = "";
-
-
-        // ==================================================
-        // DISPLAY EACH ORDER
-        // ==================================================
-
-        orders.forEach(function (order) {
-
-
-            const card =
-                document.createElement("div");
-
-
-            card.className =
-                "admin-order-card";
-
-
-            // ==================================================
-            // ORDER STATUS
-            // ==================================================
-
-            const status =
-                order.status || "Processing";
-
-
-            // ==================================================
-            // PAYMENT STATUS
-            // ==================================================
-
-            let paymentText = "Pending";
-
-
-            if (
-                order.paymentMethod === "cod"
-            ) {
-
-                paymentText =
-                    "Cash on Delivery";
-
-            }
-
-            else if (
-                order.paymentMethod === "upi" ||
-                order.paymentMethod === "online"
-            ) {
-
-                if (
-                    order.paymentStatus === "Paid"
-                ) {
-
-                    paymentText =
-                        "Paid Online";
-
-                } else {
-
-                    paymentText =
-                        "Online Payment - Pending";
-
-                }
-
-            }
-
-
-            // ==================================================
-            // CALCULATE TOTAL
-            // ==================================================
-
-            /*
-                Priority:
-
-                1. order.total
-                2. order.grandTotal
-                3. items price × quantity
-
-                Isse Accepted order me ₹0 ka problem
-                nahi aayega agar total kisi aur field me ho.
-            */
-
-            let total =
-                Number(order.total);
-
-
-            if (
-                !Number.isFinite(total) ||
-                total <= 0
-            ) {
-
-                total =
-                    Number(order.grandTotal);
-
-            }
-
-
-            // Agar total phir bhi nahi mila
-            if (
-                !Number.isFinite(total) ||
-                total <= 0
-            ) {
-
-                total = 0;
-
-
-                if (
-                    Array.isArray(order.items)
-                ) {
-
-                    order.items.forEach(function (item) {
-
-                        const price =
-                            Number(item.price) || 0;
-
-                        const quantity =
-                            Number(item.quantity) || 1;
-
-                        total +=
-                            price * quantity;
-
-                    });
-
-                }
-
-            }
-
-
-            // ==================================================
-            // ITEMS
-            // ==================================================
-
-            let itemsHTML = "";
-
-
-            if (
-                Array.isArray(order.items) &&
-                order.items.length > 0
-            ) {
-
-                order.items.forEach(function (item) {
-
-                    const name =
-                        item.name || "Medicine";
-
-
-                    const price =
-                        Number(item.price) || 0;
-
-
-                    const quantity =
-                        Number(item.quantity) || 1;
-
-
-                    const itemTotal =
-                        price * quantity;
-
-
-                    itemsHTML += `
-
-                        <div style="
-                            display:flex;
-                            justify-content:space-between;
-                            align-items:center;
-                            padding:8px 0;
-                            border-bottom:1px solid #eee;
-                        ">
-
-                            <span>
-                                ${name} × ${quantity}
-                            </span>
-
-                            <strong>
-                                ₹${itemTotal}
-                            </strong>
-
-                        </div>
-
-                    `;
-
-                });
-
-            }
-
-            else {
-
-                itemsHTML = `
-                    <p>
-                        No item details available
-                    </p>
+                ordersContainer.innerHTML = `
+                    <div class="loading">
+                        <h2>📦 No Orders</h2>
+                        <p>No customer orders found.</p>
+                    </div>
                 `;
 
+                return;
             }
 
+            ordersContainer.innerHTML = "";
 
-            // ==================================================
-            // ORDER CARD
-            // ==================================================
+            snapshot.forEach((docSnap) => {
 
-            card.innerHTML = `
+                const order = docSnap.data();
 
-                <div style="
-                    padding:20px;
-                    margin-bottom:20px;
-                    border-radius:12px;
-                    background:white;
-                    box-shadow:0 2px 10px rgba(0,0,0,0.1);
-                ">
+                renderOrder(
+                    order,
+                    docSnap.id
+                );
 
+            });
 
-                    <!-- HEADER -->
+        },
+        (error) => {
 
-                    <div style="
-                        display:flex;
-                        justify-content:space-between;
-                        align-items:center;
-                        margin-bottom:15px;
-                    ">
+            console.error("Orders Error:", error);
 
-                        <h2 style="
-                            margin:0;
-                        ">
-                            Order #${order.id || "N/A"}
-                        </h2>
-
-
-                        <span style="
-                            padding:6px 12px;
-                            border-radius:20px;
-
-                            background:
-                            ${
-                                status === "Accepted"
-                                ? "#d4edda"
-                                : "#fff3cd"
-                            };
-
-                            color:
-                            ${
-                                status === "Accepted"
-                                ? "#155724"
-                                : "#856404"
-                            };
-                        ">
-
-                            ${status}
-
-                        </span>
-
-                    </div>
-
-
-                    <hr>
-
-
-                    <!-- CUSTOMER DETAILS -->
-
-                    <h3>
-                        👤 Customer Details
-                    </h3>
-
-
-                    <p>
-                        <strong>Name:</strong>
-                        ${order.customerName || "N/A"}
-                    </p>
-
-
-                    <p>
-                        <strong>Email:</strong>
-                        ${order.email || "N/A"}
-                    </p>
-
-
-                    <p>
-                        <strong>Phone:</strong>
-                        ${order.phone || "N/A"}
-                    </p>
-
-
-                    <p>
-                        <strong>Address:</strong>
-                        ${order.address || "N/A"}
-                    </p>
-
-
-                    <p>
-                        <strong>City:</strong>
-                        ${order.city || "N/A"}
-                    </p>
-
-
-                    <p>
-                        <strong>Pincode:</strong>
-                        ${order.pincode || "N/A"}
-                    </p>
-
-
-                    <hr>
-
-
-                    <!-- ORDER DETAILS -->
-
-                    <h3>
-                        📦 Order Details
-                    </h3>
-
-
-                    <p>
-                        <strong>Order Date:</strong>
-                        ${order.orderDate || "N/A"}
-                    </p>
-
-
-                    <p>
-                        <strong>Order Time:</strong>
-                        ${order.orderTime || "N/A"}
-                    </p>
-
-
-                    <p>
-                        <strong>Expected Delivery:</strong>
-                        ${order.deliveryDate || "N/A"}
-                    </p>
-
-
-                    <p>
-                        <strong>Payment:</strong>
-                        ${paymentText}
-                    </p>
-
-
-                    <!-- ITEMS -->
-
-                    <h3>
-                        🛒 Items
-                    </h3>
-
-
-                    <div>
-                        ${itemsHTML}
-                    </div>
-
-
-                    <!-- TOTAL -->
-
-                    <h2 style="
-                        margin-top:18px;
-                        font-size:22px;
-                    ">
-
-                        Total:
-                        ₹${total}
-
-                    </h2>
-
-
-                    <!-- BUTTONS -->
-
-                    <div style="
-                        display:flex;
-                        gap:10px;
-                        margin-top:18px;
-                        flex-wrap:wrap;
-                    ">
-
-
-                        ${
-                            status !== "Accepted"
-
-                            ? `
-
-                                <button
-                                    class="accept-order-btn"
-                                    data-firestore-id="${order.firestoreId}"
-                                    style="
-                                        padding:10px 18px;
-                                        border:none;
-                                        border-radius:7px;
-                                        background:#28a745;
-                                        color:white;
-                                        cursor:pointer;
-                                    "
-                                >
-
-                                    ✅ Accept Order
-
-                                </button>
-
-                            `
-
-                            : `
-
-                                <button
-                                    disabled
-                                    style="
-                                        padding:10px 18px;
-                                        border:none;
-                                        border-radius:7px;
-                                        background:#6c757d;
-                                        color:white;
-                                    "
-                                >
-
-                                    ✅ Accepted
-
-                                </button>
-
-                            `
-                        }
-
-
-                        <button
-                            class="delete-order-btn"
-                            data-firestore-id="${order.firestoreId}"
-                            style="
-                                padding:10px 18px;
-                                border:none;
-                                border-radius:7px;
-                                background:#dc3545;
-                                color:white;
-                                cursor:pointer;
-                            "
-                        >
-
-                            🗑️ Delete
-
-                        </button>
-
-
-                    </div>
-
+            ordersContainer.innerHTML = `
+                <div class="loading">
+                    <h2>❌ Error Loading Orders</h2>
+                    <p>${escapeHTML(error.message)}</p>
                 </div>
-
             `;
 
-
-            ordersContainer.appendChild(card);
-
-        });
-
-
-        // ==================================================
-        // ACCEPT BUTTONS
-        // ==================================================
-
-        document
-            .querySelectorAll(".accept-order-btn")
-            .forEach(function (button) {
-
-                button.addEventListener(
-                    "click",
-                    function () {
-
-                        const firestoreId =
-                            this.dataset.firestoreId;
+        }
+    );
+}
 
 
-                        acceptOrder(
-                            firestoreId
-                        );
+// ===============================
+// RENDER ORDER
+// ===============================
 
-                    }
-                );
+function renderOrder(order, firestoreId) {
 
-            });
+    const card = document.createElement("div");
+
+    card.className = "admin-order-card";
+
+    const items = Array.isArray(order.items)
+        ? order.items
+        : [];
+
+    let itemsHTML = "";
+
+    items.forEach((item) => {
+
+        const name =
+            item.name ||
+            item.productName ||
+            "Product";
+
+        const quantity =
+            Number(item.quantity) ||
+            Number(item.qty) ||
+            1;
+
+        const price =
+            Number(item.price) ||
+            Number(item.productPrice) ||
+            0;
+
+        itemsHTML += `
+            <div style="
+                padding:8px 0;
+                border-bottom:1px solid #eee;
+            ">
+                <strong>${escapeHTML(name)}</strong>
+                <br>
+                <small>
+                    ₹${price} × ${quantity}
+                </small>
+            </div>
+        `;
+
+    });
 
 
-        // ==================================================
-        // DELETE BUTTONS
-        // ==================================================
+    // ===============================
+    // TOTAL
+    // ===============================
 
-        document
-            .querySelectorAll(".delete-order-btn")
-            .forEach(function (button) {
+    let total = Number(order.total);
 
-                button.addEventListener(
-                    "click",
-                    function () {
+    if (!total || total <= 0) {
 
-                        const firestoreId =
-                            this.dataset.firestoreId;
-
-
-                        deleteOrder(
-                            firestoreId
-                        );
-
-                    }
-                );
-
-            });
-
+        total = Number(order.grandTotal);
 
     }
 
-    catch (error) {
+    if (!total || total <= 0) {
 
-        console.error(
-            "Error loading orders:",
-            error
+        total = Number(order.amount);
+
+    }
+
+    if (!total || total <= 0) {
+
+        total = items.reduce(
+            (sum, item) => {
+
+                const price =
+                    Number(item.price) ||
+                    Number(item.productPrice) ||
+                    0;
+
+                const quantity =
+                    Number(item.quantity) ||
+                    Number(item.qty) ||
+                    1;
+
+                return sum + price * quantity;
+
+            },
+            0
         );
 
+    }
 
-        ordersContainer.innerHTML = `
+
+    // ===============================
+    // STATUS
+    // ===============================
+
+    const status =
+        order.status ||
+        "Processing";
+
+
+    let statusClass = "";
+
+    if (status === "Accepted") {
+        statusClass = "accepted";
+    }
+
+    else if (status === "Cancelled") {
+        statusClass = "cancelled";
+    }
+
+    else {
+        statusClass = "processing";
+    }
+
+
+    // ===============================
+    // CARD
+    // ===============================
+
+    card.innerHTML = `
+
+        <div style="
+            background:white;
+            border-radius:18px;
+            padding:25px;
+            margin-bottom:20px;
+            box-shadow:0 5px 20px rgba(0,0,0,.08);
+        ">
 
             <div style="
-                text-align:center;
-                padding:30px;
-                color:red;
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                gap:15px;
+                flex-wrap:wrap;
+                margin-bottom:20px;
             ">
 
-                <h2>
-                    ❌ Error Loading Orders
-                </h2>
+                <div>
+
+                    <h2 style="
+                        margin:0;
+                        color:#075f55;
+                    ">
+                        🧾 Order ${escapeHTML(order.id || firestoreId)}
+                    </h2>
+
+                    <p style="
+                        margin:5px 0;
+                        color:#718987;
+                    ">
+                        ${escapeHTML(order.orderDate || "")}
+                        ${escapeHTML(order.orderTime || "")}
+                    </p>
+
+                </div>
+
+
+                <div style="
+                    font-weight:bold;
+                    padding:10px 16px;
+                    border-radius:20px;
+                    background:
+                        ${
+                            status === "Accepted"
+                            ? "#d4edda"
+                            : status === "Cancelled"
+                            ? "#f8d7da"
+                            : "#fff3cd"
+                        };
+                    color:
+                        ${
+                            status === "Accepted"
+                            ? "#155724"
+                            : status === "Cancelled"
+                            ? "#721c24"
+                            : "#856404"
+                        };
+                ">
+
+                    ${
+                        status === "Accepted"
+                        ? "✅ Accepted"
+                        : status === "Cancelled"
+                        ? "❌ Cancelled"
+                        : "⏳ Processing"
+                    }
+
+                </div>
+
+            </div>
+
+
+            <!-- CUSTOMER -->
+
+            <div style="
+                background:#f7fbfa;
+                padding:15px;
+                border-radius:12px;
+                margin-bottom:15px;
+            ">
+
+                <h3>👤 Customer Details</h3>
 
                 <p>
-                    ${error.message}
+                    <strong>Name:</strong>
+                    ${escapeHTML(order.customerName || "N/A")}
+                </p>
+
+                <p>
+                    <strong>Email:</strong>
+                    ${escapeHTML(order.email || "N/A")}
+                </p>
+
+                <p>
+                    <strong>Phone:</strong>
+                    ${escapeHTML(order.phone || "N/A")}
+                </p>
+
+                <p>
+                    <strong>Address:</strong>
+                    ${escapeHTML(order.address || "N/A")}
+                </p>
+
+                <p>
+                    <strong>City:</strong>
+                    ${escapeHTML(order.city || "N/A")}
+                </p>
+
+                <p>
+                    <strong>Pincode:</strong>
+                    ${escapeHTML(order.pincode || "N/A")}
                 </p>
 
             </div>
 
-        `;
 
-    }
+            <!-- PRODUCTS -->
 
-}
+            <div>
 
+                <h3>🛒 Products</h3>
 
-// ======================================================
-// ACCEPT ORDER
-// ======================================================
+                ${itemsHTML}
 
-async function acceptOrder(
-    firestoreId
-) {
-
-    if (!firestoreId) {
-
-        alert(
-            "Invalid Firestore Order ID"
-        );
-
-        return;
-
-    }
+            </div>
 
 
-    try {
+            <!-- PAYMENT -->
 
-        /*
-            IMPORTANT:
+            <div style="
+                margin-top:20px;
+                padding:15px;
+                background:#f7fbfa;
+                border-radius:12px;
+            ">
 
-            Yahan sirf status change ho raha hai.
+                <p>
+                    <strong>Payment:</strong>
+                    ${escapeHTML(order.paymentMethod || "N/A")}
+                </p>
 
-            total ko touch nahi kar rahe.
-        */
+                <p>
+                    <strong>Payment Status:</strong>
+                    ${escapeHTML(order.paymentStatus || "Pending")}
+                </p>
 
-        await updateDoc(
+                <h2 style="color:#075f55;">
+                    💰 ₹${total.toFixed(2)}
+                </h2>
 
-            doc(
-                db,
-                "orders",
-                firestoreId
-            ),
+            </div>
 
-            {
-                status: "Accepted"
+
+            <!-- BUTTONS -->
+
+            ${
+                status !== "Accepted" &&
+                status !== "Cancelled"
+
+                ? `
+
+                <div style="
+                    display:flex;
+                    gap:10px;
+                    margin-top:20px;
+                    flex-wrap:wrap;
+                ">
+
+                    <button
+                        class="accept-order-btn"
+                        data-id="${firestoreId}"
+                        style="
+                            background:#0ca88f;
+                            color:white;
+                            border:none;
+                            padding:12px 20px;
+                            border-radius:8px;
+                            cursor:pointer;
+                            font-weight:bold;
+                        "
+                    >
+                        ✅ Accept Order
+                    </button>
+
+
+                    <button
+                        class="cancel-order-btn"
+                        data-id="${firestoreId}"
+                        style="
+                            background:#dc3545;
+                            color:white;
+                            border:none;
+                            padding:12px 20px;
+                            border-radius:8px;
+                            cursor:pointer;
+                            font-weight:bold;
+                        "
+                    >
+                        ❌ Cancel Order
+                    </button>
+
+                </div>
+
+                `
+
+                : ""
+
             }
 
+        </div>
+    `;
+
+
+    ordersContainer.appendChild(card);
+
+
+    // ===============================
+    // ACCEPT
+    // ===============================
+
+    const acceptBtn =
+        card.querySelector(".accept-order-btn");
+
+    if (acceptBtn) {
+
+        acceptBtn.addEventListener(
+            "click",
+            async () => {
+
+                try {
+
+                    acceptBtn.disabled = true;
+
+                    await updateDoc(
+                        doc(db, "orders", firestoreId),
+                        {
+                            status: "Accepted"
+                        }
+                    );
+
+                }
+
+                catch (error) {
+
+                    console.error(
+                        "Accept Error:",
+                        error
+                    );
+
+                    acceptBtn.disabled = false;
+
+                    alert(
+                        "Order accept nahi ho paya."
+                    );
+
+                }
+
+            }
         );
-
-
-        alert(
-            "✅ Order Accepted"
-        );
-
-
-        // Orders reload
-        loadOrders();
 
     }
 
-    catch (error) {
 
-        console.error(
-            "Accept order error:",
-            error
-        );
+    // ===============================
+    // CANCEL
+    // ===============================
+
+    const cancelBtn =
+        card.querySelector(".cancel-order-btn");
+
+    if (cancelBtn) {
+
+        cancelBtn.addEventListener(
+            "click",
+            async () => {
+
+                const confirmCancel =
+                    confirm(
+                        "Kya aap is order ko Cancel karna chahte ho?"
+                    );
+
+                if (!confirmCancel) {
+                    return;
+                }
 
 
-        alert(
-            "❌ Failed to accept order: " +
-            error.message
+                try {
+
+                    cancelBtn.disabled = true;
+
+                    await updateDoc(
+                        doc(db, "orders", firestoreId),
+                        {
+                            status: "Cancelled"
+                        }
+                    );
+
+                }
+
+                catch (error) {
+
+                    console.error(
+                        "Cancel Error:",
+                        error
+                    );
+
+                    cancelBtn.disabled = false;
+
+                    alert(
+                        "Order cancel nahi ho paya."
+                    );
+
+                }
+
+            }
         );
 
     }
@@ -761,100 +549,43 @@ async function acceptOrder(
 }
 
 
-// ======================================================
-// DELETE ORDER
-// ======================================================
+// ===============================
+// LOGOUT
+// ===============================
 
-async function deleteOrder(
-    firestoreId
-) {
-
-    if (!firestoreId) {
-
-        alert(
-            "Invalid Order ID"
-        );
-
-        return;
-
-    }
-
-
-    const confirmDelete =
-        confirm(
-            "Are you sure you want to delete this order?"
-        );
-
-
-    if (!confirmDelete) {
-        return;
-    }
-
+window.logoutAdmin = async function () {
 
     try {
 
-        await deleteDoc(
+        await signOut(auth);
 
-            doc(
-                db,
-                "orders",
-                firestoreId
-            )
-
-        );
-
-
-        alert(
-            "🗑️ Order Deleted"
-        );
-
-
-        // Reload
-        loadOrders();
+        window.location.href = "index.html";
 
     }
 
     catch (error) {
 
         console.error(
-            "Delete order error:",
+            "Logout Error:",
             error
-        );
-
-
-        alert(
-            "❌ Failed to delete order: " +
-            error.message
         );
 
     }
 
+};
+
+
+// ===============================
+// ESCAPE HTML
+// ===============================
+
+function escapeHTML(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
 }
-
-
-// ======================================================
-// LOGOUT
-// ======================================================
-
-window.logoutAdmin =
-    async function () {
-
-        try {
-
-            await signOut(auth);
-
-            window.location.href =
-                "login.html";
-
-        }
-
-        catch (error) {
-
-            console.error(
-                "Logout error:",
-                error
-            );
-
-        }
-
-    };
