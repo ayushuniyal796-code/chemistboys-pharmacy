@@ -175,6 +175,159 @@
             }
 
         }
+/* ==============================
+   CLEAN MY ORDERS DESIGN
+   ============================== */
+
+.order-card {
+    overflow: hidden;
+}
+
+.order-header {
+    min-height: 58px;
+    align-items: center !important;
+}
+
+.order-heading-left {
+    min-width: 0;
+}
+
+.order-id {
+    font-size: 20px;
+    line-height: 1.25;
+}
+
+.order-date {
+    margin-top: 5px;
+    color: #718987;
+    font-size: 14px;
+}
+
+.order-status-wrap {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.order-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    padding: 9px 15px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.order-status.processing {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.order-status.accepted {
+    background: #dff8f3;
+    color: #087c6b;
+}
+
+.order-status.cancelled {
+    background: #f8d7da;
+    color: #b42318;
+}
+
+.order-items {
+    margin-top: 5px;
+}
+
+.order-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    min-height: 42px;
+}
+
+.order-item-name {
+    flex: 1;
+    font-weight: 700;
+}
+
+.order-item-price {
+    flex-shrink: 0;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.order-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding-top: 5px;
+}
+
+.order-total {
+    text-align: left;
+}
+
+.order-payment {
+    color: #526d69;
+    font-size: 14px;
+    text-align: right;
+}
+
+.delivery-date-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 0 18px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: #edf9f6;
+    color: #087c6b;
+    font-size: 14px;
+}
+
+@media (max-width: 600px) {
+
+    .order-header {
+        flex-direction: row !important;
+        align-items: center !important;
+    }
+
+    .order-id {
+        font-size: 18px;
+    }
+
+    .order-status {
+        padding: 8px 11px;
+        font-size: 12px;
+    }
+
+    .order-item {
+        align-items: flex-start;
+    }
+
+    .order-item-price {
+        font-size: 13px;
+    }
+
+    .order-summary {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .order-payment {
+        text-align: left;
+    }
+
+    .delivery-date-box {
+        font-size: 13px;
+    }
+}
 
     </style>
 
