@@ -16,37 +16,25 @@ const ordersContainer =
     document.getElementById("ordersContainer");
 
 
-// ========================================
-// WAIT FOR FIREBASE AUTH
-// ========================================
-
 await authReady;
 
 
 onAuthStateChanged(auth, (user) => {
 
     if (!user) {
-
         window.location.href = "auth.html";
-
         return;
     }
 
-    loadMyOrders(user.uid);
+    loadOrders(user.uid);
 
 });
 
 
-// ========================================
-// LOAD MY ORDERS
-// ========================================
-
-function loadMyOrders(userId) {
-
-    const ordersRef = collection(db, "orders");
+function loadOrders(userId) {
 
     const ordersQuery = query(
-        ordersRef,
+        collection(db, "orders"),
         where("userId", "==", userId)
     );
 
@@ -56,79 +44,51 @@ function loadMyOrders(userId) {
 
         (snapshot) => {
 
-            let orders = [];
+            const orders = [];
 
 
             snapshot.forEach((docSnap) => {
 
                 const data = docSnap.data();
 
-                /*
-                 * IMPORTANT:
-                 * Firestore document ID save rakhenge
-                 * taaki status hamesha latest Firestore
-                 * se aaye.
-                 */
+                const orderId =
+                    data.id ||
+                    data.orderId;
+
+                const items =
+                    normalizeItems(data);
+
+
+                // Broken records hide karo
+                if (
+                    !orderId ||
+                    orderId === "N/A" ||
+                    items.length === 0
+                ) {
+                    return;
+                }
+
 
                 orders.push({
+
                     firestoreId: docSnap.id,
-                    ...data
+
+                    ...data,
+
+                    id: orderId,
+
+                    items: items
+
                 });
 
             });
 
 
-            // ========================================
-            // REMOVE INVALID / OLD BROKEN ORDERS
-            // ========================================
-
-            orders = orders.filter((order) => {
-
-                // Proper order ID hona chahiye
-                if (
-                    !order.id ||
-                    order.id === "N/A"
-                ) {
-                    return false;
-                }
-
-
-                // Products/items hona chahiye
-                const items =
-                    Array.isArray(order.items)
-                        ? order.items
-                        : Array.isArray(order.products)
-                            ? order.products
-                            : [];
-
-
-                if (items.length === 0) {
-                    return false;
-                }
-
-
-                return true;
-
-            });
-
-
-            // ========================================
-            // SORT NEWEST FIRST
-            // ========================================
-
+            // Newest order first
             orders.sort((a, b) => {
 
-                const dateA =
-                    a.orderDateISO
-                        ? new Date(a.orderDateISO).getTime()
-                        : 0;
-
-                const dateB =
-                    b.orderDateISO
-                        ? new Date(b.orderDateISO).getTime()
-                        : 0;
-
-                return dateB - dateA;
+                return getOrderTime(b)
+                     - getOrderTime(a);
 
             });
 
@@ -137,21 +97,35 @@ function loadMyOrders(userId) {
 
         },
 
+
         (error) => {
 
             console.error(
-                "My Orders Error:",
+                "Orders Error:",
                 error
             );
 
 
             ordersContainer.innerHTML = `
-                <div class="loading">
-                    <h2>❌ Unable to load orders</h2>
+
+                <div class="empty-orders">
+
+                    <div class="empty-orders-icon">
+                        ❌
+                    </div>
+
+                    <h2>
+                        Unable to load orders
+                    </h2>
+
                     <p>
-                        ${escapeHTML(error.message)}
+                        ${escapeHTML(
+                            error.message
+                        )}
                     </p>
+
                 </div>
+
             `;
 
         }
@@ -162,7 +136,80 @@ function loadMyOrders(userId) {
 
 
 // ========================================
-// RENDER ORDERS
+// NORMALIZE ITEMS
+// ========================================
+
+function normalizeItems(order) {
+
+    let items =
+        order.items ||
+        order.products ||
+        order.cartItems ||
+        [];
+
+
+    if (typeof items === "string") {
+
+        try {
+
+            items = JSON.parse(items);
+
+        }
+
+        catch {
+
+            items = [];
+
+        }
+
+    }
+
+
+    return Array.isArray(items)
+        ? items
+        : [];
+
+}
+
+
+// ========================================
+// ORDER TIME
+// ========================================
+
+function getOrderTime(order) {
+
+    if (order.orderDateISO) {
+
+        const time =
+            new Date(
+                order.orderDateISO
+            ).getTime();
+
+
+        if (Number.isFinite(time)) {
+            return time;
+        }
+
+    }
+
+
+    if (order.createdAt?.seconds) {
+
+        return (
+            order.createdAt.seconds
+            * 1000
+        );
+
+    }
+
+
+    return 0;
+
+}
+
+
+// ========================================
+// RENDER
 // ========================================
 
 function renderOrders(orders) {
@@ -170,16 +217,35 @@ function renderOrders(orders) {
     if (!orders.length) {
 
         ordersContainer.innerHTML = `
-            <div class="loading">
-                <h2>📦 No Orders Yet</h2>
+
+            <div class="empty-orders">
+
+                <div class="empty-orders-icon">
+                    📦
+                </div>
+
+                <h2>
+                    No Orders Yet
+                </h2>
 
                 <p>
-                    You haven't placed any orders yet.
+                    You haven't placed any
+                    orders yet.
                 </p>
+
+                <a
+                    href="index.html"
+                    class="shop-btn"
+                >
+                    🛍️ Start Shopping
+                </a>
+
             </div>
+
         `;
 
         return;
+
     }
 
 
@@ -191,183 +257,77 @@ function renderOrders(orders) {
         const card =
             document.createElement("div");
 
-        card.className = "order-card";
 
+        card.className =
+            "order-card";
 
-        // ========================================
-        // ORDER ITEMS
-        // ========================================
 
         const items =
-            Array.isArray(order.items)
-                ? order.items
-                : Array.isArray(order.products)
-                    ? order.products
-                    : [];
+            order.items;
 
 
-        let itemsHTML = "";
-
-
-        items.forEach((item) => {
-
-            const name =
-                item.name ||
-                item.productName ||
-                "Product";
-
-
-            const price =
-                Number(item.price) ||
-                Number(item.productPrice) ||
-                0;
-
-
-            const quantity =
-                Number(item.quantity) ||
-                Number(item.qty) ||
-                1;
-
-
-            itemsHTML += `
-
-                <div class="order-product">
-
-                    <div>
-
-                        <strong>
-                            ${escapeHTML(name)}
-                        </strong>
-
-                    </div>
-
-                    <div>
-
-                        ₹${price.toFixed(2)}
-                        × ${quantity}
-
-                    </div>
-
-                </div>
-
-            `;
-
-        });
-
-
-        // ========================================
-        // TOTAL
-        // ========================================
-
-        let total =
-            Number(order.total);
-
-
-        /*
-         * Agar total Firestore me proper hai,
-         * wahi use hoga.
-         */
-
-        if (
-            !Number.isFinite(total) ||
-            total <= 0
-        ) {
-
-            total =
-                Number(order.grandTotal);
-
-        }
-
-
-        /*
-         * Agar old order me total nahi hai,
-         * products ke prices se calculate karo.
-         */
-
-        if (
-            !Number.isFinite(total) ||
-            total <= 0
-        ) {
-
-            total = items.reduce(
-                (sum, item) => {
-
-                    const price =
-                        Number(item.price) ||
-                        Number(item.productPrice) ||
-                        0;
-
-
-                    const quantity =
-                        Number(item.quantity) ||
-                        Number(item.qty) ||
-                        1;
-
-
-                    return sum +
-                        (price * quantity);
-
-                },
-
-                0
+        const total =
+            getOrderTotal(
+                order,
+                items
             );
 
-        }
-
-
-        // ========================================
-        // STATUS
-        // ========================================
-
-        /*
-         * VERY IMPORTANT:
-         *
-         * Status ONLY Firestore se.
-         *
-         * LocalStorage se Accepted nahi lenge.
-         */
 
         const status =
-            order.status || "Processing";
+            order.status ||
+            "Processing";
 
 
-        let statusHTML = "";
+        // ====================================
+        // STATUS
+        // ====================================
+
+        let statusHTML = `
+
+            <span
+                class="order-status processing"
+            >
+                ⏳ Processing
+            </span>
+
+        `;
 
 
         if (status === "Accepted") {
 
             statusHTML = `
-                <span class="order-status accepted">
+
+                <span
+                    class="order-status accepted"
+                >
                     ✅ Accepted
                 </span>
+
             `;
 
         }
 
-        else if (status === "Cancelled") {
+
+        else if (
+            status === "Cancelled"
+        ) {
 
             statusHTML = `
-                <span class="order-status cancelled">
+
+                <span
+                    class="order-status cancelled"
+                >
                     ❌ Cancelled
                 </span>
-            `;
 
-        }
-
-        else {
-
-            statusHTML = `
-                <span class="order-status processing">
-                    ⏳ Processing
-                </span>
             `;
 
         }
 
 
-        // ========================================
+        // ====================================
         // PAYMENT
-        // ========================================
+        // ====================================
 
         let payment =
             order.paymentMethod ||
@@ -381,12 +341,13 @@ function renderOrders(orders) {
 
         }
 
+
         else if (payment === "upi") {
 
-            payment =
-                "UPI";
+            payment = "UPI";
 
         }
+
 
         else if (payment === "online") {
 
@@ -396,53 +357,144 @@ function renderOrders(orders) {
         }
 
 
-        // ========================================
-        // DATE
-        // ========================================
+        // ====================================
+        // PRODUCTS
+        // ====================================
 
-        const orderDate =
-            order.orderDate || "";
+        const itemsHTML =
+            items.map((item) => {
+
+                const name =
+                    item.name ||
+                    item.productName ||
+                    "Product";
 
 
-        const orderTime =
-            order.orderTime || "";
+                const price =
+                    Number(
+                        item.price ??
+                        item.productPrice
+                    ) || 0;
 
 
-        // ========================================
-        // FINAL CARD
-        // ========================================
+                const quantity =
+                    Number(
+                        item.quantity ??
+                        item.qty
+                    ) || 1;
 
-        card.innerHTML = `
 
-            <div class="order-card-header">
+                return `
 
-                <div>
+                    <div class="order-item">
 
-                    <h2>
-                        Order #${escapeHTML(
-                            order.id
-                        )}
-                    </h2>
+                        <span
+                            class="order-item-name"
+                        >
+                            ${escapeHTML(name)}
+                        </span>
 
-                    <p>
-                        ${escapeHTML(orderDate)}
-                        ${orderTime
-                            ? " " +
-                              escapeHTML(orderTime)
-                            : ""
-                        }
-                    </p>
+
+                        <span
+                            class="order-item-price"
+                        >
+                            ₹${price.toFixed(2)}
+                            × ${quantity}
+                        </span>
+
+                    </div>
+
+                `;
+
+            }).join("");
+
+
+        // ====================================
+        // DELIVERY DATE
+        // ====================================
+
+        let deliveryHTML = "";
+
+
+        if (order.deliveryDate) {
+
+            deliveryHTML = `
+
+                <div
+                    class="delivery-date-box"
+                >
+
+                    🚚
+
+                    <strong>
+                        Delivery:
+                    </strong>
+
+                    ${escapeHTML(
+                        formatDeliveryDate(
+                            order.deliveryDate
+                        )
+                    )}
 
                 </div>
 
-                <div>
+            `;
+
+        }
+
+
+        // ====================================
+        // FINAL CARD
+        // ====================================
+
+        card.innerHTML = `
+
+            <div class="order-header">
+
+                <div class="order-heading-left">
+
+                    <div class="order-id">
+
+                        Order #${escapeHTML(
+                            order.id
+                        )}
+
+                    </div>
+
+
+                    <div class="order-date">
+
+                        ${escapeHTML(
+                            order.orderDate || ""
+                        )}
+
+                        ${
+                            order.orderTime
+                            ? " • " +
+                              escapeHTML(
+                                  order.orderTime
+                              )
+                            : ""
+                        }
+
+                    </div>
+
+                </div>
+
+
+                <div class="order-status-wrap">
+
                     ${statusHTML}
+
                 </div>
 
             </div>
 
 
-            <div class="order-products">
+            ${deliveryHTML}
+
+
+            <div class="order-items">
 
                 ${itemsHTML}
 
@@ -451,15 +503,20 @@ function renderOrders(orders) {
 
             <div class="order-summary">
 
-                <strong>
+                <div class="order-total">
+
                     Total:
                     ₹${total.toFixed(2)}
-                </strong>
 
-                <span>
+                </div>
+
+
+                <div class="order-payment">
+
                     Payment:
                     ${escapeHTML(payment)}
-                </span>
+
+                </div>
 
             </div>
 
@@ -474,16 +531,150 @@ function renderOrders(orders) {
 
 
 // ========================================
+// TOTAL
+// ========================================
+
+function getOrderTotal(
+    order,
+    items
+) {
+
+    const savedTotal =
+        Number(order.total);
+
+
+    if (
+        Number.isFinite(savedTotal) &&
+        savedTotal > 0
+    ) {
+
+        return savedTotal;
+
+    }
+
+
+    const grandTotal =
+        Number(order.grandTotal);
+
+
+    if (
+        Number.isFinite(grandTotal) &&
+        grandTotal > 0
+    ) {
+
+        return grandTotal;
+
+    }
+
+
+    const amount =
+        Number(order.amount);
+
+
+    if (
+        Number.isFinite(amount) &&
+        amount > 0
+    ) {
+
+        return amount;
+
+    }
+
+
+    return items.reduce(
+        (sum, item) => {
+
+            const price =
+                Number(
+                    item.price ??
+                    item.productPrice
+                ) || 0;
+
+
+            const quantity =
+                Number(
+                    item.quantity ??
+                    item.qty
+                ) || 1;
+
+
+            return sum +
+                price * quantity;
+
+        },
+
+        0
+    );
+
+}
+
+
+// ========================================
+// DELIVERY DATE FORMAT
+// ========================================
+
+function formatDeliveryDate(value) {
+
+    const date =
+        new Date(
+            `${value}T00:00:00`
+        );
+
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+
+        return value;
+
+    }
+
+
+    return date.toLocaleDateString(
+        "en-IN",
+        {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+        }
+    );
+
+}
+
+
+// ========================================
 // ESCAPE HTML
 // ========================================
 
 function escapeHTML(value) {
 
     return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
 }
