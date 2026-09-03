@@ -16,6 +16,127 @@
 
     <style>
 
+.delivery-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 40, 35, 0.55);
+    backdrop-filter: blur(5px);
+}
+
+.delivery-modal-box {
+    position: relative;
+    width: 100%;
+    max-width: 430px;
+    box-sizing: border-box;
+    background: white;
+    padding: 30px;
+    border-radius: 22px;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25);
+}
+
+.delivery-close {
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 50%;
+    background: #f1f5f4;
+    color: #075f55;
+    font-size: 26px;
+    cursor: pointer;
+}
+
+.delivery-icon {
+    font-size: 42px;
+    margin-bottom: 10px;
+}
+
+.delivery-modal-box h2 {
+    margin: 0 0 8px;
+    color: #075f55;
+}
+
+.delivery-modal-box p {
+    margin: 0 0 22px;
+    color: #718987;
+}
+
+.delivery-modal-box label {
+    display: block;
+    margin-bottom: 8px;
+    color: #365853;
+    font-weight: 700;
+}
+
+#deliveryDateInput {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 13px 14px;
+    border: 2px solid #dcece8;
+    border-radius: 12px;
+    background: #f9fdfc;
+    color: #164f48;
+    font-size: 16px;
+    outline: none;
+}
+
+#deliveryDateInput:focus {
+    border-color: #0ca88f;
+}
+
+.delivery-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.delivery-modal-actions button {
+    flex: 1;
+    border: none;
+    padding: 13px 15px;
+    border-radius: 11px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.delivery-cancel-btn {
+    background: #eef3f2;
+    color: #526d69;
+}
+
+.delivery-confirm-btn {
+    background: #0ca88f;
+    color: white;
+}
+
+.delivery-confirm-btn:hover {
+    background: #087c6b;
+}
+
+.delivery-confirm-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+@media (max-width: 500px) {
+
+    .delivery-modal-box {
+        padding: 25px 20px;
+    }
+
+    .delivery-modal-actions {
+        flex-direction: column;
+    }
+
+}
+
         body {
             background: #f4fbf9;
         }
