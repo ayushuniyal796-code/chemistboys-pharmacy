@@ -1,5 +1,3 @@
-/* CHEMISTBOYS - MY ORDERS */
-
 import { auth, authReady, db } from "./firebase.js";
 
 import {
@@ -12,46 +10,80 @@ import {
 
 const ADMIN_UID = "gtTvd6XSgqXVaIrp67cM6gEJP0u2";
 
-
-document.addEventListener("DOMContentLoaded", async () => {
-
-    const container =
-        document.getElementById("ordersContainer");
-
-    if (!container) return;
+const ordersContainer = document.getElementById("ordersContainer");
 
 
-    // =========================
-    // WAIT FOR FIREBASE AUTH
-    // =========================
+function escapeHTML(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 
-    await authReady;
 
-    const user = auth.currentUser;
+function getOrderTotal(order) {
+
+    // New orders
+    if (Number(order.total) > 0) {
+        return Number(order.total);
+    }
+
+    // Old orders
+    if (Number(order.grandTotal) > 0) {
+        return Number(order.grandTotal);
+    }
+
+    if (Number(order.amount) > 0) {
+        return Number(order.amount);
+    }
+
+    // Calculate from products
+    const items = order.items || order.products || [];
+
+    return items.reduce((sum, item) => {
+
+        const price = Number(
+            item.price ??
+            item.productPrice ??
+            0
+        );
+
+        const quantity = Number(
+            item.quantity ??
+            item.qty ??
+            1
+        );
+
+        return sum + (price * quantity);
+
+    }, 0);
+}
 
 
-    if (!user) {
+function getOrderDate(order) {
 
-        container.innerHTML = `
-            <div class="empty-orders">
+    if (order.orderDateISO) {
+        return new Date(order.orderDateISO);
+    }
 
-                <div class="empty-orders-icon">
-                    🔐
-                </div>
+    if (order.createdAt?.toDate) {
+        return order.createdAt.toDate();
+    }
 
-                <h2>Please Login</h2>
+    return new Date(0);
+}
 
-                <p>
-                    Please login to view your orders.
-                </p>
 
-                <a
-                    href="login.html"
-                    class="shop-btn"
-                >
-                    🔑 Login
-                </a>
+function renderOrders(orders) {
 
+    if (!orders.length) {
+
+        ordersContainer.innerHTML = `
+            <div class="loading">
+                <h2>📦 No Orders Found</h2>
+                <p>You have not placed any orders yet.</p>
             </div>
         `;
 
@@ -59,569 +91,208 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    // =========================
-    // FIRESTORE QUERY
-    // =========================
+    orders.sort((a, b) => {
+        return getOrderDate(b) - getOrderDate(a);
+    });
+
+
+    ordersContainer.innerHTML = orders.map(order => {
+
+        const items = order.items || order.products || [];
+
+        const total = getOrderTotal(order);
+
+        const status = order.status || "Processing";
+
+
+        const statusClass =
+            status.toLowerCase() === "accepted"
+                ? "accepted"
+                : "processing";
+
+
+        const itemsHTML = items.map(item => {
+
+            const name =
+                item.name ||
+                item.productName ||
+                "Product";
+
+
+            const price = Number(
+                item.price ??
+                item.productPrice ??
+                0
+            );
+
+
+            const quantity = Number(
+                item.quantity ??
+                item.qty ??
+                1
+            );
+
+
+            return `
+                <div class="order-product">
+
+                    <span>
+                        ${escapeHTML(name)}
+                    </span>
+
+                    <span>
+                        ₹${price} × ${quantity}
+                    </span>
+
+                </div>
+            `;
+
+        }).join("");
+
+
+        return `
+            <div class="admin-order-card order-card">
+
+                <div class="order-header">
+
+                    <div>
+                        <h3>
+                            Order #${escapeHTML(order.id || "N/A")}
+                        </h3>
+
+                        <p>
+                            ${escapeHTML(
+                                order.orderDate || ""
+                            )}
+                            ${escapeHTML(
+                                order.orderTime || ""
+                            )}
+                        </p>
+                    </div>
+
+
+                    <div class="order-status ${statusClass}">
+                        ${escapeHTML(status)}
+                    </div>
+
+                </div>
+
+
+                <div class="order-products">
+
+                    ${itemsHTML}
+
+                </div>
+
+
+                <div class="order-footer">
+
+                    <strong>
+                        Total: ₹${total}
+                    </strong>
+
+                    <span>
+                        Payment:
+                        ${escapeHTML(
+                            order.paymentMethod === "upi"
+                                ? "UPI"
+                                : "Cash on Delivery"
+                        )}
+                    </span>
+
+                </div>
+
+            </div>
+        `;
+
+    }).join("");
+}
+
+
+
+async function loadOrders() {
+
+    await authReady;
+
+
+    const user = auth.currentUser;
+
+
+    if (!user) {
+
+        window.location.href = "auth.html";
+        return;
+
+    }
+
 
     let ordersQuery;
 
 
+    // ADMIN
     if (user.uid === ADMIN_UID) {
 
-        // Admin can see all orders
-        ordersQuery =
-            query(
-                collection(db, "orders")
-            );
+        ordersQuery = query(
+            collection(db, "orders")
+        );
 
-    } else {
-
-        // Customer can see ONLY their own orders
-        ordersQuery =
-            query(
-                collection(db, "orders"),
-                where(
-                    "userId",
-                    "==",
-                    user.uid
-                )
-            );
     }
 
+    // CUSTOMER
+    else {
 
-    // =========================
-    // REAL-TIME ORDERS
-    // =========================
+        ordersQuery = query(
+            collection(db, "orders"),
+            where("userId", "==", user.uid)
+        );
+
+    }
+
 
     onSnapshot(
         ordersQuery,
 
-        snapshot => {
+        (snapshot) => {
 
-            if (snapshot.empty) {
+            const orders = [];
 
-                container.innerHTML = `
-                    <div class="empty-orders">
+            snapshot.forEach(doc => {
 
-                        <div class="empty-orders-icon">
-                            📦
-                        </div>
-
-                        <h2>No Orders Yet</h2>
-
-                        <p>
-                            You haven't placed any orders yet.
-                        </p>
-
-                    </div>
-                `;
-
-                return;
-            }
-
-
-            container.innerHTML = "";
-
-
-            // =========================
-            // SORT NEWEST FIRST
-            // =========================
-
-            const documents =
-                [...snapshot.docs].sort(
-                    (a, b) => {
-
-                        const dateA =
-                            a.data().orderDateISO ||
-                            "";
-
-                        const dateB =
-                            b.data().orderDateISO ||
-                            "";
-
-                        return dateB.localeCompare(dateA);
-                    }
-                );
-
-
-            documents.forEach(docSnap => {
-
-                const order =
-                    docSnap.data();
-
-
-                // =========================
-                // ITEMS
-                // =========================
-
-                const items =
-                    Array.isArray(order.items)
-                        ? order.items
-                        : Array.isArray(order.products)
-                            ? order.products
-                            : [];
-
-
-                let itemsHTML = "";
-
-
-                items.forEach(item => {
-
-                    const name =
-                        item.name ||
-                        item.productName ||
-                        "Medicine";
-
-
-                    const price =
-                        getItemPrice(item);
-
-
-                    const quantity =
-                        getItemQuantity(item);
-
-
-                    const itemTotal =
-                        price * quantity;
-
-
-                    itemsHTML += `
-
-                        <div class="order-item">
-
-                            <span>
-                                ${escapeHTML(name)}
-                                × ${quantity}
-                            </span>
-
-                            <strong>
-                                ₹${itemTotal}
-                            </strong>
-
-                        </div>
-
-                    `;
+                orders.push({
+                    firestoreId: doc.id,
+                    ...doc.data()
                 });
-
-
-                if (!itemsHTML) {
-
-                    itemsHTML = `
-
-                        <div class="order-item">
-
-                            <span>
-                                No item details available
-                            </span>
-
-                        </div>
-
-                    `;
-                }
-
-
-                // =========================
-                // TOTAL
-                // =========================
-
-                let total =
-                    getOrderTotal(
-                        order,
-                        items
-                    );
-
-
-                // Safety fallback
-                if (
-                    !Number.isFinite(total) ||
-                    total < 0
-                ) {
-
-                    total = 0;
-
-                }
-
-
-                // =========================
-                // STATUS
-                // =========================
-
-                const status =
-                    order.status ||
-                    "Processing";
-
-
-                // =========================
-                // PAYMENT
-                // =========================
-
-                let payment =
-                    "Pending";
-
-
-                if (
-                    order.paymentMethod === "cod"
-                ) {
-
-                    payment =
-                        "Cash on Delivery";
-
-                }
-                else if (
-                    order.paymentMethod === "upi" ||
-                    order.paymentMethod === "online"
-                ) {
-
-                    payment =
-                        order.paymentStatus === "Paid"
-                            ? "Paid Online"
-                            : "Online Payment - Pending";
-                }
-
-
-                // =========================
-                // DATE / TIME
-                // =========================
-
-                const orderDate =
-                    order.orderDate ||
-                    "N/A";
-
-
-                const orderTime =
-                    order.orderTime ||
-                    "N/A";
-
-
-                const deliveryDate =
-                    order.deliveryDate ||
-                    "N/A";
-
-
-                // =========================
-                // CREATE CARD
-                // =========================
-
-                const card =
-                    document.createElement("div");
-
-
-                card.className =
-                    "order-card";
-
-
-                card.innerHTML = `
-
-                    <div class="order-header">
-
-                        <div class="order-id">
-
-                            Order #
-                            ${escapeHTML(
-                                order.id ||
-                                docSnap.id
-                            )}
-
-                        </div>
-
-                        <div class="order-status">
-
-                            ${escapeHTML(status)}
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="order-info">
-
-                        <p>
-
-                            📅
-                            <strong>
-                                Order Date:
-                            </strong>
-
-                            ${escapeHTML(orderDate)}
-
-                        </p>
-
-
-                        <p>
-
-                            🕐
-                            <strong>
-                                Order Time:
-                            </strong>
-
-                            ${escapeHTML(orderTime)}
-
-                        </p>
-
-
-                        <p>
-
-                            🚚
-                            <strong>
-                                Expected Delivery:
-                            </strong>
-
-                            ${escapeHTML(deliveryDate)}
-
-                        </p>
-
-
-                        <p>
-
-                            💳
-                            <strong>
-                                Payment:
-                            </strong>
-
-                            ${escapeHTML(payment)}
-
-                        </p>
-
-
-                        <p>
-
-                            📦
-                            <strong>
-                                Order Status:
-                            </strong>
-
-                            ${escapeHTML(status)}
-
-                        </p>
-
-                    </div>
-
-
-                    <div class="order-items">
-
-                        ${itemsHTML}
-
-                    </div>
-
-
-                    <div class="order-total">
-
-                        Total:
-                        ₹${total.toFixed(2)}
-
-                    </div>
-
-                `;
-
-
-                container.appendChild(card);
 
             });
 
+
+            renderOrders(orders);
+
         },
 
-
-        error => {
+        (error) => {
 
             console.error(
-                "Orders Error:",
+                "Orders error:",
                 error
             );
 
 
-            container.innerHTML = `
+            ordersContainer.innerHTML = `
+                <div class="loading">
 
-                <div class="empty-orders">
-
-                    <div class="empty-orders-icon">
-                        ⚠️
-                    </div>
-
-                    <h2>
-                        Unable to Load Orders
-                    </h2>
+                    <h2>❌ Error Loading Orders</h2>
 
                     <p>
-                        ${escapeHTML(
-                            error.message ||
-                            "Something went wrong."
-                        )}
+                        ${escapeHTML(error.message)}
                     </p>
 
                 </div>
-
             `;
+
         }
     );
-
-});
-
-
-// =====================================================
-// GET ITEM PRICE
-// =====================================================
-
-function getItemPrice(item) {
-
-    const price =
-        Number(item.price);
-
-
-    if (
-        Number.isFinite(price) &&
-        price > 0
-    ) {
-
-        return price;
-
-    }
-
-
-    const productPrice =
-        Number(item.productPrice);
-
-
-    if (
-        Number.isFinite(productPrice) &&
-        productPrice > 0
-    ) {
-
-        return productPrice;
-
-    }
-
-
-    return 0;
 }
 
 
-// =====================================================
-// GET ITEM QUANTITY
-// =====================================================
-
-function getItemQuantity(item) {
-
-    const quantity =
-        Number(item.quantity);
-
-
-    if (
-        Number.isFinite(quantity) &&
-        quantity > 0
-    ) {
-
-        return quantity;
-
-    }
-
-
-    const qty =
-        Number(item.qty);
-
-
-    if (
-        Number.isFinite(qty) &&
-        qty > 0
-    ) {
-
-        return qty;
-
-    }
-
-
-    return 1;
-}
-
-
-// =====================================================
-// GET ORDER TOTAL
-// =====================================================
-
-function getOrderTotal(order, items) {
-
-    // First priority: Firestore total
-    const total =
-        Number(order.total);
-
-
-    if (
-        Number.isFinite(total) &&
-        total > 0
-    ) {
-
-        return total;
-
-    }
-
-
-    // Second priority: grandTotal
-    const grandTotal =
-        Number(order.grandTotal);
-
-
-    if (
-        Number.isFinite(grandTotal) &&
-        grandTotal > 0
-    ) {
-
-        return grandTotal;
-
-    }
-
-
-    // Third priority: amount
-    const amount =
-        Number(order.amount);
-
-
-    if (
-        Number.isFinite(amount) &&
-        amount > 0
-    ) {
-
-        return amount;
-
-    }
-
-
-    // Final fallback:
-    // Calculate from products
-    if (items.length > 0) {
-
-        return items.reduce(
-            (sum, item) => {
-
-                const price =
-                    getItemPrice(item);
-
-                const quantity =
-                    getItemQuantity(item);
-
-                return (
-                    sum +
-                    price * quantity
-                );
-
-            },
-            0
-        );
-    }
-
-
-    return 0;
-}
-
-
-// =====================================================
-// HTML SAFETY
-// =====================================================
-
-function escapeHTML(value) {
-
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
+loadOrders();
