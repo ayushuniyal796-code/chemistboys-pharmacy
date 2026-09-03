@@ -1,0 +1,90 @@
+rules_version = '2';
+
+service cloud.firestore {
+
+    match /databases/{database}/documents {
+
+        // ==============================
+        // USERS
+        // ==============================
+
+        match /users/{userId} {
+
+            // User can read/write only own profile
+            allow read, create, update:
+                if request.auth != null
+                && request.auth.uid == userId;
+
+            // Delete disabled by default
+            allow delete: if false;
+        }
+
+
+        // ==============================
+        // PRODUCTS
+        // ==============================
+
+        match /products/{productId} {
+
+            // Anyone can view products
+            allow read: if true;
+
+            // Nobody can directly create/update/delete
+            // from normal client
+            allow create, update, delete: if false;
+        }
+
+
+        // ==============================
+        // ORDERS
+        // ==============================
+
+        match /orders/{orderId} {
+
+            // User can create an order only for themselves
+            allow create:
+                if request.auth != null
+                && request.resource.data.userId
+                   == request.auth.uid;
+
+            // User can read only own order
+            allow read:
+                if request.auth != null
+                && resource.data.userId
+                   == request.auth.uid;
+
+            // Users cannot modify orders
+            allow update, delete: if false;
+        }
+
+
+        // ==============================
+        // REVIEWS
+        // ==============================
+
+        match /reviews/{reviewId} {
+
+            allow create:
+                if request.auth != null
+                && request.resource.data.userId
+                   == request.auth.uid;
+
+            allow read: if true;
+
+            allow update, delete:
+                if request.auth != null
+                && resource.data.userId
+                   == request.auth.uid;
+        }
+
+
+        // ==============================
+        // EVERYTHING ELSE
+        // ==============================
+
+        match /{document=**} {
+
+            allow read, write: if false;
+        }
+    }
+}
