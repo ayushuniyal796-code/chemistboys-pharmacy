@@ -1098,4 +1098,263 @@ function openDeliveryCalendar(
 
                 closeModal();
 
-            
+            }
+
+        }
+    );
+
+}
+
+
+// ========================================
+// TODAY DATE
+// ========================================
+
+function getTodayISO() {
+
+    const now =
+        new Date();
+
+
+    const year =
+        now.getFullYear();
+
+
+    const month =
+        String(
+            now.getMonth() + 1
+        ).padStart(2, "0");
+
+
+    const day =
+        String(
+            now.getDate()
+        ).padStart(2, "0");
+
+
+    return (
+        `${year}-${month}-${day}`
+    );
+
+}
+
+
+// ========================================
+// FORMAT DELIVERY DATE
+// ========================================
+
+function formatDeliveryDate(
+    value
+) {
+
+    const date =
+        new Date(
+            `${value}T00:00:00`
+        );
+
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+
+        return value;
+
+    }
+
+
+    return date.toLocaleDateString(
+        "en-IN",
+        {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+        }
+    );
+
+}
+
+
+// ========================================
+// NORMALIZE ITEMS
+// ========================================
+
+function normalizeItems(order) {
+
+    let items =
+        order.items ||
+        order.products ||
+        order.cartItems ||
+        [];
+
+
+    if (typeof items === "string") {
+
+        try {
+
+            items =
+                JSON.parse(items);
+
+        }
+
+        catch {
+
+            items = [];
+
+        }
+
+    }
+
+
+    return Array.isArray(items)
+        ? items
+        : [];
+
+}
+
+
+// ========================================
+// GET TOTAL
+// ========================================
+
+function getOrderTotal(
+    order,
+    items
+) {
+
+    const savedTotal =
+        Number(order.total);
+
+
+    if (
+        Number.isFinite(savedTotal) &&
+        savedTotal > 0
+    ) {
+
+        return savedTotal;
+
+    }
+
+
+    const grandTotal =
+        Number(order.grandTotal);
+
+
+    if (
+        Number.isFinite(grandTotal) &&
+        grandTotal > 0
+    ) {
+
+        return grandTotal;
+
+    }
+
+
+    const amount =
+        Number(order.amount);
+
+
+    if (
+        Number.isFinite(amount) &&
+        amount > 0
+    ) {
+
+        return amount;
+
+    }
+
+
+    return items.reduce(
+        (sum, item) => {
+
+            const price =
+                Number(
+                    item.price ??
+                    item.productPrice
+                ) || 0;
+
+
+            const quantity =
+                Number(
+                    item.quantity ??
+                    item.qty
+                ) || 1;
+
+
+            return (
+                sum +
+                price * quantity
+            );
+
+        },
+
+        0
+    );
+
+}
+
+
+// ========================================
+// LOGOUT
+// ========================================
+
+window.logoutAdmin =
+    async function () {
+
+        try {
+
+            await signOut(auth);
+
+
+            window.location.href =
+                "index.html";
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Logout Error:",
+                error
+            );
+
+        }
+
+    };
+
+
+// ========================================
+// ESCAPE HTML
+// ========================================
+
+function escapeHTML(value) {
+
+    return String(value ?? "")
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
