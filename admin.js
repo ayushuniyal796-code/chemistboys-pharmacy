@@ -2589,3 +2589,404 @@ function escapeHTML(value) {
     );
 
 }
+/* =========================================================
+   CUSTOMER REVIEWS MANAGEMENT
+   ========================================================= */
+
+async function loadAdminReviews() {
+
+    const container =
+        document.getElementById(
+            "adminReviewsContainer"
+        );
+
+    const countElement =
+        document.getElementById(
+            "adminReviewCount"
+        );
+
+    const averageElement =
+        document.getElementById(
+            "adminAverageRating"
+        );
+
+
+    if (!container) {
+        return;
+    }
+
+
+    // SECURITY CHECK
+    if (
+        !auth.currentUser ||
+        auth.currentUser.uid !== ADMIN_UID
+    ) {
+        return;
+    }
+
+
+    try {
+
+        const reviewsQuery =
+            query(
+                collection(db, "reviews")
+            );
+
+
+        onSnapshot(
+            reviewsQuery,
+
+            snapshot => {
+
+                container.innerHTML = "";
+
+
+                if (snapshot.empty) {
+
+                    countElement.textContent =
+                        "0";
+
+                    averageElement.textContent =
+                        "0.0 ⭐";
+
+                    container.innerHTML = `
+                        <div class="empty-box">
+                            ⭐ No customer reviews yet.
+                        </div>
+                    `;
+
+                    return;
+                }
+
+
+                const reviews = [];
+
+
+                snapshot.forEach(
+                    reviewDoc => {
+
+                        reviews.push({
+
+                            id: reviewDoc.id,
+
+                            ...reviewDoc.data()
+
+                        });
+
+                    }
+                );
+
+
+                // NEWEST FIRST
+                reviews.sort(
+                    (a, b) => {
+
+                        const dateA =
+                            a.createdAt &&
+                            typeof a.createdAt.toDate === "function"
+                                ? a.createdAt.toDate().getTime()
+                                : 0;
+
+                        const dateB =
+                            b.createdAt &&
+                            typeof b.createdAt.toDate === "function"
+                                ? b.createdAt.toDate().getTime()
+                                : 0;
+
+                        return dateB - dateA;
+
+                    }
+                );
+
+
+                let totalRating = 0;
+
+
+                reviews.forEach(
+                    review => {
+
+                        totalRating +=
+                            Number(
+                                review.rating
+                            ) || 0;
+
+
+                        const card =
+                            document.createElement(
+                                "div"
+                            );
+
+                        card.className =
+                            "admin-review-card";
+
+
+                        const name =
+                            escapeHTML(
+                                review.name ||
+                                "ChemistBoys Customer"
+                            );
+
+
+                        const email =
+                            escapeHTML(
+                                review.email ||
+                                "No email"
+                            );
+
+
+                        const text =
+                            escapeHTML(
+                                review.review ||
+                                ""
+                            );
+
+
+                        const rating =
+                            Number(
+                                review.rating
+                            ) || 0;
+
+
+                        const date =
+                            adminReviewDate(
+                                review.createdAt
+                            );
+
+
+                        card.innerHTML = `
+
+                            <div class="admin-review-top">
+
+                                <div class="admin-review-name">
+                                    👤 ${name}
+                                </div>
+
+                                <div class="admin-review-date">
+                                    ${date}
+                                </div>
+
+                            </div>
+
+
+                            <div class="admin-review-stars">
+                                ${adminReviewStars(rating)}
+                            </div>
+
+
+                            <div class="admin-review-text">
+                                ${text}
+                            </div>
+
+
+                            <div class="admin-review-email">
+                                📧 ${email}
+                            </div>
+
+
+                            <button
+                                class="admin-delete-review"
+                            >
+                                🗑️ Delete Review
+                            </button>
+
+                        `;
+
+
+                        const deleteButton =
+                            card.querySelector(
+                                ".admin-delete-review"
+                            );
+
+
+                        deleteButton.addEventListener(
+                            "click",
+                            async () => {
+
+                                const confirmed =
+                                    confirm(
+                                        "Are you sure you want to permanently delete this review?"
+                                    );
+
+
+                                if (!confirmed) {
+                                    return;
+                                }
+
+
+                                try {
+
+                                    deleteButton.disabled =
+                                        true;
+
+                                    deleteButton.textContent =
+                                        "Deleting...";
+
+
+                                    const {
+                                        deleteDoc
+                                    } = await import(
+                                        "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js"
+                                    );
+
+
+                                    await deleteDoc(
+                                        doc(
+                                            db,
+                                            "reviews",
+                                            review.id
+                                        )
+                                    );
+
+
+                                } catch (error) {
+
+                                    console.error(
+                                        "Admin review delete error:",
+                                        error
+                                    );
+
+
+                                    deleteButton.disabled =
+                                        false;
+
+                                    deleteButton.textContent =
+                                        "🗑️ Delete Review";
+
+
+                                    alert(
+                                        "Unable to delete review."
+                                    );
+
+                                }
+
+                            }
+                        );
+
+
+                        container.appendChild(
+                            card
+                        );
+
+                    }
+                );
+
+
+                countElement.textContent =
+                    reviews.length;
+
+
+                const average =
+                    totalRating /
+                    reviews.length;
+
+
+                averageElement.textContent =
+                    average.toFixed(1) +
+                    " ⭐";
+
+            },
+
+
+            error => {
+
+                console.error(
+                    "Admin reviews error:",
+                    error
+                );
+
+
+                container.innerHTML = `
+
+                    <div class="empty-box">
+
+                        ❌ Unable to load reviews.
+
+                        <br><br>
+
+                        ${escapeHTML(
+                            error.message
+                        )}
+
+                    </div>
+
+                `;
+
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Admin review setup error:",
+            error
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   REVIEW STARS
+   ========================================================= */
+
+function adminReviewStars(rating) {
+
+    let stars = "";
+
+    for (
+        let i = 1;
+        i <= 5;
+        i++
+    ) {
+
+        stars +=
+            i <= rating
+                ? "★"
+                : "☆";
+
+    }
+
+    return stars;
+}
+
+
+/* =========================================================
+   REVIEW DATE
+   ========================================================= */
+
+function adminReviewDate(timestamp) {
+
+    if (!timestamp) {
+        return "Just now";
+    }
+
+
+    try {
+
+        return timestamp
+            .toDate()
+            .toLocaleDateString(
+                "en-IN",
+                {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric"
+                }
+            );
+
+    } catch {
+
+        return "Just now";
+
+    }
+
+}
+
+
+/* =========================================================
+   START REVIEWS
+   ========================================================= */
+
+loadAdminReviews();
