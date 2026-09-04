@@ -1,302 +1,529 @@
-/* =========================================================
-   CHEMISTBOYS - REGISTER
-========================================================= */
+import { auth, authReady, db } from "./firebase.js";
 
 import {
-    auth,
-    authReady
-} from "./firebase.js";
+    collection,
+    addDoc,
+    deleteDoc,
+    doc,
+    query,
+    orderBy,
+    onSnapshot,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-import {
-    createUserWithEmailAndPassword,
-    updateProfile
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+let selectedRating = 0;
+let currentUser = null;
 
+await authReady;
+currentUser = auth.currentUser;
 
-/* =========================================================
-   REGISTER FORM
-========================================================= */
+const stars = document.querySelectorAll("#starRating button");
+const ratingText = document.getElementById("ratingText");
+const reviewText = document.getElementById("reviewText");
+const charCount = document.getElementById("charCount");
+const submitReview = document.getElementById("submitReview");
+const reviewMessage = document.getElementById("reviewMessage");
+const reviewsList = document.getElementById("reviewsList");
+const averageNumber = document.getElementById("averageNumber");
 
-const registerForm =
-    document.getElementById("registerForm");
+// ===============================
+// STAR RATING
+// ===============================
 
+stars.forEach((star) => {
+    star.addEventListener("click", () => {
+        selectedRating = Number(star.dataset.rating);
+        updateStars();
+    });
+});
 
-if (registerForm) {
+function updateStars() {
 
-    registerForm.addEventListener(
-        "submit",
-        async function (event) {
+    stars.forEach((star) => {
 
-            event.preventDefault();
+        const rating = Number(star.dataset.rating);
 
+        star.classList.toggle(
+            "active",
+            rating <= selectedRating
+        );
 
-            /* =================================================
-               GET FORM VALUES
-            ================================================= */
+    });
 
-            const name =
-                document
-                    .getElementById("name")
-                    .value
-                    .trim();
+    const messages = {
+        1: "Very bad",
+        2: "Needs improvement",
+        3: "Good",
+        4: "Very good",
+        5: "Excellent!"
+    };
 
-
-            const email =
-                document
-                    .getElementById("email")
-                    .value
-                    .trim();
-
-
-            const password =
-                document
-                    .getElementById("password")
-                    .value;
-
-
-            const confirmPassword =
-                document
-                    .getElementById("confirmPassword")
-                    .value;
-
-
-            const message =
-                document.getElementById("authMessage");
-
-
-            /* =================================================
-               CLEAR MESSAGE
-            ================================================= */
-
-            if (message) {
-
-                message.textContent = "";
-
-            }
+    ratingText.textContent =
+        messages[selectedRating] || "Select a rating";
+}
 
 
-            /* =================================================
-               VALIDATION
-            ================================================= */
+// ===============================
+// CHARACTER COUNT
+// ===============================
 
-            if (
-                !name ||
-                !email ||
-                !password ||
-                !confirmPassword
-            ) {
+reviewText.addEventListener("input", () => {
 
-                if (message) {
+    charCount.textContent =
+        reviewText.value.length;
 
-                    message.textContent =
-                        "❌ Please fill all fields.";
+});
 
-                    message.style.color =
-                        "#e63b59";
+
+// ===============================
+// SUBMIT REVIEW
+// ===============================
+
+submitReview.addEventListener(
+    "click",
+    async () => {
+
+        reviewMessage.textContent = "";
+
+        if (!currentUser) {
+
+            reviewMessage.textContent =
+                "Please login before submitting a review.";
+
+            reviewMessage.style.color = "#d93025";
+
+            return;
+        }
+
+        if (selectedRating === 0) {
+
+            reviewMessage.textContent =
+                "Please select a star rating.";
+
+            reviewMessage.style.color = "#d93025";
+
+            return;
+        }
+
+        const text =
+            reviewText.value.trim();
+
+        if (text.length < 3) {
+
+            reviewMessage.textContent =
+                "Review must contain at least 3 characters.";
+
+            reviewMessage.style.color = "#d93025";
+
+            return;
+        }
+
+        try {
+
+            submitReview.disabled = true;
+
+            submitReview.textContent =
+                "Submitting...";
+
+            const reviewerName =
+                currentUser.displayName ||
+                currentUser.email?.split("@")[0] ||
+                "ChemistBoys Customer";
+
+            await addDoc(
+                collection(db, "reviews"),
+                {
+
+                    userId: currentUser.uid,
+
+                    name: reviewerName,
+
+                    email:
+                        currentUser.email || "",
+
+                    rating:
+                        selectedRating,
+
+                    review:
+                        text,
+
+                    createdAt:
+                        serverTimestamp()
 
                 }
+            );
 
-                return;
+            reviewMessage.textContent =
+                "Thank you! Your review has been submitted ⭐";
 
-            }
+            reviewMessage.style.color =
+                "#188038";
 
+            selectedRating = 0;
 
-            if (password.length < 6) {
+            updateStars();
 
-                if (message) {
+            reviewText.value = "";
 
-                    message.textContent =
-                        "❌ Password must be at least 6 characters.";
+            charCount.textContent = "0";
 
-                    message.style.color =
-                        "#e63b59";
+        } catch (error) {
 
-                }
+            console.error(
+                "Review submission error:",
+                error
+            );
 
-                return;
+            reviewMessage.textContent =
+                "Unable to submit review. Please try again.";
 
-            }
+            reviewMessage.style.color =
+                "#d93025";
 
+        } finally {
 
-            if (password !== confirmPassword) {
+            submitReview.disabled = false;
 
-                if (message) {
+            submitReview.textContent =
+                "⭐ Submit Review";
 
-                    message.textContent =
-                        "❌ Passwords do not match.";
+        }
 
-                    message.style.color =
-                        "#e63b59";
-
-                }
-
-                return;
-
-            }
-
-
-            /* =================================================
-               CREATE FIREBASE ACCOUNT
-            ================================================= */
-
-            try {
-
-                if (message) {
-
-                    message.textContent =
-                        "Creating your account...";
-
-                    message.style.color =
-                        "#087c6b";
-
-                }
+    }
+);
 
 
-                const userCredential =
-                    await createUserWithEmailAndPassword(
-                        auth,
-                        email,
-                        password
+// ===============================
+// LOAD REVIEWS REALTIME
+// ===============================
+
+const reviewsQuery = query(
+    collection(db, "reviews"),
+    orderBy("createdAt", "desc")
+);
+
+onSnapshot(
+    reviewsQuery,
+
+    (snapshot) => {
+
+        reviewsList.innerHTML = "";
+
+        if (snapshot.empty) {
+
+            reviewsList.innerHTML = `
+                <div class="no-reviews">
+
+                    <div style="font-size:35px;">
+                        ⭐
+                    </div>
+
+                    <p>No reviews yet.</p>
+
+                    <p>
+                        Be the first person to review ChemistBoys!
+                    </p>
+
+                </div>
+            `;
+
+            averageNumber.textContent = "0.0";
+
+            return;
+        }
+
+
+        let totalRating = 0;
+
+
+        snapshot.forEach(
+            (reviewDoc) => {
+
+                const data =
+                    reviewDoc.data();
+
+                const rating =
+                    Number(data.rating) || 0;
+
+                totalRating += rating;
+
+
+                const name =
+                    escapeHTML(
+                        data.name ||
+                        "ChemistBoys Customer"
                     );
 
 
-                /* =================================================
-                   SET DISPLAY NAME
-                ================================================= */
-
-                await updateProfile(
-                    userCredential.user,
-                    {
-                        displayName: name
-                    }
-                );
+                const review =
+                    escapeHTML(
+                        data.review || ""
+                    );
 
 
-                /* =================================================
-                   WAIT FOR AUTH STATE
-                ================================================= */
-
-                await authReady;
-
-
-                /* =================================================
-                   SUCCESS
-                ================================================= */
-
-                if (message) {
-
-                    message.textContent =
-                        "✅ Account created successfully!";
-
-                    message.style.color =
-                        "#087c6b";
-
-                }
+                const date =
+                    formatDate(
+                        data.createdAt
+                    );
 
 
-                /* =================================================
-                   REDIRECT
-                ================================================= */
-
-                window.location.href =
-                    "index.html";
+                const starsHTML =
+                    createStars(rating);
 
 
-            } catch (error) {
+                const card =
+                    document.createElement("div");
 
-                console.error(
-                    "Registration error:",
-                    error
-                );
-
-
-                if (message) {
-
-                    message.style.color =
-                        "#e63b59";
-
-                }
+                card.className =
+                    "review-card";
 
 
-                /* =================================================
-                   FIREBASE ERRORS
-                ================================================= */
+                // Check whether this review
+                // belongs to logged-in user
 
-                if (
-                    error.code ===
-                    "auth/email-already-in-use"
-                ) {
+                const isOwner =
+                    currentUser &&
+                    data.userId ===
+                    currentUser.uid;
 
-                    if (message) {
 
-                        message.textContent =
-                            "❌ This email is already registered. Please login.";
+                card.innerHTML = `
 
+                    <div class="review-top">
+
+                        <div class="reviewer-name">
+                            👤 ${name}
+                        </div>
+
+                        <div class="review-date">
+                            ${date}
+                        </div>
+
+                    </div>
+
+
+                    <div class="review-stars">
+                        ${starsHTML}
+                    </div>
+
+
+                    <div class="review-content">
+                        ${review}
+                    </div>
+
+
+                    ${
+                        isOwner
+                        ?
+                        `
+                        <button
+                            class="delete-review-btn"
+                            type="button"
+                        >
+                            🗑️ Delete Review
+                        </button>
+                        `
+                        :
+                        ""
                     }
 
+                `;
+
+
+                // ===============================
+                // DELETE OWN REVIEW
+                // ===============================
+
+                if (isOwner) {
+
+                    const deleteButton =
+                        card.querySelector(
+                            ".delete-review-btn"
+                        );
+
+
+                    deleteButton.addEventListener(
+                        "click",
+                        async () => {
+
+                            const confirmed =
+                                confirm(
+                                    "Are you sure you want to delete your review?"
+                                );
+
+
+                            if (!confirmed) {
+                                return;
+                            }
+
+
+                            try {
+
+                                deleteButton.disabled =
+                                    true;
+
+                                deleteButton.textContent =
+                                    "Deleting...";
+
+
+                                await deleteDoc(
+                                    doc(
+                                        db,
+                                        "reviews",
+                                        reviewDoc.id
+                                    )
+                                );
+
+
+                            } catch (error) {
+
+                                console.error(
+                                    "Review deletion error:",
+                                    error
+                                );
+
+
+                                deleteButton.disabled =
+                                    false;
+
+
+                                deleteButton.textContent =
+                                    "🗑️ Delete Review";
+
+
+                                reviewMessage.textContent =
+                                    "Unable to delete review. Please try again.";
+
+                                reviewMessage.style.color =
+                                    "#d93025";
+
+                            }
+
+                        }
+                    );
+
                 }
 
 
-                else if (
-                    error.code ===
-                    "auth/invalid-email"
-                ) {
-
-                    if (message) {
-
-                        message.textContent =
-                            "❌ Invalid email address.";
-
-                    }
-
-                }
-
-
-                else if (
-                    error.code ===
-                    "auth/weak-password"
-                ) {
-
-                    if (message) {
-
-                        message.textContent =
-                            "❌ Password is too weak.";
-
-                    }
-
-                }
-
-
-                else if (
-                    error.code ===
-                    "auth/api-key-not-valid"
-                ) {
-
-                    if (message) {
-
-                        message.textContent =
-                            "❌ Firebase API key is invalid.";
-
-                    }
-
-                }
-
-
-                else {
-
-                    if (message) {
-
-                        message.textContent =
-                            "❌ Registration failed: " +
-                            error.message;
-
-                    }
-
-                }
+                reviewsList.appendChild(card);
 
             }
+        );
 
-        }
-    );
+
+        averageNumber.textContent =
+            (
+                totalRating /
+                snapshot.size
+            ).toFixed(1);
+
+    },
+
+
+    (error) => {
+
+        console.error(
+            "Reviews loading error:",
+            error
+        );
+
+        reviewsList.innerHTML = `
+
+            <div class="no-reviews">
+                Unable to load reviews right now.
+            </div>
+
+        `;
+
+    }
+
+);
+
+
+// ===============================
+// CREATE STAR DISPLAY
+// ===============================
+
+function createStars(rating) {
+
+    let result = "";
+
+    for (let i = 1; i <= 5; i++) {
+
+        result +=
+            i <= rating
+                ? "★"
+                : "☆";
+
+    }
+
+    return result;
+}
+
+
+// ===============================
+// FORMAT DATE
+// ===============================
+
+function formatDate(timestamp) {
+
+    if (!timestamp) {
+        return "Just now";
+    }
+
+    try {
+
+        return timestamp
+            .toDate()
+            .toLocaleDateString(
+                "en-IN",
+                {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric"
+                }
+            );
+
+    } catch {
+
+        return "Just now";
+
+    }
+
+}
+
+
+// ===============================
+// SECURITY: ESCAPE HTML
+// ===============================
+
+function escapeHTML(value) {
+
+    return String(value)
+
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
 
 }
