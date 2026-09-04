@@ -1,4 +1,12 @@
-import { auth, authReady, db } from "./firebase.js";
+/* =========================================================
+   CHEMISTBOYS ADMIN DASHBOARD
+   ========================================================= */
+
+import {
+    auth,
+    authReady,
+    db
+} from "./firebase.js";
 
 import {
     collection,
@@ -14,46 +22,112 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
+/* =========================================================
+   ADMIN UID
+   ========================================================= */
+
 const ADMIN_UID =
     "gtTvd6XSgqXVaIrp67cM6gEJP0u2";
 
 
+/* =========================================================
+   GLOBAL VARIABLES
+   ========================================================= */
+
+let allOrders = [];
+
+let selectedOrderId = null;
+
+let revenueChart = null;
+let ordersChart = null;
+let statusChart = null;
+let paymentChart = null;
+
+
+/* =========================================================
+   ELEMENTS
+   ========================================================= */
+
 const ordersContainer =
     document.getElementById("ordersContainer");
 
+const searchInput =
+    document.getElementById("searchInput");
 
-// ========================================
-// AUTH CHECK
-// ========================================
+const statusFilter =
+    document.getElementById("statusFilter");
+
+const paymentFilter =
+    document.getElementById("paymentFilter");
+
+const deliveryModal =
+    document.getElementById("deliveryModal");
+
+const deliveryDateInput =
+    document.getElementById("deliveryDateInput");
+
+
+/* =========================================================
+   AUTHENTICATION
+   ========================================================= */
 
 await authReady;
 
-
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, user => {
 
     if (!user) {
 
-        window.location.href =
-            "auth.html";
+        window.location.href = "login.html";
 
         return;
     }
 
 
+    /* ONLY ADMIN */
+
     if (user.uid !== ADMIN_UID) {
 
-        ordersContainer.innerHTML = `
+        document.body.innerHTML = `
 
-            <div class="loading">
+            <div style="
+                min-height:100vh;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                background:#eef8f6;
+                font-family:Arial;
+                padding:20px;
+            ">
 
-                <h2>
-                    ❌ Access Denied
-                </h2>
+                <div style="
+                    background:white;
+                    padding:35px;
+                    border-radius:20px;
+                    text-align:center;
+                    max-width:450px;
+                    box-shadow:0 10px 40px rgba(0,0,0,.12);
+                ">
 
-                <p>
-                    You are not authorized
-                    to access Admin Panel.
-                </p>
+                    <div style="
+                        font-size:55px;
+                    ">
+                        🚫
+                    </div>
+
+                    <h2 style="
+                        color:#075f55;
+                    ">
+                        Access Denied
+                    </h2>
+
+                    <p style="
+                        color:#718987;
+                    ">
+                        You are not authorized
+                        to access the admin panel.
+                    </p>
+
+                </div>
 
             </div>
 
@@ -68,159 +142,149 @@ onAuthStateChanged(auth, (user) => {
 });
 
 
-// ========================================
-// LOAD ORDERS
-// ========================================
+/* =========================================================
+   LOAD ORDERS - REAL TIME
+   ========================================================= */
 
 function loadOrders() {
 
-    /*
-       orderBy() intentionally nahi use kiya.
-       Isse purane orders bhi safely load honge
-       even agar unme orderDateISO missing ho.
-    */
+    const ordersRef =
+        collection(db, "orders");
 
     const ordersQuery =
-        query(
-            collection(db, "orders")
-        );
+        query(ordersRef);
 
 
     onSnapshot(
-
         ordersQuery,
 
-        (snapshot) => {
+        snapshot => {
 
-            if (snapshot.empty) {
-
-                ordersContainer.innerHTML = `
-
-                    <div class="loading">
-
-                        <h2>
-                            📦 No Orders
-                        </h2>
-
-                        <p>
-                            No customer orders found.
-                        </p>
-
-                    </div>
-
-                `;
-
-                return;
-            }
+            allOrders = [];
 
 
-            const orders = [];
+            snapshot.forEach(docSnap => {
+
+                const data =
+                    docSnap.data();
 
 
-            snapshot.forEach((docSnap) => {
-
-                orders.push({
+                allOrders.push({
 
                     firestoreId:
                         docSnap.id,
 
-                    ...docSnap.data()
+                    ...data
 
                 });
 
             });
 
 
-            // Newest orders first
-            orders.sort((a, b) => {
+            sortOrders();
 
-                return (
-                    getOrderTime(b)
-                    -
-                    getOrderTime(a)
-                );
+            updateDashboard();
 
-            });
+            renderOrders();
 
+            renderRecentOrders();
 
-            ordersContainer.innerHTML =
-                "";
+            renderTopProducts();
 
-
-            orders.forEach((order) => {
-
-                renderOrder(
-                    order,
-                    order.firestoreId
-                );
-
-            });
+            updateAlerts();
 
         },
 
 
-        (error) => {
+        error => {
 
             console.error(
-                "Orders Error:",
+                "Orders error:",
                 error
             );
 
 
             ordersContainer.innerHTML = `
 
-                <div class="loading">
+                <div class="empty-box">
 
-                    <h2>
-                        ❌ Error Loading Orders
-                    </h2>
+                    ❌ Unable to load orders.
 
-                    <p>
-                        ${escapeHTML(
-                            error.message
-                        )}
-                    </p>
+                    <br><br>
+
+                    ${escapeHTML(
+                        error.message
+                    )}
 
                 </div>
 
             `;
 
         }
-
     );
 
 }
 
 
-// ========================================
-// ORDER TIME
-// ========================================
+/* =========================================================
+   SORT ORDERS
+   ========================================================= */
 
-function getOrderTime(order) {
+function sortOrders() {
 
-    if (order.orderDateISO) {
+    allOrders.sort((a, b) => {
 
-        const time =
-            new Date(
-                order.orderDateISO
-            ).getTime();
+        const dateA =
+            getOrderDate(a);
+
+        const dateB =
+            getOrderDate(b);
 
 
-        if (Number.isFinite(time)) {
+        return dateB - dateA;
 
-            return time;
+    });
 
-        }
+}
+
+
+/* =========================================================
+   GET ORDER DATE
+   ========================================================= */
+
+function getOrderDate(order) {
+
+    if (
+        order.createdAt &&
+        typeof order.createdAt.toDate === "function"
+    ) {
+
+        return order.createdAt
+            .toDate()
+            .getTime();
 
     }
 
 
-    if (order.createdAt?.seconds) {
+    if (order.orderDate) {
 
-        return (
-            order.createdAt.seconds
-            * 1000
-        );
+        const parsed =
+            new Date(
+                `${order.orderDate} ${
+                    order.orderTime || ""
+                }`
+            );
+
+
+        if (
+            !isNaN(
+                parsed.getTime()
+            )
+        ) {
+
+            return parsed.getTime();
+
+        }
 
     }
 
@@ -230,957 +294,27 @@ function getOrderTime(order) {
 }
 
 
-// ========================================
-// RENDER ORDER
-// ========================================
-
-function renderOrder(
-    order,
-    firestoreId
-) {
-
-    const card =
-        document.createElement("div");
-
-
-    card.className =
-        "admin-order-card";
-
-
-    const items =
-        normalizeItems(order);
-
-
-    // ====================================
-    // PRODUCTS
-    // ====================================
-
-    let itemsHTML = "";
-
-
-    items.forEach((item) => {
-
-        const name =
-            item.name ||
-            item.productName ||
-            "Product";
-
-
-        const quantity =
-            Number(
-                item.quantity ??
-                item.qty
-            ) || 1;
-
-
-        const price =
-            Number(
-                item.price ??
-                item.productPrice
-            ) || 0;
-
-
-        itemsHTML += `
-
-            <div style="
-                padding:10px 0;
-                border-bottom:
-                    1px solid #e8efed;
-            ">
-
-                <strong>
-                    ${escapeHTML(name)}
-                </strong>
-
-                <br>
-
-                <small>
-                    ₹${price.toFixed(2)}
-                    × ${quantity}
-                </small>
-
-            </div>
-
-        `;
-
-    });
-
-
-    // ====================================
-    // TOTAL
-    // ====================================
-
-    const total =
-        getOrderTotal(
-            order,
-            items
-        );
-
-
-    // ====================================
-    // STATUS
-    // ====================================
-
-    const status =
-        order.status ||
-        "Processing";
-
-
-    let statusText =
-        "⏳ Processing";
-
-
-    let statusBackground =
-        "#fff3cd";
-
-
-    let statusColor =
-        "#856404";
-
-
-    if (status === "Accepted") {
-
-        statusText =
-            "✅ Accepted";
-
-        statusBackground =
-            "#d4edda";
-
-        statusColor =
-            "#155724";
-
-    }
-
-
-    else if (
-        status === "Cancelled"
-    ) {
-
-        statusText =
-            "❌ Cancelled";
-
-        statusBackground =
-            "#f8d7da";
-
-        statusColor =
-            "#721c24";
-
-    }
-
-
-    // ====================================
-    // PAYMENT
-    // ====================================
-
-    let payment =
-        order.paymentMethod ||
-        "N/A";
-
-
-    if (payment === "cod") {
-
-        payment =
-            "Cash on Delivery";
-
-    }
-
-
-    else if (payment === "upi") {
-
-        payment =
-            "UPI";
-
-    }
-
-
-    else if (payment === "online") {
-
-        payment =
-            "Online Payment";
-
-    }
-
-
-    // ====================================
-    // DELIVERY DATE
-    // ====================================
-
-    let deliveryHTML = "";
-
-
-    if (order.deliveryDate) {
-
-        deliveryHTML = `
-
-            <div style="
-                margin-top:15px;
-                padding:12px 15px;
-                border-radius:12px;
-                background:#edf9f6;
-                color:#087c6b;
-                font-weight:700;
-            ">
-
-                🚚 Delivery Date:
-                ${escapeHTML(
-                    formatDeliveryDate(
-                        order.deliveryDate
-                    )
-                )}
-
-            </div>
-
-        `;
-
-    }
-
-
-    // ====================================
-    // BUTTONS
-    // ====================================
-
-    let buttonsHTML = "";
-
-
-    if (
-        status !== "Accepted" &&
-        status !== "Cancelled"
-    ) {
-
-        buttonsHTML = `
-
-            <div style="
-                display:flex;
-                gap:10px;
-                margin-top:20px;
-                flex-wrap:wrap;
-            ">
-
-                <button
-                    class="accept-order-btn"
-                    data-id="${firestoreId}"
-                    style="
-                        flex:1;
-                        min-width:140px;
-                        background:#0ca88f;
-                        color:white;
-                        border:none;
-                        padding:13px 18px;
-                        border-radius:10px;
-                        cursor:pointer;
-                        font-weight:800;
-                    "
-                >
-                    ✅ Accept Order
-                </button>
-
-
-                <button
-                    class="cancel-order-btn"
-                    data-id="${firestoreId}"
-                    style="
-                        flex:1;
-                        min-width:140px;
-                        background:#dc3545;
-                        color:white;
-                        border:none;
-                        padding:13px 18px;
-                        border-radius:10px;
-                        cursor:pointer;
-                        font-weight:800;
-                    "
-                >
-                    ❌ Cancel Order
-                </button>
-
-            </div>
-
-        `;
-
-    }
-
-
-    // ====================================
-    // CARD HTML
-    // ====================================
-
-    card.innerHTML = `
-
-        <div style="
-            background:white;
-            border-radius:18px;
-            padding:25px;
-            margin-bottom:20px;
-            box-shadow:
-                0 5px 20px
-                rgba(0,0,0,.08);
-        ">
-
-
-            <!-- HEADER -->
-
-            <div style="
-                display:flex;
-                justify-content:space-between;
-                align-items:center;
-                gap:15px;
-                margin-bottom:20px;
-            ">
-
-                <div>
-
-                    <h2 style="
-                        margin:0;
-                        color:#075f55;
-                        font-size:21px;
-                    ">
-
-                        🧾 Order
-                        ${escapeHTML(
-                            order.id ||
-                            order.orderId ||
-                            firestoreId
-                        )}
-
-                    </h2>
-
-
-                    <p style="
-                        margin:6px 0 0;
-                        color:#718987;
-                        font-size:14px;
-                    ">
-
-                        ${escapeHTML(
-                            order.orderDate ||
-                            ""
-                        )}
-
-                        ${
-                            order.orderTime
-                            ? " • " +
-                              escapeHTML(
-                                  order.orderTime
-                              )
-                            : ""
-                        }
-
-                    </p>
-
-                </div>
-
-
-                <div style="
-                    flex-shrink:0;
-                    font-weight:800;
-                    padding:10px 15px;
-                    border-radius:25px;
-                    background:${statusBackground};
-                    color:${statusColor};
-                    white-space:nowrap;
-                ">
-
-                    ${statusText}
-
-                </div>
-
-            </div>
-
-
-            <!-- CUSTOMER -->
-
-            <div style="
-                background:#f7fbfa;
-                padding:17px;
-                border-radius:13px;
-                margin-bottom:18px;
-            ">
-
-                <h3 style="
-                    margin-top:0;
-                    color:#075f55;
-                ">
-                    👤 Customer Details
-                </h3>
-
-
-                <p>
-                    <strong>Name:</strong>
-                    ${escapeHTML(
-                        order.customerName ||
-                        "N/A"
-                    )}
-                </p>
-
-
-                <p>
-                    <strong>Email:</strong>
-                    ${escapeHTML(
-                        order.email ||
-                        "N/A"
-                    )}
-                </p>
-
-
-                <p>
-                    <strong>Phone:</strong>
-                    ${escapeHTML(
-                        order.phone ||
-                        "N/A"
-                    )}
-                </p>
-
-
-                <p>
-                    <strong>Address:</strong>
-                    ${escapeHTML(
-                        order.address ||
-                        "N/A"
-                    )}
-                </p>
-
-
-                <p>
-                    <strong>City:</strong>
-                    ${escapeHTML(
-                        order.city ||
-                        "N/A"
-                    )}
-                </p>
-
-
-                <p>
-                    <strong>Pincode:</strong>
-                    ${escapeHTML(
-                        order.pincode ||
-                        "N/A"
-                    )}
-                </p>
-
-            </div>
-
-
-            <!-- PRODUCTS -->
-
-            <h3 style="
-                color:#075f55;
-            ">
-                🛒 Products
-            </h3>
-
-
-            <div style="
-                background:#fafdfc;
-                padding:12px 15px;
-                border-radius:12px;
-            ">
-
-                ${itemsHTML}
-
-            </div>
-
-
-            <!-- DELIVERY -->
-
-            ${deliveryHTML}
-
-
-            <!-- PAYMENT -->
-
-            <div style="
-                margin-top:20px;
-                padding:17px;
-                background:#f7fbfa;
-                border-radius:13px;
-            ">
-
-                <p>
-                    <strong>
-                        Payment:
-                    </strong>
-
-                    ${escapeHTML(payment)}
-
-                </p>
-
-
-                <p>
-                    <strong>
-                        Payment Status:
-                    </strong>
-
-                    ${escapeHTML(
-                        order.paymentStatus ||
-                        "Pending"
-                    )}
-
-                </p>
-
-
-                <h2 style="
-                    color:#075f55;
-                    margin-bottom:0;
-                ">
-
-                    💰 ₹${total.toFixed(2)}
-
-                </h2>
-
-            </div>
-
-
-            <!-- BUTTONS -->
-
-            ${buttonsHTML}
-
-        </div>
-
-    `;
-
-
-    ordersContainer.appendChild(card);
-
-
-    // ====================================
-    // ACCEPT BUTTON
-    // ====================================
-
-    const acceptBtn =
-        card.querySelector(
-            ".accept-order-btn"
-        );
-
-
-    if (acceptBtn) {
-
-        acceptBtn.addEventListener(
-            "click",
-            () => {
-
-                openDeliveryCalendar(
-                    firestoreId
-                );
-
-            }
-        );
-
-    }
-
-
-    // ====================================
-    // CANCEL BUTTON
-    // ====================================
-
-    const cancelBtn =
-        card.querySelector(
-            ".cancel-order-btn"
-        );
-
-
-    if (cancelBtn) {
-
-        cancelBtn.addEventListener(
-            "click",
-            async () => {
-
-                const confirmCancel =
-                    confirm(
-                        "Kya aap is order ko Cancel karna chahte ho?"
-                    );
-
-
-                if (!confirmCancel) {
-
-                    return;
-
-                }
-
-
-                try {
-
-                    cancelBtn.disabled =
-                        true;
-
-
-                    cancelBtn.textContent =
-                        "Cancelling...";
-
-
-                    await updateDoc(
-
-                        doc(
-                            db,
-                            "orders",
-                            firestoreId
-                        ),
-
-                        {
-                            status:
-                                "Cancelled"
-                        }
-
-                    );
-
-                }
-
-
-                catch (error) {
-
-                    console.error(
-                        "Cancel Error:",
-                        error
-                    );
-
-
-                    cancelBtn.disabled =
-                        false;
-
-
-                    cancelBtn.textContent =
-                        "❌ Cancel Order";
-
-
-                    alert(
-                        "Order cancel nahi ho paya."
-                    );
-
-                }
-
-            }
-        );
-
-    }
-
-}
-
-
-// ========================================
-// DELIVERY DATE CALENDAR
-// ========================================
-
-function openDeliveryCalendar(
-    firestoreId
-) {
-
-    const today =
-        getTodayISO();
-
-
-    const modal =
-        document.createElement("div");
-
-
-    modal.className =
-        "delivery-modal";
-
-
-    modal.innerHTML = `
-
-        <div class="delivery-modal-box">
-
-
-            <button
-                type="button"
-                class="delivery-close"
-            >
-                ×
-            </button>
-
-
-            <div class="delivery-icon">
-                🚚
-            </div>
-
-
-            <h2>
-                Select Delivery Date
-            </h2>
-
-
-            <p>
-                Select the date on which
-                this order will be delivered.
-            </p>
-
-
-            <label>
-                Delivery Date
-            </label>
-
-
-            <input
-                type="date"
-                id="deliveryDateInput"
-                min="${today}"
-                value="${today}"
-            />
-
-
-            <div class="delivery-modal-actions">
-
-
-                <button
-                    type="button"
-                    class="delivery-cancel-btn"
-                >
-                    Cancel
-                </button>
-
-
-                <button
-                    type="button"
-                    class="delivery-confirm-btn"
-                >
-                    ✅ Accept Order
-                </button>
-
-
-            </div>
-
-        </div>
-
-    `;
-
-
-    document.body.appendChild(modal);
-
-
-    const input =
-        modal.querySelector(
-            "#deliveryDateInput"
-        );
-
-
-    const closeBtn =
-        modal.querySelector(
-            ".delivery-close"
-        );
-
-
-    const cancelBtn =
-        modal.querySelector(
-            ".delivery-cancel-btn"
-        );
-
-
-    const confirmBtn =
-        modal.querySelector(
-            ".delivery-confirm-btn"
-        );
-
-
-    function closeModal() {
-
-        modal.remove();
-
-    }
-
-
-    closeBtn.addEventListener(
-        "click",
-        closeModal
-    );
-
-
-    cancelBtn.addEventListener(
-        "click",
-        closeModal
-    );
-
-
-    // ====================================
-    // CONFIRM ACCEPT
-    // ====================================
-
-    confirmBtn.addEventListener(
-        "click",
-        async () => {
-
-            const deliveryDate =
-                input.value;
-
-
-            if (!deliveryDate) {
-
-                alert(
-                    "Please select delivery date."
-                );
-
-                return;
-
-            }
-
-
-            // Extra protection
-            if (
-                deliveryDate < today
-            ) {
-
-                alert(
-                    "Past date select nahi kar sakte."
-                );
-
-                return;
-
-            }
-
-
-            try {
-
-                confirmBtn.disabled =
-                    true;
-
-
-                confirmBtn.textContent =
-                    "Saving...";
-
-
-                await updateDoc(
-
-                    doc(
-                        db,
-                        "orders",
-                        firestoreId
-                    ),
-
-                    {
-
-                        status:
-                            "Accepted",
-
-                        deliveryDate:
-                            deliveryDate
-
-                    }
-
-                );
-
-
-                closeModal();
-
-            }
-
-
-            catch (error) {
-
-                console.error(
-                    "Accept Error:",
-                    error
-                );
-
-
-                confirmBtn.disabled =
-                    false;
-
-
-                confirmBtn.textContent =
-                    "✅ Accept Order";
-
-
-                alert(
-                    "Order accept nahi ho paya."
-                );
-
-            }
-
-        }
-    );
-
-
-    // Close by clicking outside
-    modal.addEventListener(
-        "click",
-        (event) => {
-
-            if (
-                event.target === modal
-            ) {
-
-                closeModal();
-
-            }
-
-        }
-    );
-
-}
-
-
-// ========================================
-// TODAY DATE
-// ========================================
-
-function getTodayISO() {
-
-    const now =
-        new Date();
-
-
-    const year =
-        now.getFullYear();
-
-
-    const month =
-        String(
-            now.getMonth() + 1
-        ).padStart(2, "0");
-
-
-    const day =
-        String(
-            now.getDate()
-        ).padStart(2, "0");
-
+/* =========================================================
+   GET ORDER ID
+   ========================================================= */
+
+function getOrderId(order) {
 
     return (
-        `${year}-${month}-${day}`
+        order.id ||
+        order.orderId ||
+        order.firestoreId ||
+        "N/A"
     );
 
 }
 
 
-// ========================================
-// FORMAT DELIVERY DATE
-// ========================================
+/* =========================================================
+   GET ITEMS
+   ========================================================= */
 
-function formatDeliveryDate(
-    value
-) {
-
-    const date =
-        new Date(
-            `${value}T00:00:00`
-        );
-
-
-    if (
-        Number.isNaN(
-            date.getTime()
-        )
-    ) {
-
-        return value;
-
-    }
-
-
-    return date.toLocaleDateString(
-        "en-IN",
-        {
-            day: "2-digit",
-            month: "short",
-            year: "numeric"
-        }
-    );
-
-}
-
-
-// ========================================
-// NORMALIZE ITEMS
-// ========================================
-
-function normalizeItems(order) {
+function getItems(order) {
 
     let items =
         order.items ||
@@ -1196,9 +330,7 @@ function normalizeItems(order) {
             items =
                 JSON.parse(items);
 
-        }
-
-        catch {
+        } catch {
 
             items = [];
 
@@ -1207,79 +339,58 @@ function normalizeItems(order) {
     }
 
 
-    return Array.isArray(items)
-        ? items
-        : [];
+    if (!Array.isArray(items)) {
+
+        items = [];
+
+    }
+
+
+    return items;
 
 }
 
 
-// ========================================
-// GET TOTAL
-// ========================================
+/* =========================================================
+   GET TOTAL
+   ========================================================= */
 
-function getOrderTotal(
-    order,
-    items
-) {
+function getTotal(order) {
 
-    const savedTotal =
-        Number(order.total);
+    const directTotal =
+        Number(
+            order.total ??
+            order.grandTotal ??
+            order.amount
+        );
 
 
     if (
-        Number.isFinite(savedTotal) &&
-        savedTotal > 0
+        Number.isFinite(
+            directTotal
+        )
     ) {
 
-        return savedTotal;
+        return directTotal;
 
     }
 
 
-    const grandTotal =
-        Number(order.grandTotal);
-
-
-    if (
-        Number.isFinite(grandTotal) &&
-        grandTotal > 0
-    ) {
-
-        return grandTotal;
-
-    }
-
-
-    const amount =
-        Number(order.amount);
-
-
-    if (
-        Number.isFinite(amount) &&
-        amount > 0
-    ) {
-
-        return amount;
-
-    }
-
-
-    return items.reduce(
+    return getItems(order).reduce(
         (sum, item) => {
 
             const price =
                 Number(
-                    item.price ??
-                    item.productPrice
-                ) || 0;
+                    item.price || 0
+                );
 
 
             const quantity =
                 Number(
-                    item.quantity ??
-                    item.qty
-                ) || 1;
+                    item.quantity ||
+                    item.qty ||
+                    1
+                );
 
 
             return (
@@ -1288,73 +399,2194 @@ function getOrderTotal(
             );
 
         },
-
         0
     );
 
 }
 
 
-// ========================================
-// LOGOUT
-// ========================================
+/* =========================================================
+   MONEY FORMAT
+   ========================================================= */
 
-window.logoutAdmin =
-    async function () {
+function money(value) {
 
-        try {
+    return (
+        "₹" +
+        Number(
+            value || 0
+        ).toFixed(2)
+    );
 
-            await signOut(auth);
+}
 
 
-            window.location.href =
-                "index.html";
+/* =========================================================
+   GET STATUS
+   ========================================================= */
 
+function getStatus(order) {
+
+    return (
+        order.status ||
+        "Processing"
+    );
+
+}
+
+
+/* =========================================================
+   PAYMENT NAME
+   ========================================================= */
+
+function getPaymentName(order) {
+
+    const payment =
+        String(
+            order.paymentMethod ||
+            ""
+        ).toLowerCase();
+
+
+    if (payment === "cod") {
+
+        return "Cash on Delivery";
+
+    }
+
+
+    if (payment === "upi") {
+
+        return "UPI";
+
+    }
+
+
+    if (payment === "online") {
+
+        return "Online Payment";
+
+    }
+
+
+    return (
+        order.paymentMethod ||
+        "N/A"
+    );
+
+}
+
+
+/* =========================================================
+   FORMAT DATE
+   ========================================================= */
+
+function formatDate(value) {
+
+    if (!value) {
+
+        return "N/A";
+
+    }
+
+
+    let date;
+
+
+    if (
+        value &&
+        typeof value.toDate === "function"
+    ) {
+
+        date =
+            value.toDate();
+
+    } else {
+
+        date =
+            new Date(value);
+
+    }
+
+
+    if (
+        isNaN(
+            date.getTime()
+        )
+    ) {
+
+        return "N/A";
+
+    }
+
+
+    return date.toLocaleString(
+        "en-IN",
+        {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
         }
+    );
 
-        catch (error) {
+}
 
-            console.error(
-                "Logout Error:",
-                error
+
+/* =========================================================
+   DELIVERY DATE FORMAT
+   ========================================================= */
+
+function formatDeliveryDate(value) {
+
+    if (!value) {
+
+        return "";
+
+    }
+
+
+    const date =
+        new Date(
+            value + "T00:00:00"
+        );
+
+
+    if (
+        isNaN(
+            date.getTime()
+        )
+    ) {
+
+        return value;
+
+    }
+
+
+    return date.toLocaleDateString(
+        "en-IN",
+        {
+            day: "2-digit",
+            month: "long",
+            year: "numeric"
+        }
+    );
+
+}
+
+
+/* =========================================================
+   UPDATE DASHBOARD
+   ========================================================= */
+
+function updateDashboard() {
+
+    const totalOrders =
+        allOrders.length;
+
+
+    const accepted =
+        allOrders.filter(
+            order =>
+                getStatus(order)
+                === "Accepted"
+        );
+
+
+    const processing =
+        allOrders.filter(
+            order =>
+                getStatus(order)
+                === "Processing"
+        );
+
+
+    const cancelled =
+        allOrders.filter(
+            order =>
+                getStatus(order)
+                === "Cancelled"
+        );
+
+
+    const revenue =
+        accepted.reduce(
+            (total, order) => {
+
+                return (
+                    total +
+                    getTotal(order)
+                );
+
+            },
+            0
+        );
+
+
+    const aov =
+        accepted.length
+            ? revenue /
+              accepted.length
+            : 0;
+
+
+    const customerSet =
+        new Set();
+
+
+    allOrders.forEach(order => {
+
+        const customer =
+            order.userId ||
+            order.email ||
+            order.customerEmail ||
+            order.customerName;
+
+
+        if (customer) {
+
+            customerSet.add(
+                customer
             );
 
         }
 
-    };
+    });
 
 
-// ========================================
-// ESCAPE HTML
-// ========================================
+    const customers =
+        customerSet.size;
+
+
+    const itemsSold =
+        allOrders.reduce(
+            (total, order) => {
+
+                return (
+                    total +
+                    getItems(order)
+                        .reduce(
+                            (
+                                sum,
+                                item
+                            ) => {
+
+                                return (
+                                    sum +
+                                    Number(
+                                        item.quantity ||
+                                        item.qty ||
+                                        1
+                                    )
+                                );
+
+                            },
+                            0
+                        )
+                );
+
+            },
+            0
+        );
+
+
+    document.getElementById(
+        "revenueValue"
+    ).textContent =
+        money(revenue);
+
+
+    document.getElementById(
+        "ordersValue"
+    ).textContent =
+        totalOrders;
+
+
+    document.getElementById(
+        "customersValue"
+    ).textContent =
+        customers;
+
+
+    document.getElementById(
+        "aovValue"
+    ).textContent =
+        money(aov);
+
+
+    document.getElementById(
+        "processingValue"
+    ).textContent =
+        processing.length;
+
+
+    document.getElementById(
+        "acceptedValue"
+    ).textContent =
+        accepted.length;
+
+
+    document.getElementById(
+        "cancelledValue"
+    ).textContent =
+        cancelled.length;
+
+
+    document.getElementById(
+        "itemsSoldValue"
+    ).textContent =
+        itemsSold;
+
+
+    renderCharts();
+
+}
+
+
+/* =========================================================
+   CHARTS
+   ========================================================= */
+
+function renderCharts() {
+
+    if (
+        typeof Chart === "undefined"
+    ) {
+
+        return;
+
+    }
+
+
+    const labels = [];
+
+    const revenueData = [];
+
+    const ordersData = [];
+
+
+    /* LAST 7 DAYS */
+
+    for (
+        let i = 6;
+        i >= 0;
+        i--
+    ) {
+
+        const date =
+            new Date();
+
+
+        date.setHours(
+            0,
+            0,
+            0,
+            0
+        );
+
+
+        date.setDate(
+            date.getDate() - i
+        );
+
+
+        const key =
+            date.toISOString()
+                .slice(0, 10);
+
+
+        labels.push(
+            date.toLocaleDateString(
+                "en-IN",
+                {
+                    day: "2-digit",
+                    month: "short"
+                }
+            )
+        );
+
+
+        let dayRevenue = 0;
+
+        let dayOrders = 0;
+
+
+        allOrders.forEach(order => {
+
+            const orderDate =
+                getOrderDate(order);
+
+
+            if (!orderDate) {
+
+                return;
+
+            }
+
+
+            const orderDay =
+                new Date(
+                    orderDate
+                );
+
+
+            const orderKey =
+                orderDay
+                    .toISOString()
+                    .slice(0, 10);
+
+
+            if (
+                orderKey === key
+            ) {
+
+                dayOrders++;
+
+
+                if (
+                    getStatus(order)
+                    === "Accepted"
+                ) {
+
+                    dayRevenue +=
+                        getTotal(order);
+
+                }
+
+            }
+
+        });
+
+
+        revenueData.push(
+            dayRevenue
+        );
+
+
+        ordersData.push(
+            dayOrders
+        );
+
+    }
+
+
+    /* REVENUE CHART */
+
+    if (revenueChart) {
+
+        revenueChart.destroy();
+
+    }
+
+
+    revenueChart =
+        new Chart(
+            document.getElementById(
+                "revenueChart"
+            ),
+            {
+
+                type: "line",
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                "Revenue",
+
+                            data:
+                                revenueData,
+
+                            tension:
+                                0.35,
+
+                            fill:
+                                true
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive:
+                        true,
+
+                    maintainAspectRatio:
+                        false
+
+                }
+
+            }
+        );
+
+
+    /* ORDERS CHART */
+
+    if (ordersChart) {
+
+        ordersChart.destroy();
+
+    }
+
+
+    ordersChart =
+        new Chart(
+            document.getElementById(
+                "ordersChart"
+            ),
+            {
+
+                type: "bar",
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                "Orders",
+
+                            data:
+                                ordersData
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive:
+                        true,
+
+                    maintainAspectRatio:
+                        false
+
+                }
+
+            }
+        );
+
+
+    /* STATUS CHART */
+
+    const processing =
+        allOrders.filter(
+            order =>
+                getStatus(order)
+                === "Processing"
+        ).length;
+
+
+    const accepted =
+        allOrders.filter(
+            order =>
+                getStatus(order)
+                === "Accepted"
+        ).length;
+
+
+    const cancelled =
+        allOrders.filter(
+            order =>
+                getStatus(order)
+                === "Cancelled"
+        ).length;
+
+
+    if (statusChart) {
+
+        statusChart.destroy();
+
+    }
+
+
+    statusChart =
+        new Chart(
+            document.getElementById(
+                "statusChart"
+            ),
+            {
+
+                type: "doughnut",
+
+                data: {
+
+                    labels: [
+
+                        "Processing",
+                        "Accepted",
+                        "Cancelled"
+
+                    ],
+
+                    datasets: [
+
+                        {
+
+                            data: [
+
+                                processing,
+                                accepted,
+                                cancelled
+
+                            ]
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive:
+                        true,
+
+                    maintainAspectRatio:
+                        false
+
+                }
+
+            }
+        );
+
+
+    /* PAYMENT CHART */
+
+    let cod = 0;
+
+    let upi = 0;
+
+    let online = 0;
+
+
+    allOrders.forEach(order => {
+
+        const payment =
+            String(
+                order.paymentMethod ||
+                ""
+            ).toLowerCase();
+
+
+        if (
+            payment === "cod"
+        ) {
+
+            cod++;
+
+        }
+
+
+        else if (
+            payment === "upi"
+        ) {
+
+            upi++;
+
+        }
+
+
+        else if (
+            payment === "online"
+        ) {
+
+            online++;
+
+        }
+
+    });
+
+
+    if (paymentChart) {
+
+        paymentChart.destroy();
+
+    }
+
+
+    paymentChart =
+        new Chart(
+            document.getElementById(
+                "paymentChart"
+            ),
+            {
+
+                type: "pie",
+
+                data: {
+
+                    labels: [
+
+                        "COD",
+                        "UPI",
+                        "Online"
+
+                    ],
+
+                    datasets: [
+
+                        {
+
+                            data: [
+
+                                cod,
+                                upi,
+                                online
+
+                            ]
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive:
+                        true,
+
+                    maintainAspectRatio:
+                        false
+
+                }
+
+            }
+        );
+
+}
+
+
+/* =========================================================
+   TOP PRODUCTS
+   ========================================================= */
+
+function renderTopProducts() {
+
+    const products = {};
+
+
+    allOrders.forEach(order => {
+
+        getItems(order).forEach(item => {
+
+            const name =
+                item.name ||
+                item.title ||
+                "Unknown Product";
+
+
+            const quantity =
+                Number(
+                    item.quantity ||
+                    item.qty ||
+                    1
+                );
+
+
+            const price =
+                Number(
+                    item.price ||
+                    0
+                );
+
+
+            if (
+                !products[name]
+            ) {
+
+                products[name] = {
+
+                    quantity: 0,
+
+                    revenue: 0
+
+                };
+
+            }
+
+
+            products[name]
+                .quantity +=
+                quantity;
+
+
+            products[name]
+                .revenue +=
+                price *
+                quantity;
+
+        });
+
+    });
+
+
+    const sorted =
+        Object.entries(
+            products
+        )
+        .sort(
+            (a, b) =>
+                b[1].quantity -
+                a[1].quantity
+        )
+        .slice(0, 10);
+
+
+    const body =
+        document.getElementById(
+            "topProductsBody"
+        );
+
+
+    if (!sorted.length) {
+
+        body.innerHTML = `
+
+            <tr>
+
+                <td
+                    colspan="4"
+                    style="
+                        text-align:center;
+                        color:#718987;
+                    "
+                >
+                    No product data yet.
+                </td>
+
+            </tr>
+
+        `;
+
+        return;
+
+    }
+
+
+    body.innerHTML =
+        sorted.map(
+            (
+                [name, data],
+                index
+            ) => `
+
+                <tr>
+
+                    <td>
+                        #${index + 1}
+                    </td>
+
+                    <td>
+                        <strong>
+                            ${escapeHTML(name)}
+                        </strong>
+                    </td>
+
+                    <td>
+                        ${data.quantity}
+                    </td>
+
+                    <td>
+                        ${money(data.revenue)}
+                    </td>
+
+                </tr>
+
+            `
+        )
+        .join("");
+
+}
+
+
+/* =========================================================
+   LIVE ALERTS
+   ========================================================= */
+
+function updateAlerts() {
+
+    const pending =
+        allOrders.filter(
+            order =>
+                getStatus(order)
+                === "Processing"
+        ).length;
+
+
+    const pendingPayments =
+        allOrders.filter(
+            order => {
+
+                const paymentStatus =
+                    String(
+                        order.paymentStatus ||
+                        ""
+                    ).toLowerCase();
+
+
+                return paymentStatus
+                    .includes("pending");
+
+            }
+        ).length;
+
+
+    const deliveryRequired =
+        allOrders.filter(
+            order =>
+                getStatus(order)
+                === "Accepted" &&
+                !order.deliveryDate
+        ).length;
+
+
+    document.getElementById(
+        "pendingAlert"
+    ).textContent =
+
+        pending > 0
+
+            ? `⏳ ${pending} order(s) waiting for acceptance`
+
+            : "✅ No pending orders";
+
+
+    document.getElementById(
+        "paymentAlert"
+    ).textContent =
+
+        pendingPayments > 0
+
+            ? `💳 ${pendingPayments} payment(s) pending`
+
+            : "✅ No pending payments";
+
+
+    document.getElementById(
+        "deliveryAlert"
+    ).textContent =
+
+        deliveryRequired > 0
+
+            ? `🚚 ${deliveryRequired} accepted order(s) need delivery date`
+
+            : "✅ Delivery dates are assigned";
+
+}
+
+
+/* =========================================================
+   FILTERED ORDERS
+   ========================================================= */
+
+function getFilteredOrders() {
+
+    const search =
+        searchInput
+            .value
+            .trim()
+            .toLowerCase();
+
+
+    const selectedStatus =
+        statusFilter.value;
+
+
+    const selectedPayment =
+        paymentFilter.value;
+
+
+    return allOrders.filter(order => {
+
+        const searchableText = [
+
+            getOrderId(order),
+
+            order.customerName,
+
+            order.name,
+
+            order.email,
+
+            order.customerEmail,
+
+            order.phone,
+
+            order.customerPhone
+
+        ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+
+        const matchesSearch =
+            !search ||
+            searchableText.includes(
+                search
+            );
+
+
+        const matchesStatus =
+            selectedStatus === "all" ||
+            getStatus(order) ===
+            selectedStatus;
+
+
+        const payment =
+            String(
+                order.paymentMethod ||
+                ""
+            ).toLowerCase();
+
+
+        const matchesPayment =
+            selectedPayment === "all" ||
+            payment ===
+            selectedPayment;
+
+
+        return (
+            matchesSearch &&
+            matchesStatus &&
+            matchesPayment
+        );
+
+    });
+
+}
+
+
+/* =========================================================
+   RENDER FULL ORDERS
+   ========================================================= */
+
+function renderOrders() {
+
+    const orders =
+        getFilteredOrders();
+
+
+    if (!orders.length) {
+
+        ordersContainer.innerHTML = `
+
+            <div class="empty-box">
+
+                🧾 No matching orders found.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    ordersContainer.innerHTML =
+        orders
+            .map(renderOrder)
+            .join("");
+
+
+    attachOrderButtons();
+
+}
+
+
+/* =========================================================
+   RENDER SINGLE ORDER
+   ========================================================= */
+
+function renderOrder(order) {
+
+    const status =
+        getStatus(order);
+
+
+    const items =
+        getItems(order);
+
+
+    const deliveryHTML =
+
+        (
+            status === "Accepted" &&
+            order.deliveryDate
+        )
+
+            ? `
+
+                <div class="delivery-box">
+
+                    🚚 Delivery Date:
+
+                    ${escapeHTML(
+                        formatDeliveryDate(
+                            order.deliveryDate
+                        )
+                    )}
+
+                </div>
+
+            `
+
+            : "";
+
+
+    const buttonsHTML =
+
+        status === "Processing"
+
+            ? `
+
+                <div class="order-buttons">
+
+                    <button
+                        class="accept-btn"
+                        data-id="${escapeHTML(
+                            order.firestoreId
+                        )}"
+                    >
+                        ✅ Accept Order
+                    </button>
+
+
+                    <button
+                        class="cancel-btn"
+                        data-id="${escapeHTML(
+                            order.firestoreId
+                        )}"
+                    >
+                        ❌ Cancel Order
+                    </button>
+
+                </div>
+
+            `
+
+            : "";
+
+
+    const itemsHTML =
+        items.length
+
+            ? items.map(item => {
+
+                const name =
+                    item.name ||
+                    item.title ||
+                    "Product";
+
+
+                const price =
+                    Number(
+                        item.price || 0
+                    );
+
+
+                const quantity =
+                    Number(
+                        item.quantity ||
+                        item.qty ||
+                        1
+                    );
+
+
+                return `
+
+                    <div class="product-row">
+
+                        <div>
+
+                            <strong>
+                                ${escapeHTML(name)}
+                            </strong>
+
+                        </div>
+
+                        <div>
+
+                            ${money(price)}
+                            ×
+                            ${quantity}
+
+                        </div>
+
+                    </div>
+
+                `;
+
+            }).join("")
+
+            : `
+
+                <div>
+                    No products found.
+                </div>
+
+            `;
+
+
+    return `
+
+        <div class="order-card">
+
+
+            <div class="order-header">
+
+                <div>
+
+                    <h2 class="order-id">
+
+                        🧾 Order
+                        ${escapeHTML(
+                            getOrderId(order)
+                        )}
+
+                    </h2>
+
+
+                    <p class="order-date">
+
+                        ${escapeHTML(
+                            formatDate(
+                                order.createdAt ||
+                                getOrderDate(order)
+                            )
+                        )}
+
+                    </p>
+
+                </div>
+
+
+                <span
+                    class="
+                        status
+                        ${
+                            status === "Accepted"
+                                ? "status-accepted"
+                                :
+                            status === "Cancelled"
+                                ? "status-cancelled"
+                                :
+                                "status-processing"
+                        }
+                    "
+                >
+
+                    ${
+                        status === "Accepted"
+                            ? "✅ Accepted"
+                            :
+                        status === "Cancelled"
+                            ? "❌ Cancelled"
+                            :
+                            "⏳ Processing"
+                    }
+
+                </span>
+
+            </div>
+
+
+            <div class="customer-box">
+
+                <h3>
+                    👤 Customer Details
+                </h3>
+
+
+                <p>
+
+                    <strong>
+                        Name:
+                    </strong>
+
+                    ${escapeHTML(
+                        order.customerName ||
+                        order.name ||
+                        "N/A"
+                    )}
+
+                </p>
+
+
+                <p>
+
+                    <strong>
+                        Email:
+                    </strong>
+
+                    ${escapeHTML(
+                        order.email ||
+                        order.customerEmail ||
+                        "N/A"
+                    )}
+
+                </p>
+
+
+                <p>
+
+                    <strong>
+                        Phone:
+                    </strong>
+
+                    ${escapeHTML(
+                        order.phone ||
+                        order.customerPhone ||
+                        "N/A"
+                    )}
+
+                </p>
+
+
+                <p>
+
+                    <strong>
+                        Address:
+                    </strong>
+
+                    ${escapeHTML(
+                        order.address ||
+                        "N/A"
+                    )}
+
+                </p>
+
+
+                <p>
+
+                    <strong>
+                        City:
+                    </strong>
+
+                    ${escapeHTML(
+                        order.city ||
+                        "N/A"
+                    )}
+
+                </p>
+
+
+                <p>
+
+                    <strong>
+                        Pincode:
+                    </strong>
+
+                    ${escapeHTML(
+                        order.pincode ||
+                        "N/A"
+                    )}
+
+                </p>
+
+            </div>
+
+
+            <h3 class="products-title">
+
+                🛒 Products
+
+            </h3>
+
+
+            <div class="product-list">
+
+                ${itemsHTML}
+
+            </div>
+
+
+            ${deliveryHTML}
+
+
+            <div class="payment-box">
+
+                <p>
+
+                    <strong>
+                        Payment:
+                    </strong>
+
+                    ${escapeHTML(
+                        getPaymentName(order)
+                    )}
+
+                </p>
+
+
+                <p>
+
+                    <strong>
+                        Payment Status:
+                    </strong>
+
+                    ${escapeHTML(
+                        order.paymentStatus ||
+                        "N/A"
+                    )}
+
+                </p>
+
+
+                <h2>
+
+                    💰
+                    ${money(
+                        getTotal(order)
+                    )}
+
+                </h2>
+
+            </div>
+
+
+            ${buttonsHTML}
+
+
+        </div>
+
+    `;
+
+}
+
+/* =========================================================
+   ORDER BUTTON EVENTS
+   ========================================================= */
+
+function attachOrderButtons() {
+
+    document
+        .querySelectorAll(".accept-btn")
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    openDeliveryModal(
+                        button.dataset.id
+                    );
+
+                }
+            );
+
+        });
+
+
+    document
+        .querySelectorAll(".cancel-btn")
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    cancelOrder(
+                        button.dataset.id
+                    );
+
+                }
+            );
+
+        });
+
+}
+
+
+/* =========================================================
+   OPEN DELIVERY MODAL
+   ========================================================= */
+
+function openDeliveryModal(
+    firestoreId
+) {
+
+    selectedOrderId =
+        firestoreId;
+
+
+    const today =
+        new Date();
+
+
+    const yyyy =
+        today.getFullYear();
+
+
+    const mm =
+        String(
+            today.getMonth() + 1
+        ).padStart(2, "0");
+
+
+    const dd =
+        String(
+            today.getDate()
+        ).padStart(2, "0");
+
+
+    const todayString =
+        `${yyyy}-${mm}-${dd}`;
+
+
+    deliveryDateInput.min =
+        todayString;
+
+
+    deliveryDateInput.value =
+        todayString;
+
+
+    deliveryModal.classList.add(
+        "active"
+    );
+
+}
+
+
+/* =========================================================
+   CLOSE DELIVERY MODAL
+   ========================================================= */
+
+document
+    .getElementById("closeModalBtn")
+    .addEventListener(
+        "click",
+        closeDeliveryModal
+    );
+
+
+function closeDeliveryModal() {
+
+    deliveryModal.classList.remove(
+        "active"
+    );
+
+
+    selectedOrderId =
+        null;
+
+}
+
+
+/* =========================================================
+   CONFIRM ACCEPT ORDER
+   ========================================================= */
+
+document
+    .getElementById(
+        "confirmDeliveryBtn"
+    )
+    .addEventListener(
+        "click",
+        async () => {
+
+            if (!selectedOrderId) {
+
+                return;
+
+            }
+
+
+            const selectedDate =
+                deliveryDateInput.value;
+
+
+            if (!selectedDate) {
+
+                alert(
+                    "Please select delivery date."
+                );
+
+                return;
+
+            }
+
+
+            const today =
+                new Date();
+
+
+            today.setHours(
+                0,
+                0,
+                0,
+                0
+            );
+
+
+            const chosenDate =
+                new Date(
+                    selectedDate +
+                    "T00:00:00"
+                );
+
+
+            if (
+                chosenDate < today
+            ) {
+
+                alert(
+                    "Past date cannot be selected."
+                );
+
+                return;
+
+            }
+
+
+            try {
+
+                await updateDoc(
+
+                    doc(
+                        db,
+                        "orders",
+                        selectedOrderId
+                    ),
+
+                    {
+
+                        status:
+                            "Accepted",
+
+                        deliveryDate:
+                            selectedDate
+
+                    }
+
+                );
+
+
+                alert(
+                    "Order accepted successfully!"
+                );
+
+
+                closeDeliveryModal();
+
+            }
+
+
+            catch (error) {
+
+                console.error(
+                    error
+                );
+
+
+                alert(
+                    "Unable to accept order."
+                );
+
+            }
+
+        }
+    );
+
+
+/* =========================================================
+   CANCEL ORDER
+   ========================================================= */
+
+async function cancelOrder(
+    firestoreId
+) {
+
+    const confirmed =
+        confirm(
+            "Are you sure you want to cancel this order?"
+        );
+
+
+    if (!confirmed) {
+
+        return;
+
+    }
+
+
+    try {
+
+        await updateDoc(
+
+            doc(
+                db,
+                "orders",
+                firestoreId
+            ),
+
+            {
+
+                status:
+                    "Cancelled"
+
+            }
+
+        );
+
+
+        alert(
+            "Order cancelled successfully."
+        );
+
+    }
+
+
+    catch (error) {
+
+        console.error(
+            error
+        );
+
+
+        alert(
+            "Unable to cancel order."
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   RECENT ORDERS TABLE
+   ========================================================= */
+
+function renderRecentOrders() {
+
+    const body =
+        document.getElementById(
+            "recentOrdersBody"
+        );
+
+
+    const recent =
+        getFilteredOrders()
+            .slice(0, 10);
+
+
+    if (!recent.length) {
+
+        body.innerHTML = `
+
+            <tr>
+
+                <td
+                    colspan="6"
+                    style="
+                        text-align:center;
+                        color:#718987;
+                    "
+                >
+                    No orders found.
+                </td>
+
+            </tr>
+
+        `;
+
+        return;
+
+    }
+
+
+    body.innerHTML =
+        recent.map(order => {
+
+            const status =
+                getStatus(order);
+
+
+            return `
+
+                <tr>
+
+                    <td>
+
+                        <strong>
+
+                            ${escapeHTML(
+                                getOrderId(
+                                    order
+                                )
+                            )}
+
+                        </strong>
+
+                    </td>
+
+
+                    <td>
+
+                        ${escapeHTML(
+                            order.customerName ||
+                            order.name ||
+                            "N/A"
+                        )}
+
+                    </td>
+
+
+                    <td>
+
+                        <strong>
+
+                            ${money(
+                                getTotal(order)
+                            )}
+
+                        </strong>
+
+                    </td>
+
+
+                    <td>
+
+                        ${escapeHTML(
+                            getPaymentName(
+                                order
+                            )
+                        )}
+
+                    </td>
+
+
+                    <td>
+
+                        <span
+                            class="
+                                status
+                                ${
+                                    status === "Accepted"
+                                        ? "status-accepted"
+                                        :
+                                    status === "Cancelled"
+                                        ? "status-cancelled"
+                                        :
+                                        "status-processing"
+                                }
+                            "
+                        >
+
+                            ${
+                                status === "Accepted"
+                                    ? "Accepted"
+                                    :
+                                status === "Cancelled"
+                                    ? "Cancelled"
+                                    :
+                                    "Processing"
+                            }
+
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        ${escapeHTML(
+                            formatDate(
+                                order.createdAt ||
+                                getOrderDate(order)
+                            )
+                        )}
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        }).join("");
+
+}
+
+
+/* =========================================================
+   SEARCH FILTER EVENTS
+   ========================================================= */
+
+searchInput.addEventListener(
+    "input",
+    () => {
+
+        renderOrders();
+
+        renderRecentOrders();
+
+    }
+);
+
+
+statusFilter.addEventListener(
+    "change",
+    () => {
+
+        renderOrders();
+
+        renderRecentOrders();
+
+    }
+);
+
+
+paymentFilter.addEventListener(
+    "change",
+    () => {
+
+        renderOrders();
+
+        renderRecentOrders();
+
+    }
+);
+
+
+/* =========================================================
+   EXPORT CSV
+   ========================================================= */
+
+document
+    .getElementById("exportBtn")
+    .addEventListener(
+        "click",
+        exportCSV
+    );
+
+
+function exportCSV() {
+
+    const orders =
+        getFilteredOrders();
+
+
+    if (!orders.length) {
+
+        alert(
+            "No orders available to export."
+        );
+
+        return;
+
+    }
+
+
+    const header = [
+
+        "Order ID",
+        "Customer Name",
+        "Email",
+        "Phone",
+        "Address",
+        "City",
+        "Pincode",
+        "Total",
+        "Payment",
+        "Payment Status",
+        "Order Status",
+        "Delivery Date",
+        "Order Date"
+
+    ];
+
+
+    const rows =
+        orders.map(order => [
+
+            getOrderId(order),
+
+            order.customerName ||
+            order.name ||
+            "",
+
+            order.email ||
+            order.customerEmail ||
+            "",
+
+            order.phone ||
+            order.customerPhone ||
+            "",
+
+            order.address ||
+            "",
+
+            order.city ||
+            "",
+
+            order.pincode ||
+            "",
+
+            getTotal(order),
+
+            getPaymentName(order),
+
+            order.paymentStatus ||
+            "",
+
+            getStatus(order),
+
+            order.deliveryDate ||
+            "",
+
+            formatDate(
+                order.createdAt ||
+                getOrderDate(order)
+            )
+
+        ]);
+
+
+    const csv =
+        [
+            header,
+            ...rows
+        ]
+        .map(
+            row =>
+                row
+                    .map(
+                        value =>
+                            `"${String(value)
+                                .replace(
+                                    /"/g,
+                                    '""'
+                                )}"`
+                    )
+                    .join(",")
+        )
+        .join("\n");
+
+
+    const blob =
+        new Blob(
+            [csv],
+            {
+                type:
+                    "text/csv;charset=utf-8;"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    const link =
+        document.createElement(
+            "a"
+        );
+
+
+    link.href =
+        url;
+
+
+    link.download =
+        `chemistboys-orders-${new Date()
+            .toISOString()
+            .slice(0, 10)}.csv`;
+
+
+    link.click();
+
+
+    URL.revokeObjectURL(
+        url
+    );
+
+}
+
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+document
+    .getElementById("logoutBtn")
+    .addEventListener(
+        "click",
+        async () => {
+
+            try {
+
+                await signOut(
+                    auth
+                );
+
+
+                window.location.href =
+                    "login.html";
+
+            }
+
+
+            catch (error) {
+
+                console.error(
+                    error
+                );
+
+            }
+
+        }
+    );
+
+
+/* =========================================================
+   ESCAPE HTML
+   ========================================================= */
 
 function escapeHTML(value) {
 
-    return String(value ?? "")
-
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-
-        .replace(
-            /</g,
-            "&lt;"
-        )
-
-        .replace(
-            />/g,
-            "&gt;"
-        )
-
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-
-        .replace(
-            /'/g,
-            "&#039;"
-        );
+    return String(
+        value ?? ""
+    )
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+    .replace(
+        /</g,
+        "&lt;"
+    )
+    .replace(
+        />/g,
+        "&gt;"
+    )
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+    .replace(
+        /'/g,
+        "&#039;"
+    );
 
 }
