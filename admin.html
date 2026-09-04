@@ -1,1461 +1,570 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>ChemistBoys Admin Panel</title>
-
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <style>
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f8f7;
-            color: #173f3a;
-        }
-
-        button,
-        input,
-        select {
-            font-family: inherit;
-        }
-
-        /* =========================
-           LAYOUT
-        ========================== */
-
-        .admin-layout {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        /* =========================
-           SIDEBAR
-        ========================== */
-
-        .sidebar {
-            width: 250px;
-            background: #075f55;
-            color: white;
-            position: fixed;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            padding: 22px 15px;
-            z-index: 1000;
-            overflow-y: auto;
-        }
-
-        .brand {
-            padding: 5px 12px 25px;
-            border-bottom: 1px solid rgba(255,255,255,.15);
-            margin-bottom: 18px;
-        }
-
-        .brand h1 {
-            margin: 0;
-            font-size: 21px;
-        }
-
-        .brand p {
-            margin: 7px 0 0;
-            font-size: 12px;
-            opacity: .75;
-        }
-
-        .nav-title {
-            font-size: 11px;
-            text-transform: uppercase;
-            opacity: .55;
-            margin: 18px 12px 8px;
-            font-weight: 800;
-        }
-
-        .nav-btn {
-            width: 100%;
-            border: none;
-            background: transparent;
-            color: white;
-            padding: 13px 14px;
-            border-radius: 10px;
-            text-align: left;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            margin-bottom: 5px;
-            transition: .2s;
-        }
-
-        .nav-btn:hover {
-            background: rgba(255,255,255,.1);
-        }
-
-        .nav-btn.active {
-            background: white;
-            color: #075f55;
-        }
-
-        .sidebar-bottom {
-            margin-top: 25px;
-            padding-top: 18px;
-            border-top: 1px solid rgba(255,255,255,.15);
-        }
-
-        .logout-sidebar {
-            width: 100%;
-            border: none;
-            background: #dc3545;
-            color: white;
-            padding: 12px;
-            border-radius: 10px;
-            font-weight: 800;
-            cursor: pointer;
-        }
-
-        /* =========================
-           MAIN
-        ========================== */
-
-        .main-area {
-            margin-left: 250px;
-            width: calc(100% - 250px);
-            min-width: 0;
-        }
-
-        /* =========================
-           TOPBAR
-        ========================== */
-
-        .topbar {
-            height: 75px;
-            background: white;
-            border-bottom: 1px solid #e4eeee;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 28px;
-            position: sticky;
-            top: 0;
-            z-index: 500;
-        }
-
-        .mobile-menu {
-            display: none;
-            border: none;
-            background: #075f55;
-            color: white;
-            border-radius: 8px;
-            padding: 9px 12px;
-            font-size: 20px;
-            cursor: pointer;
-        }
-
-        .page-heading h2 {
-            margin: 0;
-            font-size: 21px;
-            color: #075f55;
-        }
-
-        .page-heading p {
-            margin: 4px 0 0;
-            color: #78908c;
-            font-size: 12px;
-        }
-
-        .live-status {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            font-size: 12px;
-            font-weight: 800;
-            color: #087c6b;
-        }
-
-        .live-dot {
-            width: 9px;
-            height: 9px;
-            background: #16b57d;
-            border-radius: 50%;
-        }
-
-        /* =========================
-           CONTENT
-        ========================== */
-
-        .content {
-            padding: 28px;
-            max-width: 1500px;
-        }
-
-        .section {
-            display: none;
-        }
-
-        .section.active {
-            display: block;
-        }
-
-        .section-title {
-            margin: 0 0 18px;
-            font-size: 22px;
-            color: #075f55;
-        }
-
-        /* =========================
-           KPI
-        ========================== */
-
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 16px;
-        }
-
-        .kpi-card {
-            background: white;
-            padding: 20px;
-            border-radius: 16px;
-            border: 1px solid #e5eeee;
-            box-shadow: 0 5px 20px rgba(0,0,0,.05);
-        }
-
-        .kpi-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .kpi-label {
-            font-size: 13px;
-            color: #78908c;
-            font-weight: 700;
-        }
-
-        .kpi-icon {
-            font-size: 25px;
-        }
-
-        .kpi-value {
-            margin-top: 9px;
-            font-size: 27px;
-            font-weight: 900;
-            color: #075f55;
-        }
-
-        /* =========================
-           ALERTS
-        ========================== */
-
-        .alert-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .alert {
-            background: white;
-            padding: 17px;
-            border-radius: 14px;
-            border-left: 5px solid #0ca88f;
-            box-shadow: 0 4px 15px rgba(0,0,0,.05);
-            font-weight: 700;
-        }
-
-        /* =========================
-           CARDS
-        ========================== */
-
-        .card {
-            background: white;
-            border-radius: 17px;
-            padding: 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,.05);
-            border: 1px solid #e5eeee;
-            margin-bottom: 20px;
-        }
-
-        .card h3 {
-            margin: 0 0 17px;
-            color: #075f55;
-        }
-
-        /* =========================
-           TABLE
-        ========================== */
-
-        .table-wrapper {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 700px;
-        }
-
-        th,
-        td {
-            padding: 14px;
-            border-bottom: 1px solid #edf2f1;
-            text-align: left;
-            font-size: 13px;
-        }
-
-        th {
-            background: #f5faf9;
-            color: #075f55;
-            font-size: 12px;
-        }
-
-        /* =========================
-           STATUS
-        ========================== */
-
-        .status {
-            display: inline-flex;
-            padding: 7px 11px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 800;
-        }
-
-        .processing {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .accepted {
-            background: #dff8f3;
-            color: #087c6b;
-        }
-
-        .cancelled {
-            background: #f8d7da;
-            color: #b42318;
-        }
-
-        /* =========================
-           CONTROLS
-        ========================== */
-
-        .controls {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .search {
-            flex: 1;
-            min-width: 230px;
-            border: 1px solid #d6e7e4;
-            padding: 12px;
-            border-radius: 10px;
-            outline: none;
-        }
-
-        .filter {
-            border: 1px solid #d6e7e4;
-            padding: 12px;
-            border-radius: 10px;
-            background: white;
-            color: #173f3a;
-            font-weight: 700;
-        }
-
-        .export-btn {
-            border: none;
-            background: #075f55;
-            color: white;
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-weight: 800;
-            cursor: pointer;
-        }
-
-        /* =========================
-           ORDER CARDS
-        ========================== */
-
-        .order-card {
-            background: white;
-            border-radius: 17px;
-            padding: 22px;
-            margin-bottom: 17px;
-            box-shadow: 0 5px 20px rgba(0,0,0,.05);
-            border: 1px solid #e5eeee;
-        }
-
-        .order-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 17px;
-        }
-
-        .order-id {
-            margin: 0;
-            color: #075f55;
-            font-size: 19px;
-        }
-
-        .order-date {
-            color: #78908c;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-
-        .customer-box,
-        .payment-box {
-            background: #f7fbfa;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 15px;
-        }
-
-        .customer-box h4,
-        .payment-box h4 {
-            margin: 0 0 9px;
-            color: #075f55;
-        }
-
-        .customer-box p,
-        .payment-box p {
-            margin: 5px 0;
-            font-size: 13px;
-        }
-
-        .product-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            padding: 11px 0;
-            border-bottom: 1px solid #edf2f1;
-        }
-
-        .product-row:last-child {
-            border-bottom: none;
-        }
-
-        .delivery-box {
-            background: #edf9f6;
-            color: #087c6b;
-            padding: 11px 14px;
-            border-radius: 10px;
-            margin: 14px 0;
-            font-size: 13px;
-            font-weight: 800;
-        }
-
-        .order-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 17px;
-        }
-
-        .accept-btn,
-        .cancel-btn {
-            flex: 1;
-            border: none;
-            padding: 12px;
-            border-radius: 10px;
-            color: white;
-            font-weight: 800;
-            cursor: pointer;
-        }
-
-        .accept-btn {
-            background: #0ca88f;
-        }
-
-        .cancel-btn {
-            background: #dc3545;
-        }
-
-        /* =========================
-           CHARTS
-        ========================== */
-
-        .charts {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 18px;
-        }
-
-        .chart-box {
-            background: white;
-            padding: 20px;
-            border-radius: 17px;
-            box-shadow: 0 5px 20px rgba(0,0,0,.05);
-            min-height: 350px;
-        }
-
-        .chart-box h3 {
-            margin: 0 0 15px;
-            color: #075f55;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 280px;
-        }
-
-        /* =========================
-           PRODUCT GRID
-        ========================== */
-
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-        }
-
-        .product-card {
-            background: white;
-            padding: 18px;
-            border-radius: 15px;
-            border: 1px solid #e5eeee;
-            box-shadow: 0 4px 15px rgba(0,0,0,.04);
-        }
-
-        .product-card h3 {
-            margin: 0 0 8px;
-            font-size: 15px;
-            color: #075f55;
-        }
-
-        .product-price {
-            font-weight: 900;
-            color: #087c6b;
-        }
-
-        .product-sold {
-            margin-top: 8px;
-            color: #78908c;
-            font-size: 12px;
-        }
-
-        /* =========================
-           MODAL
-        ========================== */
-
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,.55);
-            z-index: 5000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-box {
-            width: min(430px,100%);
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
-        }
-
-        .modal-box h2 {
-            margin-top: 0;
-            color: #075f55;
-        }
-
-        .modal-box p {
-            color: #78908c;
-            font-size: 14px;
-        }
-
-        .date-input {
-            width: 100%;
-            padding: 13px;
-            border: 1px solid #d6e7e4;
-            border-radius: 10px;
-            font-size: 16px;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 18px;
-        }
-
-        .modal-actions button {
-            flex: 1;
-            border: none;
-            padding: 12px;
-            border-radius: 10px;
-            font-weight: 800;
-            cursor: pointer;
-        }
-
-        .modal-cancel {
-            background: #edf2f1;
-            color: #173f3a;
-        }
-
-        .modal-confirm {
-            background: #075f55;
-            color: white;
-        }
-
-        /* =========================
-           EMPTY
-        ========================== */
-
-        .empty {
-            background: white;
-            padding: 45px 20px;
-            border-radius: 17px;
-            text-align: center;
-            color: #78908c;
-        }
-
-        /* =========================
-           MOBILE
-        ========================== */
-
-        @media(max-width:1100px) {
-
-            .kpi-grid {
-                grid-template-columns: repeat(2,1fr);
-            }
-
-            .product-grid {
-                grid-template-columns: repeat(2,1fr);
-            }
-
-        }
-
-        @media(max-width:800px) {
-
-            .sidebar {
-                transform: translateX(-100%);
-                transition: .25s;
-            }
-
-            .sidebar.open {
-                transform: translateX(0);
-            }
-
-            .main-area {
-                margin-left: 0;
-                width: 100%;
-            }
-
-            .mobile-menu {
-                display: block;
-            }
-
-            .topbar {
-                padding: 0 15px;
-            }
-
-            .live-status {
-                display: none;
-            }
-
-            .content {
-                padding: 18px 14px;
-            }
-
-            .charts {
-                grid-template-columns: 1fr;
-            }
-
-            .alert-grid {
-                grid-template-columns: 1fr;
-            }
-
-        }
-
-        @media(max-width:550px) {
-
-            .kpi-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .product-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .order-header {
-                align-items: flex-start;
-            }
-
-            .order-actions {
-                flex-direction: column;
-            }
-
-            .page-heading h2 {
-                font-size: 17px;
-            }
-
-        }
-
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ChemistBoys Admin</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+    font-family:Arial,sans-serif;
+    background:#f3f8f7;
+    color:#244d48;
+}
+button{font-family:inherit;cursor:pointer}
+.header{
+    height:82px;
+    background:white;
+    border-bottom:1px solid #dcefeb;
+    display:flex;
+    align-items:center;
+    padding:0 22px;
+    position:sticky;
+    top:0;
+    z-index:20;
+}
+.menu{
+    width:52px;
+    height:52px;
+    border:0;
+    border-radius:14px;
+    background:#086f63;
+    color:white;
+    font-size:27px;
+    margin-right:25px;
+}
+.head-title h1{
+    color:#086f63;
+    font-size:27px;
+}
+.head-title p{
+    color:#78908c;
+    margin-top:4px;
+}
+
+.sidebar{
+    position:fixed;
+    top:82px;
+    left:0;
+    width:250px;
+    height:calc(100vh - 82px);
+    background:#075f55;
+    padding:20px 14px;
+    transform:translateX(-100%);
+    transition:.25s;
+    z-index:30;
+}
+.sidebar.open{transform:translateX(0)}
+.sidebar button{
+    width:100%;
+    border:0;
+    background:transparent;
+    color:white;
+    text-align:left;
+    padding:15px;
+    border-radius:11px;
+    font-size:16px;
+    margin-bottom:5px;
+}
+.sidebar button:hover,
+.sidebar button.active{
+    background:#0ca88f;
+}
+
+.main{
+    max-width:1250px;
+    margin:auto;
+    padding:30px 20px;
+}
+.section{display:none}
+.section.active{display:block}
+
+.overview-title{
+    font-size:32px;
+    color:#075f55;
+    margin-bottom:22px;
+}
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+}
+.card{
+    background:white;
+    border-radius:20px;
+    padding:25px;
+    min-height:145px;
+    border:1px solid #dfefeb;
+    box-shadow:0 8px 25px rgba(0,70,60,.07);
+}
+.card h3{
+    color:#78908c;
+    font-size:17px;
+}
+.card .value{
+    color:#075f55;
+    font-size:32px;
+    font-weight:800;
+    margin-top:22px;
+}
+
+.alerts{
+    display:grid;
+    gap:12px;
+    margin:25px 0;
+}
+.alert{
+    background:white;
+    padding:17px;
+    border-left:5px solid #0ca88f;
+    border-radius:13px;
+    font-weight:700;
+}
+
+.panel{
+    background:white;
+    border-radius:20px;
+    padding:22px;
+    margin-bottom:20px;
+    border:1px solid #dfefeb;
+}
+.panel h2{
+    color:#075f55;
+    margin-bottom:18px;
+}
+
+.filters{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+}
+.filters input,.filters select{
+    padding:12px;
+    border:1px solid #cfe3df;
+    border-radius:10px;
+    outline:none;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+th,td{
+    padding:13px 10px;
+    border-bottom:1px solid #e5efed;
+    text-align:left;
+}
+th{
+    background:#f2f8f7;
+    color:#075f55;
+}
+.empty{
+    padding:25px;
+    text-align:center;
+    background:white;
+    border-radius:15px;
+    color:#718987;
+}
+
+.order-card{
+    background:white;
+    border:1px solid #dfefeb;
+    border-radius:18px;
+    padding:20px;
+    margin-bottom:15px;
+}
+.order-header{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:15px;
+}
+.status{
+    padding:7px 12px;
+    border-radius:20px;
+    font-weight:bold;
+    background:#e4f7f2;
+    color:#087c6b;
+}
+.order-actions{
+    display:flex;
+    gap:10px;
+    margin-top:15px;
+}
+.order-actions button{
+    padding:10px 14px;
+    border:0;
+    border-radius:9px;
+    color:white;
+    background:#087c6b;
+}
+.order-actions .cancel-btn{
+    background:#dc3545;
+}
+
+.charts{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+}
+.chart-box{
+    background:white;
+    border-radius:18px;
+    padding:20px;
+    height:330px;
+}
+
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+}
+.modal.active{display:flex}
+.modal-box{
+    background:white;
+    width:min(400px,90%);
+    padding:25px;
+    border-radius:18px;
+}
+.modal-box input{
+    width:100%;
+    padding:13px;
+    margin:15px 0;
+    border:1px solid #ccd;
+    border-radius:9px;
+}
+.modal-box button{
+    padding:11px 18px;
+    border:0;
+    border-radius:9px;
+    background:#087c6b;
+    color:white;
+}
+
+@media(max-width:850px){
+    .cards{grid-template-columns:1fr 1fr}
+    .charts{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+    .cards{grid-template-columns:1fr}
+    .main{padding:22px 14px}
+    .head-title h1{font-size:22px}
+    .head-title p{font-size:13px}
+    table{font-size:13px}
+    .panel{overflow-x:auto}
+}
+</style>
 </head>
 
 <body>
 
-<div class="admin-layout">
-
-    <!-- =========================
-         SIDEBAR
-    ========================== -->
-
-    <aside class="sidebar" id="sidebar">
-
-        <div class="brand">
-            <h1>💊 ChemistBoys</h1>
-            <p>Admin Control Center</p>
-        </div>
-
-        <div class="nav-title">
-            Main
-        </div>
-
-        <button class="nav-btn active" data-section="dashboard">
-            📊 Dashboard
-        </button>
-
-        <button class="nav-btn" data-section="orders">
-            📦 Orders
-        </button>
-
-        <button class="nav-btn" data-section="customers">
-            👥 Customers
-        </button>
-
-        <button class="nav-btn" data-section="products">
-            💊 Products
-        </button>
-
-        <div class="nav-title">
-            Business
-        </div>
-
-        <button class="nav-btn" data-section="payments">
-            💳 Payments
-        </button>
-
-        <button class="nav-btn" data-section="analytics">
-            📈 Analytics
-        </button>
-
-        <div class="sidebar-bottom">
-
-            <button
-                class="logout-sidebar"
-                id="logoutBtn"
-            >
-                🚪 Logout
-            </button>
-
-        </div>
-
-    </aside>
-
-
-    <!-- =========================
-         MAIN AREA
-    ========================== -->
-
-    <div class="main-area">
-
-        <header class="topbar">
-
-            <button
-                class="mobile-menu"
-                id="mobileMenu"
-            >
-                ☰
-            </button>
-
-            <div class="page-heading">
-
-                <h2 id="pageTitle">
-                    Dashboard
-                </h2>
-
-                <p id="pageSubtitle">
-                    Business overview & realtime performance
-                </p>
-
-            </div>
-
-            <div class="live-status">
-
-                <span class="live-dot"></span>
-
-                REALTIME
-
-            </div>
-
-        </header>
-
-
-        <main class="content">
-
-
-            <!-- =========================
-                 DASHBOARD
-            ========================== -->
-   <section
-                class="section active"
-                id="dashboard"
-            >
-
-                <h2 class="section-title">
-                    📊 Business Overview
-                </h2>
-
-
-                <div class="kpi-grid">
-
-                    <div class="kpi-card">
-                        <div class="kpi-top">
-                            <div class="kpi-label">
-                                Accepted Revenue
-                            </div>
-                            <div class="kpi-icon">💰</div>
-                        </div>
-
-                        <div
-                            class="kpi-value"
-                            id="revenueValue"
-                        >
-                            ₹0
-                        </div>
-                    </div>
-
-
-                    <div class="kpi-card">
-                        <div class="kpi-top">
-                            <div class="kpi-label">
-                                Total Orders
-                            </div>
-                            <div class="kpi-icon">🧾</div>
-                        </div>
-
-                        <div
-                            class="kpi-value"
-                            id="ordersValue"
-                        >
-                            0
-                        </div>
-                    </div>
-
-
-                    <div class="kpi-card">
-                        <div class="kpi-top">
-                            <div class="kpi-label">
-                                Customers
-                            </div>
-                            <div class="kpi-icon">👥</div>
-                        </div>
-
-                        <div
-                            class="kpi-value"
-                            id="customersValue"
-                        >
-                            0
-                        </div>
-                    </div>
-
-
-                    <div class="kpi-card">
-                        <div class="kpi-top">
-                            <div class="kpi-label">
-                                Average Order
-                            </div>
-                            <div class="kpi-icon">📈</div>
-                        </div>
-
-                        <div
-                            class="kpi-value"
-                            id="aovValue"
-                        >
-                            ₹0
-                        </div>
-                    </div>
-
-
-                    <div class="kpi-card">
-                        <div class="kpi-top">
-                            <div class="kpi-label">
-                                Processing
-                            </div>
-                            <div class="kpi-icon">⏳</div>
-                        </div>
-
-                        <div
-                            class="kpi-value"
-                            id="processingValue"
-                        >
-                            0
-                        </div>
-                    </div>
-
-
-                    <div class="kpi-card">
-                        <div class="kpi-top">
-                            <div class="kpi-label">
-                                Accepted
-                            </div>
-                            <div class="kpi-icon">✅</div>
-                        </div>
-
-                        <div
-                            class="kpi-value"
-                            id="acceptedValue"
-                        >
-                            0
-                        </div>
-                    </div>
-
-
-                    <div class="kpi-card">
-                        <div class="kpi-top">
-                            <div class="kpi-label">
-                                Cancelled
-                            </div>
-                            <div class="kpi-icon">❌</div>
-                        </div>
-
-                        <div
-                            class="kpi-value"
-                            id="cancelledValue"
-                        >
-                            0
-                        </div>
-                    </div>
-
-
-                    <div class="kpi-card">
-                        <div class="kpi-top">
-                            <div class="kpi-label">
-                                Items Sold
-                            </div>
-                            <div class="kpi-icon">📦</div>
-                        </div>
-
-                        <div
-                            class="kpi-value"
-                            id="itemsSoldValue"
-                        >
-                            0
-                        </div>
-                    </div>
-
-                </div>
-
-
-                <br>
-
-
-                <div class="alert-grid">
-
-                    <div
-                        class="alert"
-                        id="pendingAlert"
-                    >
-                        ⏳ No pending orders
-                    </div>
-
-                    <div
-                        class="alert"
-                        id="paymentAlert"
-                    >
-                        💳 No pending payments
-                    </div>
-
-                    <div
-                        class="alert"
-                        id="deliveryAlert"
-                    >
-                        🚚 No delivery actions
-                    </div>
-
-                </div>
-
-
-                <div class="card">
-
-                    <h3>
-                        🧾 Recent Orders
-                    </h3>
-
-                    <div class="table-wrapper">
-
-                        <table>
-
-                            <thead>
-
-                            <tr>
-                                <th>Order</th>
-                                <th>Customer</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                            </tr>
-
-                            </thead>
-
-                            <tbody id="recentOrdersBody"></tbody>
-
-                        </table>
-
-                    </div>
-
-                </div>
-
-            </section>
-
-
-            <!-- =========================
-                 ORDERS
-            ========================== -->
-
-            <section
-                class="section"
-                id="orders"
-            >
-
-                <h2 class="section-title">
-                    📦 Order Management
-                </h2>
-
-                <div class="controls">
-
-                    <input
-                        class="search"
-                        id="searchInput"
-                        placeholder="Search order, customer, email, phone..."
-                    >
-
-                    <select
-                        class="filter"
-                        id="statusFilter"
-                    >
-                        <option value="all">
-                            All Status
-                        </option>
-
-                        <option value="Processing">
-                            Processing
-                        </option>
-
-                        <option value="Accepted">
-                            Accepted
-                        </option>
-
-                        <option value="Cancelled">
-                            Cancelled
-                        </option>
-                    </select>
-
-
-                    <select
-                        class="filter"
-                        id="paymentFilter"
-                    >
-
-                        <option value="all">
-                            All Payments
-                        </option>
-
-                        <option value="cod">
-                            COD
-                        </option>
-
-                        <option value="upi">
-                            UPI
-                        </option>
-
-                        <option value="online">
-                            Online
-                        </option>
-
-                    </select>
-
-
-                    <button
-                        class="export-btn"
-                        id="exportBtn"
-                    >
-                        ⬇️ Export CSV
-                    </button>
-
-                </div>
-
-
-                <div id="ordersContainer"></div>
-
-            </section>
-
-
-            <!-- =========================
-                 CUSTOMERS
-            ========================== -->
-
-            <section
-                class="section"
-                id="customers"
-            >
-
-                <h2 class="section-title">
-                    👥 Customers
-                </h2>
-
-                <div class="card">
-
-                    <div class="table-wrapper">
-
-                        <table>
-
-                            <thead>
-
-                            <tr>
-                                <th>Customer</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Orders</th>
-                                <th>Total Spending</th>
-                            </tr>
-
-                            </thead>
-
-                            <tbody id="customersBody"></tbody>
-
-                        </table>
-
-                    </div>
-
-                </div>
-
-            </section>
-
-
-            <!-- =========================
-                 PRODUCTS
-            ========================== -->
-
-            <section
-                class="section"
-                id="products"
-            >
-
-                <h2 class="section-title">
-                    💊 Products
-                </h2>
-
-                <div
-                    class="product-grid"
-                    id="productsGrid"
-                ></div>
-
-            </section>
-
-
-            <!-- =========================
-                 PAYMENTS
-            ========================== -->
-
-            <section
-                class="section"
-                id="payments"
-            >
-
-                <h2 class="section-title">
-                    💳 Payment Management
-                </h2>
-
-
-                <div class="kpi-grid">
-
-                    <div class="kpi-card">
-
-                        <div class="kpi-label">
-                            COD Orders
-                        </div>
-
-                        <div
-                            class="kpi-value"
-                            id="codValue"
-                        >
-                            0
-                        </div>
-
-                    </div>
-
-
-                    <div class="kpi-card">
-
-                        <div class="kpi-label">
-                            UPI Orders
-                        </div>
-
-                        <div
-                            class="kpi-value"
-                            id="upiValue"
-                        >
-                            0
-                        </div>
-
-                    </div>
-
-
-                    <div class="kpi-card">
-
-                        <div class="kpi-label">
-                            Pending Payments
-                        </div>
-
-                        <div
-                            class="kpi-value"
-                            id="pendingPaymentsValue"
-                        >
-                            0
-                        </div>
-
-                    </div>
-
-
-                    <div class="kpi-card">
-
-                        <div class="kpi-label">
-                            Accepted Revenue
-                        </div>
-
-                        <div
-                            class="kpi-value"
-                            id="paymentRevenueValue"
-                        >
-                            ₹0
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <br>
-
-
-                <div class="card">
-
-                    <h3>
-                        💳 Payment Details
-                    </h3>
-
-                    <div class="table-wrapper">
-
-                        <table>
-
-                            <thead>
-
-                            <tr>
-                                <th>Order</th>
-                                <th>Customer</th>
-                                <th>Method</th>
-                                <th>Payment Status</th>
-                                <th>Amount</th>
-                            </tr>
-
-                            </thead>
-
-                            <tbody id="paymentsBody"></tbody>
-
-                        </table>
-
-                    </div>
-
-                </div>
-
-            </section>
-
-
-            <!-- =========================
-                 ANALYTICS
-            ========================== -->
-
-            <section
-                class="section"
-                id="analytics"
-            >
-
-                <h2 class="section-title">
-                    📈 Business Analytics
-                </h2>
-
-
-                <div class="charts">
-
-                    <div class="chart-box">
-
-                        <h3>
-                            💰 Revenue Trend
-                        </h3>
-
-                        <div class="chart-container">
-                            <canvas id="revenueChart"></canvas>
-                        </div>
-
-                    </div>
-
-
-                    <div class="chart-box">
-
-                        <h3>
-                            🧾 Orders Trend
-                        </h3>
-
-                        <div class="chart-container">
-                            <canvas id="ordersChart"></canvas>
-                        </div>
-
-                    </div>
-
-
-                    <div class="chart-box">
-
-                        <h3>
-                            📊 Order Status
-                        </h3>
-
-                        <div class="chart-container">
-                            <canvas id="statusChart"></canvas>
-                        </div>
-
-                    </div>
-
-
-                    <div class="chart-box">
-
-                        <h3>
-                            💳 Payment Methods
-                        </h3>
-
-                        <div class="chart-container">
-                            <canvas id="paymentChart"></canvas>
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <br>
-
-
-                <div class="card">
-
-                    <h3>
-                        🏆 Top Selling Products
-                    </h3>
-
-                    <div class="table-wrapper">
-
-                        <table>
-
-                            <thead>
-
-                            <tr>
-                                <th>Rank</th>
-                                <th>Product</th>
-                                <th>Quantity Sold</th>
-                                <th>Revenue</th>
-                            </tr>
-
-                            </thead>
-
-                            <tbody id="topProductsBody"></tbody>
-
-                        </table>
-
-                    </div>
-
-                </div>
-
-            </section>
-
-        </main>
-
-    </div>
-
-</div>
-
-
-<!-- =========================
-     DELIVERY DATE MODAL
-========================== -->
-
-<div
-    class="modal"
-    id="deliveryModal"
->
-
-    <div class="modal-box">
-
-        <h2>
-            🚚 Select Delivery Date
-        </h2>
-
-        <p>
-            Choose a delivery date for this accepted order.
-            Past dates are not allowed.
+<header class="header">
+    <button class="menu" id="mobileMenu">☰</button>
+
+    <div class="head-title">
+        <h1 id="pageTitle">Dashboard</h1>
+        <p id="pageSubtitle">
+            Business overview & realtime performance
         </p>
-
-        <input
-            type="date"
-            class="date-input"
-            id="deliveryDateInput"
-        >
-
-        <div class="modal-actions">
-
-            <button
-                class="modal-cancel"
-                id="closeModalBtn"
-            >
-                Cancel
-            </button>
-
-            <button
-                class="modal-confirm"
-                id="confirmDeliveryBtn"
-            >
-                ✅ Accept Order
-            </button>
-
-        </div>
-
     </div>
+</header>
+
+<aside class="sidebar" id="sidebar">
+
+    <button data-section="dashboard" class="active">
+        📊 Dashboard
+    </button>
+
+    <button data-section="orders">
+        📦 Orders
+    </button>
+
+    <button data-section="customers">
+        👥 Customers
+    </button>
+
+    <button data-section="products">
+        💊 Products
+    </button>
+
+    <button data-section="payments">
+        💳 Payments
+    </button>
+
+    <button data-section="analytics">
+        📈 Analytics
+    </button>
+
+    <button id="exportBtn">
+        📥 Export Orders
+    </button>
+
+    <button id="logoutBtn">
+        🚪 Logout
+    </button>
+
+</aside>
+
+<main class="main">
+
+<!-- DASHBOARD -->
+<section id="dashboard" class="section active">
+
+<h2 class="overview-title">📊 Business Overview</h2>
+
+<div class="cards">
+
+<div class="card">
+<h3>Accepted Revenue</h3>
+<div class="value" id="revenueValue">₹0</div>
+</div>
+
+<div class="card">
+<h3>Total Orders</h3>
+<div class="value" id="ordersValue">0</div>
+</div>
+
+<div class="card">
+<h3>Customers</h3>
+<div class="value" id="customersValue">0</div>
+</div>
+
+<div class="card">
+<h3>Average Order</h3>
+<div class="value" id="aovValue">₹0</div>
+</div>
+
+<div class="card">
+<h3>Processing</h3>
+<div class="value" id="processingValue">0</div>
+</div>
+
+<div class="card">
+<h3>Accepted</h3>
+<div class="value" id="acceptedValue">0</div>
+</div>
+
+<div class="card">
+<h3>Cancelled</h3>
+<div class="value" id="cancelledValue">0</div>
+</div>
+
+<div class="card">
+<h3>Items Sold</h3>
+<div class="value" id="itemsSoldValue">0</div>
+</div>
 
 </div>
 
+<div class="alerts">
+<div class="alert" id="pendingAlert">⏳ Loading...</div>
+<div class="alert" id="paymentAlert">💳 Loading...</div>
+<div class="alert" id="deliveryAlert">🚚 Loading...</div>
+</div>
 
-<script
-    type="module"
-    src="admin.js?v=60"
-></script>
+<div class="panel">
+<h2>🧾 Recent Orders</h2>
+
+<table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Customer</th>
+<th>Total</th>
+<th>Status</th>
+<th>Date</th>
+</tr>
+</thead>
+<tbody id="recentOrdersBody">
+<tr><td colspan="5">Loading...</td></tr>
+</tbody>
+</table>
+
+</div>
+
+</section>
+
+<!-- ORDERS -->
+<section id="orders" class="section">
+
+<h2 class="overview-title">📦 Orders</h2>
+
+<div class="filters">
+<input id="searchInput" placeholder="Search order/customer...">
+
+<select id="statusFilter">
+<option value="all">All Status</option>
+<option value="Processing">Processing</option>
+<option value="Accepted">Accepted</option>
+<option value="Cancelled">Cancelled</option>
+</select>
+
+<select id="paymentFilter">
+<option value="all">All Payments</option>
+<option value="COD">COD</option>
+<option value="UPI">UPI</option>
+</select>
+</div>
+
+<div id="ordersContainer"></div>
+
+</section>
+
+<!-- CUSTOMERS -->
+<section id="customers" class="section">
+
+<h2 class="overview-title">👥 Customers</h2>
+
+<div class="panel">
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Email</th>
+<th>Phone</th>
+<th>Orders</th>
+<th>Spent</th>
+</tr>
+</thead>
+<tbody id="customersBody"></tbody>
+</table>
+</div>
+
+</section>
+
+<!-- PRODUCTS -->
+<section id="products" class="section">
+
+<h2 class="overview-title">💊 Products</h2>
+
+<div class="panel">
+<div id="productsGrid"></div>
+</div>
+
+</section>
+
+<!-- PAYMENTS -->
+<section id="payments" class="section">
+
+<h2 class="overview-title">💳 Payments</h2>
+
+<div class="cards">
+
+<div class="card">
+<h3>COD Orders</h3>
+<div class="value" id="codValue">0</div>
+</div>
+
+<div class="card">
+<h3>UPI Orders</h3>
+<div class="value" id="upiValue">0</div>
+</div>
+
+<div class="card">
+<h3>Pending Payments</h3>
+<div class="value" id="pendingPaymentsValue">0</div>
+</div>
+
+<div class="card">
+<h3>Payment Revenue</h3>
+<div class="value" id="paymentRevenueValue">₹0</div>
+</div>
+
+</div>
+
+<div class="panel">
+<table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Customer</th>
+<th>Method</th>
+<th>Status</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody id="paymentsBody"></tbody>
+</table>
+</div>
+
+</section>
+
+<!-- ANALYTICS -->
+<section id="analytics" class="section">
+
+<h2 class="overview-title">📈 Business Intelligence</h2>
+
+<div class="charts">
+
+<div class="chart-box">
+<canvas id="revenueChart"></canvas>
+</div>
+
+<div class="chart-box">
+<canvas id="ordersChart"></canvas>
+</div>
+
+<div class="chart-box">
+<canvas id="statusChart"></canvas>
+</div>
+
+<div class="chart-box">
+<canvas id="paymentChart"></canvas>
+</div>
+
+</div>
+
+<div class="panel">
+<h2>🔥 Top Products</h2>
+
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Product</th>
+<th>Units</th>
+<th>Revenue</th>
+</tr>
+</thead>
+<tbody id="topProductsBody"></tbody>
+</table>
+
+</div>
+
+</section>
+
+</main>
+
+<!-- DELIVERY MODAL -->
+<div class="modal" id="deliveryModal">
+
+<div class="modal-box">
+
+<h2>🚚 Delivery Date</h2>
+
+<input type="date" id="deliveryDateInput">
+
+<button id="confirmDeliveryBtn">
+✅ Confirm
+</button>
+
+<button id="closeModalBtn">
+Close
+</button>
+
+</div>
+</div>
+
+<script type="module" src="admin.js"></script>
 
 </body>
 </html>
