@@ -1,10 +1,8 @@
-/* CHEMISTBOYS - CHECKOUT + FAMPAY UPI + FIRESTORE */
-
-import { auth, authReady, db } from "./firebase.js";
-
 import {
-    onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+    auth,
+    authReady,
+    db
+} from "./firebase.js";
 
 import {
     collection,
@@ -12,1145 +10,1425 @@ import {
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-
-const CART_KEY = "chemistboys_cart";
-const OLD_CART_KEY = "chemistCart";
-
-const UPI_ID = "ayushuniyal.cyberlab@fam";
-
-let currentUser = null;
+import {
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-// ================= CART =================
+// ========================================
+// ELEMENTS
+// ========================================
+
+const checkoutForm =
+    document.getElementById("checkoutForm");
+
+const customerName =
+    document.getElementById("customerName");
+
+const customerEmail =
+    document.getElementById("customerEmail");
+
+const customerPhone =
+    document.getElementById("customerPhone");
+
+const customerAddress =
+    document.getElementById("customerAddress");
+
+const customerCity =
+    document.getElementById("customerCity");
+
+const customerPincode =
+    document.getElementById("customerPincode");
+
+const paymentMethod =
+    document.getElementById("paymentMethod");
+
+const checkoutItems =
+    document.getElementById("checkoutItems");
+
+const subtotalElement =
+    document.getElementById("subtotal");
+
+const deliveryChargeElement =
+    document.getElementById("deliveryCharge");
+
+const grandTotalElement =
+    document.getElementById("grandTotal");
+
+const placeOrderBtn =
+    document.getElementById("placeOrderBtn");
+
+
+// ========================================
+// CART KEY
+// ========================================
+
+const CART_KEY =
+    "chemistboys_cart";
+
+const OLD_CART_KEY =
+    "chemistCart";
+
+
+// ========================================
+// UPI ID
+// ========================================
+
+const UPI_ID =
+    "ayushuniyal.cyberlab@fam";
+
+
+// ========================================
+// CART
+// ========================================
 
 function getCart() {
 
+    let cart = [];
+
     try {
 
-        const data =
-            localStorage.getItem(CART_KEY) ||
-            localStorage.getItem(OLD_CART_KEY);
+        cart =
+            JSON.parse(
+                localStorage.getItem(
+                    CART_KEY
+                ) || "[]"
+            );
 
-        if (!data)
-            return [];
-
-        const cart = JSON.parse(data);
-
-        return Array.isArray(cart)
-            ? cart
-            : [];
-
-    } catch (error) {
-
-        console.error("Cart loading error:", error);
-
-        return [];
     }
+
+    catch {
+
+        cart = [];
+
+    }
+
+
+    // Old key support
+    if (
+        !Array.isArray(cart) ||
+        cart.length === 0
+    ) {
+
+        try {
+
+            cart =
+                JSON.parse(
+                    localStorage.getItem(
+                        OLD_CART_KEY
+                    ) || "[]"
+                );
+
+        }
+
+        catch {
+
+            cart = [];
+
+        }
+
+    }
+
+
+    return Array.isArray(cart)
+        ? cart
+        : [];
+
 }
 
 
-// ================= PRODUCT PRICE =================
+// ========================================
+// INITIAL AUTH CHECK
+// ========================================
 
-function findProduct(id) {
+await authReady;
 
-    const products =
-        Array.isArray(window.products)
-            ? window.products
-            : [];
 
-    return products.find(
-        product =>
-            String(product.id) === String(id)
+if (!auth.currentUser) {
+
+    window.location.href =
+        "auth.html";
+
+}
+
+
+// ========================================
+// AUTH STATE
+// ========================================
+
+onAuthStateChanged(
+    auth,
+    (user) => {
+
+        if (!user) {
+
+            window.location.href =
+                "auth.html";
+
+            return;
+
+        }
+
+
+        // Fill logged-in user's details
+        if (customerName) {
+
+            customerName.value =
+                user.displayName || "";
+
+        }
+
+
+        if (customerEmail) {
+
+            customerEmail.value =
+                user.email || "";
+
+        }
+
+
+        loadCheckout();
+
+    }
+);
+
+
+// ========================================
+// LOAD CHECKOUT
+// ========================================
+
+function loadCheckout() {
+
+    const cart =
+        getCart();
+
+
+    if (cart.length === 0) {
+
+        showEmptyCart();
+
+        return;
+
+    }
+
+
+    renderCheckoutItems(
+        cart
     );
+
 }
 
 
-function getPrice(item) {
+// ========================================
+// RENDER ITEMS
+// ========================================
 
-    const cartPrice = Number(item.price);
+function renderCheckoutItems(
+    cart
+) {
 
-    if (
-        Number.isFinite(cartPrice) &&
-        cartPrice > 0
-    ) {
+    checkoutItems.innerHTML =
+        "";
 
-        return cartPrice;
-    }
-
-    const product = findProduct(item.id);
-
-    if (
-        product &&
-        Number(product.price) > 0
-    ) {
-
-        return Number(product.price);
-    }
-
-    return 0;
-}
-
-
-// ================= USER DETAILS =================
-
-function fillUserDetails() {
-
-    if (!currentUser)
-        return;
-
-    const nameInput =
-        document.getElementById("customerName");
-
-    const emailInput =
-        document.getElementById("customerEmail");
-
-    if (
-        nameInput &&
-        !nameInput.value
-    ) {
-
-        nameInput.value =
-            currentUser.displayName ||
-            currentUser.email ||
-            "";
-    }
-
-    if (
-        emailInput &&
-        !emailInput.value
-    ) {
-
-        emailInput.value =
-            currentUser.email ||
-            "";
-    }
-}
-
-
-// ================= SHOW CART =================
-
-function renderCheckoutCart() {
-
-    const container =
-        document.getElementById("checkoutItems");
-
-    const subtotalElement =
-        document.getElementById("subtotal");
-
-    const totalElement =
-        document.getElementById("grandTotal");
-
-    const deliveryElement =
-        document.getElementById("deliveryCharge");
-
-    if (!container)
-        return;
-
-    const cart = getCart();
-
-    if (!cart.length) {
-
-        container.innerHTML = `
-
-            <div style="
-                text-align:center;
-                padding:20px;
-                color:#666;
-            ">
-
-                🛒 Your cart is empty
-
-            </div>
-
-        `;
-
-        if (subtotalElement)
-            subtotalElement.textContent = "₹0";
-
-        if (totalElement)
-            totalElement.textContent = "₹0";
-
-        if (deliveryElement)
-            deliveryElement.textContent = "FREE";
-
-        return;
-    }
 
     let subtotal = 0;
 
-    container.innerHTML =
-        cart.map(item => {
+    let totalQuantity = 0;
 
-            const price = getPrice(item);
+
+    cart.forEach(
+        (item) => {
+
+            const name =
+                item.name ||
+                item.productName ||
+                "Product";
+
+
+            const price =
+                Number(
+                    item.price ??
+                    item.productPrice
+                ) || 0;
+
 
             const quantity =
-                Math.max(
-                    1,
-                    Number(item.quantity) || 1
-                );
+                Number(
+                    item.quantity ??
+                    item.qty
+                ) || 1;
+
 
             const itemTotal =
                 price * quantity;
 
-            subtotal += itemTotal;
 
-            return `
+            subtotal +=
+                itemTotal;
 
-                <div class="checkout-item">
 
-                    <div>
+            totalQuantity +=
+                quantity;
 
-                        <div class="checkout-item-name">
-                            ${item.name || "Medicine"}
-                        </div>
 
-                        <div class="checkout-item-quantity">
-                            Quantity: ${quantity}
-                        </div>
+            const itemElement =
+                document.createElement(
+                    "div"
+                );
+
+
+            itemElement.className =
+                "checkout-item";
+
+
+            itemElement.innerHTML = `
+
+                <div>
+
+                    <div class="checkout-item-name">
+
+                        ${escapeHTML(name)}
 
                     </div>
 
-                    <div class="checkout-item-price">
-                        ₹${itemTotal}
+
+                    <div class="checkout-item-quantity">
+
+                        Quantity:
+                        ${quantity}
+
                     </div>
+
+                </div>
+
+
+                <div class="checkout-item-price">
+
+                    ₹${itemTotal.toFixed(2)}
 
                 </div>
 
             `;
 
-        }).join("");
 
-    if (subtotalElement)
-        subtotalElement.textContent =
-            `₹${subtotal}`;
+            checkoutItems.appendChild(
+                itemElement
+            );
 
-    if (deliveryElement)
-        deliveryElement.textContent =
-            "FREE";
-
-    if (totalElement)
-        totalElement.textContent =
-            `₹${subtotal}`;
-}
-
-
-// ================= ORDER ID =================
-
-function generateOrderId() {
-
-    return "CB" +
-        Date.now()
-            .toString()
-            .slice(-8);
-}
-
-
-// ================= DELIVERY DATE =================
-
-function getDeliveryDate() {
-
-    const date = new Date();
-
-    date.setDate(
-        date.getDate() + 3
-    );
-
-    return date.toLocaleDateString(
-        "en-IN",
-        {
-            day: "2-digit",
-            month: "short",
-            year: "numeric"
         }
     );
+
+
+    // Delivery is FREE
+    const deliveryCharge =
+        0;
+
+
+    const grandTotal =
+        subtotal +
+        deliveryCharge;
+
+
+    subtotalElement.textContent =
+        `₹${subtotal.toFixed(2)}`;
+
+
+    deliveryChargeElement.textContent =
+        "FREE";
+
+
+    grandTotalElement.textContent =
+        `₹${grandTotal.toFixed(2)}`;
+
+
+    // Store values for order
+    checkoutForm.dataset.subtotal =
+        subtotal.toString();
+
+
+    checkoutForm.dataset.total =
+        grandTotal.toString();
+
+
+    checkoutForm.dataset.quantity =
+        totalQuantity.toString();
+
 }
 
 
-// ================= SUCCESS SOUND =================
+// ========================================
+// EMPTY CART
+// ========================================
 
-function playSuccessSound() {
+function showEmptyCart() {
 
-    try {
+    checkoutItems.innerHTML = `
 
-        const AudioContext =
-            window.AudioContext ||
-            window.webkitAudioContext;
+        <div class="empty-cart">
 
-        if (!AudioContext)
-            return;
-
-        const audio =
-            new AudioContext();
-
-        const oscillator =
-            audio.createOscillator();
-
-        const gain =
-            audio.createGain();
-
-        oscillator.type = "sine";
-
-        oscillator.frequency.setValueAtTime(
-            523.25,
-            audio.currentTime
-        );
-
-        oscillator.frequency.setValueAtTime(
-            659.25,
-            audio.currentTime + 0.12
-        );
-
-        oscillator.frequency.setValueAtTime(
-            783.99,
-            audio.currentTime + 0.24
-        );
-
-        gain.gain.setValueAtTime(
-            0.0001,
-            audio.currentTime
-        );
-
-        gain.gain.exponentialRampToValueAtTime(
-            0.25,
-            audio.currentTime + 0.03
-        );
-
-        gain.gain.exponentialRampToValueAtTime(
-            0.0001,
-            audio.currentTime + 0.55
-        );
-
-        oscillator.connect(gain);
-
-        gain.connect(
-            audio.destination
-        );
-
-        oscillator.start();
-
-        oscillator.stop(
-            audio.currentTime + 0.6
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Success sound error:",
-            error
-        );
-    }
-}
-
-
-// ================= ORDER SUCCESS =================
-
-function showOrderSuccess(
-    orderId,
-    paymentStatus
-) {
-
-    playSuccessSound();
-
-    const overlay =
-        document.createElement("div");
-
-    overlay.id =
-        "orderSuccessOverlay";
-
-    overlay.innerHTML = `
-
-        <div class="success-box">
-
-            <div class="success-tick">
-                ✓
+            <div class="empty-cart-icon">
+                🛒
             </div>
 
             <h2>
-                Order Successful!
+                Your Cart is Empty
             </h2>
 
             <p>
-                Your order has been placed
-                successfully.
+                Please add some products
+                before placing an order.
             </p>
-
-            <p>
-                <strong>
-                    Order ID:
-                </strong>
-                ${orderId}
-            </p>
-
-            <p>
-                <strong>
-                    Payment:
-                </strong>
-                ${paymentStatus}
-            </p>
-
-            <button
-                id="viewOrdersBtn"
-                type="button"
-            >
-
-                📦 View My Orders
-
-            </button>
-
-        </div>
-
-    `;
-
-    const style =
-        document.createElement("style");
-
-    style.textContent = `
-
-        #orderSuccessOverlay {
-
-            position: fixed;
-
-            inset: 0;
-
-            background:
-                rgba(0,0,0,.65);
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            z-index: 2000000;
-
-            padding: 20px;
-
-        }
-
-        .success-box {
-
-            background: white;
-
-            width:
-                min(420px,100%);
-
-            padding: 35px 25px;
-
-            border-radius: 22px;
-
-            text-align: center;
-
-            box-shadow:
-                0 20px 70px
-                rgba(0,0,0,.3);
-
-        }
-
-        .success-tick {
-
-            width: 80px;
-
-            height: 80px;
-
-            margin: 0 auto 15px;
-
-            border-radius: 50%;
-
-            background: #16a34a;
-
-            color: white;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            font-size: 50px;
-
-            font-weight: bold;
-
-        }
-
-        .success-box h2 {
-
-            color: #15803d;
-
-            margin-bottom: 10px;
-
-        }
-
-        .success-box button {
-
-            width: 100%;
-
-            border: 0;
-
-            border-radius: 10px;
-
-            padding: 14px;
-
-            margin-top: 15px;
-
-            background: #075f55;
-
-            color: white;
-
-            font-size: 16px;
-
-            font-weight: bold;
-
-            cursor: pointer;
-
-        }
-
-    `;
-
-    document.head.appendChild(style);
-
-    document.body.appendChild(overlay);
-
-    document
-        .getElementById("viewOrdersBtn")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                window.location.href =
-                    "orders.html";
-
-            }
-        );
-}
-
-
-// ================= UPI PAYMENT =================
-
-function showUpiPayment(
-    total,
-    orderData
-) {
-
-    const oldOverlay =
-        document.getElementById(
-            "upiPaymentOverlay"
-        );
-
-    if (oldOverlay)
-        oldOverlay.remove();
-
-    const transactionNote =
-        `ChemistBoys ${orderData.id}`;
-
-    const upiUrl =
-        `upi://pay?` +
-        `pa=${encodeURIComponent(UPI_ID)}` +
-        `&pn=${encodeURIComponent("ChemistBoys")}` +
-        `&am=${encodeURIComponent(total.toFixed(2))}` +
-        `&cu=INR` +
-        `&tn=${encodeURIComponent(transactionNote)}`;
-
-    const overlay =
-        document.createElement("div");
-
-    overlay.id =
-        "upiPaymentOverlay";
-
-    overlay.innerHTML = `
-
-        <div class="upi-box">
-
-            <button
-                class="upi-close"
-                id="upiCloseBtn"
-                type="button"
-            >
-                ×
-            </button>
-
-            <div class="upi-icon">
-                📱
-            </div>
-
-            <h2>
-                Pay via UPI
-            </h2>
-
-            <p>
-
-                Pay
-
-                <strong>
-                    ₹${total.toFixed(2)}
-                </strong>
-
-                to ChemistBoys
-
-            </p>
-
-            <div class="upi-id-box">
-
-                ${UPI_ID}
-
-            </div>
 
             <a
-                class="upi-pay-btn"
-                href="${upiUrl}"
+                href="index.html"
+                class="continue-shopping"
             >
-
-                💳 Pay ₹${total.toFixed(2)}
-                via UPI
-
+                🛍️ Continue Shopping
             </a>
-
-            <p class="upi-note">
-
-                Your UPI app will open with
-                the amount and FamPay UPI ID
-                already filled in.
-
-            </p>
 
         </div>
 
     `;
 
-    const style =
-        document.createElement("style");
 
-    style.textContent = `
+    subtotalElement.textContent =
+        "₹0";
 
-        #upiPaymentOverlay {
 
-            position: fixed;
+    deliveryChargeElement.textContent =
+        "FREE";
 
-            inset: 0;
 
-            background:
-                rgba(0,0,0,.65);
+    grandTotalElement.textContent =
+        "₹0";
 
-            display: flex;
 
-            align-items: center;
+    if (placeOrderBtn) {
 
-            justify-content: center;
+        placeOrderBtn.disabled =
+            true;
 
-            z-index: 1000000;
+    }
 
-            padding: 18px;
-
-        }
-
-        .upi-box {
-
-            position: relative;
-
-            background: white;
-
-            width:
-                min(430px,100%);
-
-            border-radius: 22px;
-
-            padding: 30px 22px;
-
-            text-align: center;
-
-            box-shadow:
-                0 20px 70px
-                rgba(0,0,0,.3);
-
-        }
-
-        .upi-close {
-
-            position: absolute;
-
-            right: 14px;
-
-            top: 10px;
-
-            border: 0;
-
-            background: transparent;
-
-            font-size: 30px;
-
-            cursor: pointer;
-
-            color: #666;
-
-        }
-
-        .upi-icon {
-            font-size: 42px;
-        }
-
-        .upi-box h2 {
-
-            color: #075f55;
-
-            margin: 8px 0;
-
-        }
-
-        .upi-id-box {
-
-            background: #eefaf7;
-
-            border:
-                1px dashed #0ca88f;
-
-            padding: 12px;
-
-            border-radius: 10px;
-
-            margin: 15px 0;
-
-            font-weight: 700;
-
-            color: #087c6b;
-
-            word-break: break-all;
-
-        }
-
-        .upi-pay-btn {
-
-            display: block;
-
-            width: 100%;
-
-            box-sizing: border-box;
-
-            border: 0;
-
-            border-radius: 12px;
-
-            padding: 14px;
-
-            margin-top: 12px;
-
-            font-size: 16px;
-
-            font-weight: 700;
-
-            cursor: pointer;
-
-            text-decoration: none;
-
-            background: #0ca88f;
-
-            color: white;
-
-        }
-
-        .upi-note {
-
-            font-size: 13px;
-
-            color: #666;
-
-            margin-top: 15px;
-
-        }
-
-    `;
-
-    document.head.appendChild(style);
-
-    document.body.appendChild(overlay);
-
-    document
-        .getElementById("upiCloseBtn")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                overlay.remove();
-
-            }
-        );
 }
 
 
-// ================= FIRESTORE SAVE =================
+// ========================================
+// PLACE ORDER
+// ========================================
 
-async function saveOrderToFirestore(order) {
+checkoutForm.addEventListener(
+    "submit",
+    async (event) => {
 
-    try {
+        event.preventDefault();
 
-        const firestoreOrder = {
 
-            ...order,
-
-            createdAt: serverTimestamp()
-
-        };
-
-        const docRef =
-            await addDoc(
-                collection(db, "orders"),
-                firestoreOrder
-            );
-
-        console.log(
-            "Order saved to Firestore:",
-            docRef.id
-        );
-
-        return docRef.id;
-
-    } catch (error) {
-
-        console.error(
-            "Firestore order save error:",
-            error
-        );
-
-        throw error;
-    }
-}
-
-
-// ================= SAVE ORDER =================
-
-async function finishOrder(
-    order,
-    paymentStatus
-) {
-
-    order.paymentStatus =
-        paymentStatus;
-
-    try {
-
-        // Save centrally in Firestore
-        await saveOrderToFirestore(order);
-
-        // Also keep local copy for existing orders page
-        const orders =
-            JSON.parse(
-                localStorage.getItem("orders") ||
-                "[]"
-            );
-
-        orders.push(order);
-
-        localStorage.setItem(
-            "orders",
-            JSON.stringify(orders)
-        );
-
-        // Clear cart
-        localStorage.removeItem(CART_KEY);
-
-        localStorage.removeItem(OLD_CART_KEY);
-
-        // Show success
-        showOrderSuccess(
-            order.id,
-            paymentStatus
-        );
-
-    } catch (error) {
-
-        alert(
-            "Order could not be saved. Please try again."
-        );
-
-        console.error(
-            "Order save failed:",
-            error
-        );
-    }
-}
-
-
-// ================= PLACE ORDER =================
-
-async function placeOrder(event) {
-
-    event.preventDefault();
-
-    await authReady;
-
-    if (!auth.currentUser) {
-
-        window.location.href =
-            "login.html";
-
-        return;
-    }
-
-    const cart = getCart();
-
-    if (!cart.length) {
-
-        alert(
-            "Your cart is empty."
-        );
-
-        return;
-    }
-
-    const form =
-        document.getElementById(
-            "checkoutForm"
-        );
-
-    if (!form.checkValidity()) {
-
-        form.reportValidity();
-
-        return;
-    }
-
-    const paymentMethod =
-        document.getElementById(
-            "paymentMethod"
-        )?.value;
-
-    if (!paymentMethod) {
-
-        alert(
-            "Please select a payment method."
-        );
-
-        return;
-    }
-
-    const orderItems =
-        cart.map(item => ({
-
-            id: item.id,
-
-            name: item.name,
-
-            price: getPrice(item),
-
-            quantity:
-                Math.max(
-                    1,
-                    Number(item.quantity) || 1
-                ),
-
-            image: item.image
-
-        }));
-
-    const total =
-        orderItems.reduce(
-            (sum, item) =>
-                sum +
-                item.price *
-                item.quantity,
-            0
-        );
-
-    if (total <= 0) {
-
-        alert(
-            "Unable to calculate cart total."
-        );
-
-        return;
-    }
-
-    const order = {
-
-        id:
-            generateOrderId(),
-
-        userId:
-            auth.currentUser.uid,
-
-        customerName:
-            document
-                .getElementById("customerName")
-                ?.value.trim(),
-
-        email:
-            document
-                .getElementById("customerEmail")
-                ?.value.trim(),
-
-        phone:
-            document
-                .getElementById("customerPhone")
-                ?.value.trim(),
-
-        address:
-            document
-                .getElementById("customerAddress")
-                ?.value.trim(),
-
-        city:
-            document
-                .getElementById("customerCity")
-                ?.value.trim(),
-
-        pincode:
-            document
-                .getElementById("customerPincode")
-                ?.value.trim(),
-
-        paymentMethod,
-
-        paymentStatus:
-            "Pending",
-
-        items:
-            orderItems,
-
-        total,
-
-        orderDate:
-            new Date()
-                .toLocaleDateString("en-IN"),
-
-        orderTime:
-            new Date()
-                .toLocaleTimeString("en-IN"),
-
-        orderDateISO:
-            new Date()
-                .toISOString(),
-
-        deliveryDate:
-            getDeliveryDate(),
-
-        status:
-            "Processing"
-
-    };
-
-
-    // ================= UPI =================
-
-    if (
-        paymentMethod === "upi"
-    ) {
-
-        /*
-         * Order is stored as Pending.
-         * Payment is NOT automatically verified.
-         */
-
-        try {
-
-            await saveOrderToFirestore(order);
-
-            const orders =
-                JSON.parse(
-                    localStorage.getItem("orders") ||
-                    "[]"
-                );
-
-            orders.push(order);
-
-            localStorage.setItem(
-                "orders",
-                JSON.stringify(orders)
-            );
-
-            localStorage.removeItem(CART_KEY);
-            localStorage.removeItem(OLD_CART_KEY);
-
-            showUpiPayment(
-                total,
-                order
-            );
-
-        } catch (error) {
-
-            console.error(
-                "UPI order save error:",
-                error
-            );
-
-            alert(
-                "Unable to create order. Please try again."
-            );
-        }
-
-        return;
-    }
-
-
-    // ================= COD =================
-
-    if (
-        paymentMethod === "cod"
-    ) {
-
-        await finishOrder(
-            order,
-            "Cash on Delivery - Pending"
-        );
-
-        return;
-    }
-
-
-    // ================= CARD =================
-
-    if (
-        paymentMethod === "card"
-    ) {
-
-        alert(
-            "Card payment gateway is not connected yet."
-        );
-
-        return;
-    }
-}
-
-
-// ================= FIREBASE AUTH =================
-
-onAuthStateChanged(
-    auth,
-    user => {
-
-        currentUser =
-            user;
-
-        if (user)
-            fillUserDetails();
-
-    }
-);
-
-
-// ================= PAGE LOAD =================
-
-document.addEventListener(
-    "DOMContentLoaded",
-    async () => {
-
-        await authReady;
+        // ====================================
+        // AUTH CHECK
+        // ====================================
 
         if (!auth.currentUser) {
 
             window.location.href =
-                "login.html";
+                "auth.html";
 
             return;
+
         }
 
-        fillUserDetails();
 
-        renderCheckoutCart();
+        // ====================================
+        // CART CHECK
+        // ====================================
 
-        document
-            .getElementById("checkoutForm")
-            ?.addEventListener(
-                "submit",
-                placeOrder
+        const cart =
+            getCart();
+
+
+        if (cart.length === 0) {
+
+            showMessage(
+                "Your cart is empty.",
+                "error"
             );
+
+            return;
+
+        }
+
+
+        // ====================================
+        // FORM VALIDATION
+        // ====================================
+
+        const name =
+            customerName.value.trim();
+
+        const email =
+            customerEmail.value.trim();
+
+        const phone =
+            customerPhone.value.trim();
+
+        const address =
+            customerAddress.value.trim();
+
+        const city =
+            customerCity.value.trim();
+
+        const pincode =
+            customerPincode.value.trim();
+
+        const selectedPayment =
+            paymentMethod.value;
+
+
+        if (!name) {
+
+            showMessage(
+                "Please enter your name.",
+                "error"
+            );
+
+            customerName.focus();
+
+            return;
+
+        }
+
+
+        if (!email) {
+
+            showMessage(
+                "Please enter your email.",
+                "error"
+            );
+
+            customerEmail.focus();
+
+            return;
+
+        }
+
+
+        if (!/^\d{10}$/.test(phone)) {
+
+            showMessage(
+                "Please enter a valid 10-digit mobile number.",
+                "error"
+            );
+
+            customerPhone.focus();
+
+            return;
+
+        }
+
+
+        if (!address) {
+
+            showMessage(
+                "Please enter your delivery address.",
+                "error"
+            );
+
+            customerAddress.focus();
+
+            return;
+
+        }
+
+
+        if (!city) {
+
+            showMessage(
+                "Please enter your city.",
+                "error"
+            );
+
+            customerCity.focus();
+
+            return;
+
+        }
+
+
+        if (!/^\d{6}$/.test(pincode)) {
+
+            showMessage(
+                "Please enter a valid 6-digit pincode.",
+                "error"
+            );
+
+            customerPincode.focus();
+
+            return;
+
+        }
+
+
+        if (!selectedPayment) {
+
+            showMessage(
+                "Please select a payment method.",
+                "error"
+            );
+
+            paymentMethod.focus();
+
+            return;
+
+        }
+
+
+        // ====================================
+        // PREVENT DOUBLE CLICK
+        // ====================================
+
+        placeOrderBtn.disabled =
+            true;
+
+        placeOrderBtn.textContent =
+            "Placing Order...";
+
+
+        try {
+
+            // =================================
+            // PREPARE ITEMS
+            // =================================
+
+            const orderItems =
+                cart.map(
+                    (item) => {
+
+                        return {
+
+                            name:
+                                item.name ||
+                                item.productName ||
+                                "Product",
+
+                            price:
+                                Number(
+                                    item.price ??
+                                    item.productPrice
+                                ) || 0,
+
+                            quantity:
+                                Number(
+                                    item.quantity ??
+                                    item.qty
+                                ) || 1
+
+                        };
+
+                    }
+                );
+
+
+            // =================================
+            // TOTAL
+            // =================================
+
+            const total =
+                orderItems.reduce(
+                    (
+                        sum,
+                        item
+                    ) => {
+
+                        return (
+                            sum +
+                            item.price *
+                            item.quantity
+                        );
+
+                    },
+                    0
+                );
+
+
+            // =================================
+            // ORDER OBJECT
+            // =================================
+
+            const order = {
+
+                id:
+                    generateOrderId(),
+
+                userId:
+                    auth.currentUser.uid,
+
+                customerName:
+                    name,
+
+                email:
+                    email,
+
+                phone:
+                    phone,
+
+                address:
+                    address,
+
+                city:
+                    city,
+
+                pincode:
+                    pincode,
+
+                paymentMethod:
+                    selectedPayment,
+
+                paymentStatus:
+                    selectedPayment === "cod"
+                        ? "Cash on Delivery - Pending"
+                        : "UPI - Pending",
+
+                items:
+                    orderItems,
+
+                total:
+                    total,
+
+                orderDate:
+                    new Date()
+                        .toLocaleDateString(
+                            "en-IN"
+                        ),
+
+                orderTime:
+                    new Date()
+                        .toLocaleTimeString(
+                            "en-IN"
+                        ),
+
+                orderDateISO:
+                    new Date()
+                        .toISOString(),
+
+                status:
+                    "Processing"
+
+                /*
+                    IMPORTANT:
+
+                    deliveryDate intentionally
+                    NOT included here.
+
+                    Admin will choose it later.
+                */
+
+            };
+
+
+            // =================================
+            // SAVE ORDER
+            // =================================
+
+            await saveOrderToFirestore(
+                order
+            );
+
+
+            // =================================
+            // SAVE LOCAL COPY
+            // =================================
+
+            saveLocalOrder(
+                order
+            );
+
+
+            // =================================
+            // CLEAR CART
+            // =================================
+
+            localStorage.removeItem(
+                CART_KEY
+            );
+
+            localStorage.removeItem(
+                OLD_CART_KEY
+            );
+
+
+            // =================================
+            // PAYMENT
+            // =================================
+
+            if (
+                selectedPayment === "online" ||
+                selectedPayment === "upi"
+            ) {
+
+                showUPIPopup(
+                    order
+                );
+
+            }
+
+            else {
+
+                showSuccessMessage(
+                    order
+                );
+
+            }
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Place Order Error:",
+                error
+            );
+
+
+            showMessage(
+                "Order place nahi ho paya. Please try again.",
+                "error"
+            );
+
+
+            placeOrderBtn.disabled =
+                false;
+
+
+            placeOrderBtn.textContent =
+                "✅ Place Order";
+
+        }
 
     }
 );
+
+
+// ========================================
+// SAVE ORDER FIRESTORE
+// ========================================
+
+async function saveOrderToFirestore(
+    order
+) {
+
+    await addDoc(
+
+        collection(
+            db,
+            "orders"
+        ),
+
+        {
+
+            ...order,
+
+            createdAt:
+                serverTimestamp()
+
+        }
+
+    );
+
+}
+
+
+// ========================================
+// LOCAL ORDER
+// ========================================
+
+function saveLocalOrder(
+    order
+) {
+
+    try {
+
+        const existing =
+            JSON.parse(
+                localStorage.getItem(
+                    "chemistboys_orders"
+                ) || "[]"
+            );
+
+
+        const orders =
+            Array.isArray(existing)
+                ? existing
+                : [];
+
+
+        orders.unshift(
+            order
+        );
+
+
+        localStorage.setItem(
+
+            "chemistboys_orders",
+
+            JSON.stringify(
+                orders
+            )
+
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Local order save error:",
+            error
+        );
+
+    }
+
+}
+
+
+// ========================================
+// ORDER ID
+// ========================================
+
+function generateOrderId() {
+
+    const randomNumber =
+        Math.floor(
+            100000000 +
+            Math.random() *
+            900000000
+        );
+
+
+    return (
+        "CB" +
+        randomNumber
+    );
+
+}
+
+
+// ========================================
+// UPI POPUP
+// ========================================
+
+function showUPIPopup(
+    order
+) {
+
+    const popup =
+        document.createElement(
+            "div"
+        );
+
+
+    popup.style.cssText = `
+
+        position:fixed;
+        inset:0;
+        z-index:99999;
+
+        display:flex;
+        align-items:center;
+        justify-content:center;
+
+        padding:20px;
+
+        background:
+            rgba(0,40,35,.60);
+
+        backdrop-filter:
+            blur(5px);
+
+    `;
+
+
+    popup.innerHTML = `
+
+        <div style="
+
+            width:100%;
+            max-width:430px;
+
+            box-sizing:border-box;
+
+            background:white;
+
+            padding:30px;
+
+            border-radius:22px;
+
+            text-align:center;
+
+            box-shadow:
+                0 25px 70px
+                rgba(0,0,0,.25);
+
+        ">
+
+
+            <div style="
+                font-size:50px;
+                margin-bottom:10px;
+            ">
+                💳
+            </div>
+
+
+            <h2 style="
+                color:#075f55;
+                margin:0 0 10px;
+            ">
+                UPI Payment
+            </h2>
+
+
+            <p style="
+                color:#526d69;
+                margin-bottom:20px;
+            ">
+                Please complete the payment
+                using the UPI ID below.
+            </p>
+
+
+            <div style="
+
+                background:#edf9f6;
+
+                padding:15px;
+
+                border-radius:12px;
+
+                margin-bottom:15px;
+
+            ">
+
+                <strong>
+                    UPI ID
+                </strong>
+
+                <br>
+
+                <span style="
+                    color:#087c6b;
+                    font-weight:800;
+                    word-break:break-all;
+                ">
+                    ${escapeHTML(UPI_ID)}
+                </span>
+
+            </div>
+
+
+            <div style="
+
+                background:#f7fbfa;
+
+                padding:15px;
+
+                border-radius:12px;
+
+                margin-bottom:20px;
+
+            ">
+
+                <strong>
+                    Amount
+                </strong>
+
+                <br>
+
+                <span style="
+                    color:#075f55;
+                    font-size:24px;
+                    font-weight:900;
+                ">
+                    ₹${Number(
+                        order.total
+                    ).toFixed(2)}
+                </span>
+
+            </div>
+
+
+            <p style="
+                color:#718987;
+                font-size:13px;
+                margin-bottom:20px;
+            ">
+
+                Your order has been received
+                and is currently being processed.
+
+            </p>
+
+
+            <button
+                type="button"
+                id="closeUPIPopup"
+                style="
+
+                    width:100%;
+
+                    border:none;
+
+                    padding:14px;
+
+                    border-radius:11px;
+
+                    background:#0ca88f;
+
+                    color:white;
+
+                    font-size:16px;
+
+                    font-weight:800;
+
+                    cursor:pointer;
+
+                "
+            >
+                Continue
+            </button>
+
+
+        </div>
+
+    `;
+
+
+    document.body.appendChild(
+        popup
+    );
+
+
+    const closeButton =
+        popup.querySelector(
+            "#closeUPIPopup"
+        );
+
+
+    closeButton.addEventListener(
+        "click",
+        () => {
+
+            popup.remove();
+
+            showSuccessMessage(
+                order
+            );
+
+        }
+    );
+
+}
+
+
+// ========================================
+// SUCCESS MESSAGE
+// ========================================
+
+function showSuccessMessage(
+    order
+) {
+
+    const overlay =
+        document.createElement(
+            "div"
+        );
+
+
+    overlay.style.cssText = `
+
+        position:fixed;
+        inset:0;
+        z-index:99998;
+
+        display:flex;
+        align-items:center;
+        justify-content:center;
+
+        padding:20px;
+
+        background:
+            rgba(0,40,35,.55);
+
+        backdrop-filter:
+            blur(5px);
+
+    `;
+
+
+    overlay.innerHTML = `
+
+        <div style="
+
+            width:100%;
+            max-width:430px;
+
+            box-sizing:border-box;
+
+            background:white;
+
+            padding:32px;
+
+            border-radius:22px;
+
+            text-align:center;
+
+            box-shadow:
+                0 25px 70px
+                rgba(0,0,0,.25);
+
+        ">
+
+
+            <div style="
+                font-size:55px;
+                margin-bottom:10px;
+            ">
+                ✅
+            </div>
+
+
+            <h2 style="
+                color:#075f55;
+                margin:0 0 10px;
+            ">
+                Order Placed Successfully!
+            </h2>
+
+
+            <p style="
+                color:#526d69;
+                margin-bottom:8px;
+            ">
+                Your Order ID
+            </p>
+
+
+            <strong style="
+                color:#087c6b;
+                font-size:20px;
+            ">
+                #${escapeHTML(order.id)}
+            </strong>
+
+
+            <p style="
+                color:#718987;
+                margin-top:20px;
+                line-height:1.6;
+            ">
+                Your order is currently
+                <strong>
+                    Processing
+                </strong>.
+                Delivery date will be
+                confirmed after the order
+                is accepted.
+            </p>
+
+
+            <div style="
+                display:flex;
+                gap:10px;
+                margin-top:25px;
+                flex-direction:column;
+            ">
+
+
+                <a
+                    href="orders.html"
+                    style="
+
+                        display:block;
+
+                        padding:13px;
+
+                        border-radius:11px;
+
+                        background:#0ca88f;
+
+                        color:white;
+
+                        text-decoration:none;
+
+                        font-weight:800;
+
+                    "
+                >
+                    📦 View My Orders
+                </a>
+
+
+                <a
+                    href="index.html"
+                    style="
+
+                        display:block;
+
+                        padding:13px;
+
+                        border-radius:11px;
+
+                        background:#eef3f2;
+
+                        color:#526d69;
+
+                        text-decoration:none;
+
+                        font-weight:800;
+
+                    "
+                >
+                    🏠 Continue Shopping
+                </a>
+
+            </div>
+
+        </div>
+
+    `;
+
+
+    document.body.appendChild(
+        overlay
+    );
+
+}
+
+
+// ========================================
+// MESSAGE
+// ========================================
+
+function showMessage(
+    message,
+    type = "error"
+) {
+
+    const existing =
+        document.getElementById(
+            "checkoutMessage"
+        );
+
+
+    if (existing) {
+
+        existing.remove();
+
+    }
+
+
+    const messageBox =
+        document.createElement(
+            "div"
+        );
+
+
+    messageBox.id =
+        "checkoutMessage";
+
+
+    messageBox.textContent =
+        message;
+
+
+    messageBox.style.cssText = `
+
+        position:fixed;
+
+        top:20px;
+        left:50%;
+
+        transform:
+            translateX(-50%);
+
+        z-index:100000;
+
+        max-width:90%;
+
+        padding:13px 20px;
+
+        border-radius:12px;
+
+        font-weight:700;
+
+        box-shadow:
+            0 8px 25px
+            rgba(0,0,0,.15);
+
+        background:
+            ${type === "success"
+                ? "#dff8f3"
+                : "#f8d7da"};
+
+        color:
+            ${type === "success"
+                ? "#087c6b"
+                : "#b42318"};
+
+    `;
+
+
+    document.body.appendChild(
+        messageBox
+    );
+
+
+    setTimeout(
+        () => {
+
+            messageBox.remove();
+
+        },
+        3500
+    );
+
+}
+
+
+// ========================================
+// ESCAPE HTML
+// ========================================
+
+function escapeHTML(
+    value
+) {
+
+    return String(
+        value ?? ""
+    )
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
