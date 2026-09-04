@@ -7,93 +7,142 @@ import {
     onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-import {
-    onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
+// ========================================
+// ELEMENT
+// ========================================
 
 const ordersContainer =
     document.getElementById("ordersContainer");
 
 
+// ========================================
+// AUTH
+// ========================================
+
 await authReady;
 
+if (!auth.currentUser) {
 
-onAuthStateChanged(auth, (user) => {
+    window.location.href = "auth.html";
 
-    if (!user) {
-        window.location.href = "auth.html";
-        return;
-    }
+} else {
 
-    loadOrders(user.uid);
+    loadMyOrders(auth.currentUser.uid);
 
-});
+}
 
 
-function loadOrders(userId) {
+// ========================================
+// LOAD MY ORDERS
+// ========================================
 
-    const ordersQuery = query(
-        collection(db, "orders"),
-        where("userId", "==", userId)
-    );
+function loadMyOrders(uid) {
+
+    const ordersQuery =
+        query(
+            collection(db, "orders"),
+            where("userId", "==", uid)
+        );
 
 
     onSnapshot(
+
         ordersQuery,
 
         (snapshot) => {
+
+            ordersContainer.innerHTML = "";
+
 
             const orders = [];
 
 
             snapshot.forEach((docSnap) => {
 
-                const data = docSnap.data();
+                const data =
+                    docSnap.data();
 
+
+                const order = {
+
+                    firestoreId:
+                        docSnap.id,
+
+                    ...data
+
+                };
+
+
+                // Broken orders hide karo
                 const orderId =
-                    data.id ||
-                    data.orderId;
+                    order.id ||
+                    order.orderId;
+
 
                 const items =
-                    normalizeItems(data);
+                    normalizeItems(order);
 
 
-                // Broken records hide karo
-                if (
-                    !orderId ||
-                    orderId === "N/A" ||
-                    items.length === 0
-                ) {
+                if (!orderId || items.length === 0) {
+
                     return;
+
                 }
 
 
-                orders.push({
-
-                    firestoreId: docSnap.id,
-
-                    ...data,
-
-                    id: orderId,
-
-                    items: items
-
-                });
+                orders.push(order);
 
             });
 
 
-            // Newest order first
+            // Newest first
             orders.sort((a, b) => {
 
-                return getOrderTime(b)
-                     - getOrderTime(a);
+                return (
+                    getOrderTime(b)
+                    -
+                    getOrderTime(a)
+                );
 
             });
 
 
-            renderOrders(orders);
+            if (orders.length === 0) {
+
+                ordersContainer.innerHTML = `
+
+                    <div class="empty-orders">
+
+                        <h2>
+                            📦 No Orders Found
+                        </h2>
+
+                        <p>
+                            You have not placed any orders yet.
+                        </p>
+
+                        <a
+                            href="index.html"
+                            class="shop-btn"
+                        >
+                            🛒 Start Shopping
+                        </a>
+
+                    </div>
+
+                `;
+
+                return;
+
+            }
+
+
+            orders.forEach((order) => {
+
+                renderOrder(order);
+
+            });
 
         },
 
@@ -110,12 +159,8 @@ function loadOrders(userId) {
 
                 <div class="empty-orders">
 
-                    <div class="empty-orders-icon">
-                        ❌
-                    </div>
-
                     <h2>
-                        Unable to load orders
+                        ❌ Unable to Load Orders
                     </h2>
 
                     <p>
@@ -131,6 +176,350 @@ function loadOrders(userId) {
         }
 
     );
+
+}
+
+
+// ========================================
+// RENDER ORDER
+// ========================================
+
+function renderOrder(order) {
+
+    const orderId =
+        order.id ||
+        order.orderId ||
+        "N/A";
+
+
+    const items =
+        normalizeItems(order);
+
+
+    const status =
+        order.status ||
+        "Processing";
+
+
+    const total =
+        getOrderTotal(
+            order,
+            items
+        );
+
+
+    // ====================================
+    // STATUS
+    // ====================================
+
+    let statusText =
+        "⏳ Processing";
+
+
+    let statusClass =
+        "processing";
+
+
+    if (status === "Accepted") {
+
+        statusText =
+            "✅ Accepted";
+
+        statusClass =
+            "accepted";
+
+    }
+
+
+    else if (status === "Cancelled") {
+
+        statusText =
+            "❌ Cancelled";
+
+        statusClass =
+            "cancelled";
+
+    }
+
+
+    // ====================================
+    // ITEMS
+    // ====================================
+
+    let itemsHTML = "";
+
+
+    items.forEach((item) => {
+
+        const name =
+            item.name ||
+            item.productName ||
+            "Product";
+
+
+        const price =
+            Number(
+                item.price ??
+                item.productPrice
+            ) || 0;
+
+
+        const quantity =
+            Number(
+                item.quantity ??
+                item.qty
+            ) || 1;
+
+
+        itemsHTML += `
+
+            <div class="order-item">
+
+                <div class="order-item-name">
+
+                    ${escapeHTML(name)}
+
+                </div>
+
+
+                <div class="order-item-price">
+
+                    ₹${price.toFixed(2)}
+                    × ${quantity}
+
+                </div>
+
+            </div>
+
+        `;
+
+    });
+
+
+    // ====================================
+    // DELIVERY DATE
+    // ====================================
+
+    let deliveryHTML = "";
+
+
+    /*
+       IMPORTANT:
+
+       Delivery date sirf Accepted order mein
+       show hogi.
+
+       Processing mein date nahi dikhegi.
+       Cancelled mein bhi date nahi dikhegi.
+    */
+
+    if (
+        status === "Accepted" &&
+        order.deliveryDate
+    ) {
+
+        deliveryHTML = `
+
+            <div class="delivery-date-box">
+
+                🚚 Delivery:
+                <strong>
+                    ${escapeHTML(
+                        formatDeliveryDate(
+                            order.deliveryDate
+                        )
+                    )}
+                </strong>
+
+            </div>
+
+        `;
+
+    }
+
+
+    // ====================================
+    // PAYMENT
+    // ====================================
+
+    let payment =
+        order.paymentMethod ||
+        "N/A";
+
+
+    if (payment === "cod") {
+
+        payment =
+            "Cash on Delivery";
+
+    }
+
+    else if (payment === "upi") {
+
+        payment =
+            "UPI";
+
+    }
+
+    else if (payment === "online") {
+
+        payment =
+            "Online Payment";
+
+    }
+
+
+    // ====================================
+    // DATE & TIME
+    // ====================================
+
+    let orderDate =
+        order.orderDate ||
+        "";
+
+
+    let orderTime =
+        order.orderTime ||
+        "";
+
+
+    // ====================================
+    // CARD
+    // ====================================
+
+    const card =
+        document.createElement("div");
+
+
+    card.className =
+        "order-card";
+
+
+    card.innerHTML = `
+
+        <div class="order-header">
+
+            <div class="order-heading-left">
+
+                <div class="order-id">
+
+                    Order
+                    <br>
+
+                    #${escapeHTML(orderId)}
+
+                </div>
+
+
+                ${
+                    orderDate
+                    ? `
+                        <div class="order-date">
+
+                            ${escapeHTML(orderDate)}
+
+                            ${
+                                orderTime
+                                ? " • " +
+                                  escapeHTML(orderTime)
+                                : ""
+                            }
+
+                        </div>
+                    `
+                    : ""
+                }
+
+            </div>
+
+
+            <div class="order-status-wrap">
+
+                <span
+                    class="order-status ${statusClass}"
+                >
+
+                    ${statusText}
+
+                </span>
+
+            </div>
+
+        </div>
+
+
+        ${deliveryHTML}
+
+
+        <div class="order-items">
+
+            ${itemsHTML}
+
+        </div>
+
+
+        <div class="order-summary">
+
+            <div class="order-total">
+
+                <strong>
+                    Total: ₹${total.toFixed(2)}
+                </strong>
+
+            </div>
+
+
+            <div class="order-payment">
+
+                Payment:
+                ${escapeHTML(payment)}
+
+            </div>
+
+        </div>
+
+    `;
+
+
+    ordersContainer.appendChild(card);
+
+}
+
+
+// ========================================
+// ORDER TIME
+// ========================================
+
+function getOrderTime(order) {
+
+    if (order.orderDateISO) {
+
+        const time =
+            new Date(
+                order.orderDateISO
+            ).getTime();
+
+
+        if (Number.isFinite(time)) {
+
+            return time;
+
+        }
+
+    }
+
+
+    if (order.createdAt?.seconds) {
+
+        return (
+            order.createdAt.seconds *
+            1000
+        );
+
+    }
+
+
+    return 0;
 
 }
 
@@ -152,7 +541,8 @@ function normalizeItems(order) {
 
         try {
 
-            items = JSON.parse(items);
+            items =
+                JSON.parse(items);
 
         }
 
@@ -173,371 +563,10 @@ function normalizeItems(order) {
 
 
 // ========================================
-// ORDER TIME
-// ========================================
-
-function getOrderTime(order) {
-
-    if (order.orderDateISO) {
-
-        const time =
-            new Date(
-                order.orderDateISO
-            ).getTime();
-
-
-        if (Number.isFinite(time)) {
-            return time;
-        }
-
-    }
-
-
-    if (order.createdAt?.seconds) {
-
-        return (
-            order.createdAt.seconds
-            * 1000
-        );
-
-    }
-
-
-    return 0;
-
-}
-
-
-// ========================================
-// RENDER
-// ========================================
-
-function renderOrders(orders) {
-
-    if (!orders.length) {
-
-        ordersContainer.innerHTML = `
-
-            <div class="empty-orders">
-
-                <div class="empty-orders-icon">
-                    📦
-                </div>
-
-                <h2>
-                    No Orders Yet
-                </h2>
-
-                <p>
-                    You haven't placed any
-                    orders yet.
-                </p>
-
-                <a
-                    href="index.html"
-                    class="shop-btn"
-                >
-                    🛍️ Start Shopping
-                </a>
-
-            </div>
-
-        `;
-
-        return;
-
-    }
-
-
-    ordersContainer.innerHTML = "";
-
-
-    orders.forEach((order) => {
-
-        const card =
-            document.createElement("div");
-
-
-        card.className =
-            "order-card";
-
-
-        const items =
-            order.items;
-
-
-        const total =
-            getOrderTotal(
-                order,
-                items
-            );
-
-
-        const status =
-            order.status ||
-            "Processing";
-
-
-        // ====================================
-        // STATUS
-        // ====================================
-
-        let statusHTML = `
-
-            <span
-                class="order-status processing"
-            >
-                ⏳ Processing
-            </span>
-
-        `;
-
-
-        if (status === "Accepted") {
-
-            statusHTML = `
-
-                <span
-                    class="order-status accepted"
-                >
-                    ✅ Accepted
-                </span>
-
-            `;
-
-        }
-
-
-        else if (
-            status === "Cancelled"
-        ) {
-
-            statusHTML = `
-
-                <span
-                    class="order-status cancelled"
-                >
-                    ❌ Cancelled
-                </span>
-
-            `;
-
-        }
-
-
-        // ====================================
-        // PAYMENT
-        // ====================================
-
-        let payment =
-            order.paymentMethod ||
-            "Cash on Delivery";
-
-
-        if (payment === "cod") {
-
-            payment =
-                "Cash on Delivery";
-
-        }
-
-
-        else if (payment === "upi") {
-
-            payment = "UPI";
-
-        }
-
-
-        else if (payment === "online") {
-
-            payment =
-                "Online Payment";
-
-        }
-
-
-        // ====================================
-        // PRODUCTS
-        // ====================================
-
-        const itemsHTML =
-            items.map((item) => {
-
-                const name =
-                    item.name ||
-                    item.productName ||
-                    "Product";
-
-
-                const price =
-                    Number(
-                        item.price ??
-                        item.productPrice
-                    ) || 0;
-
-
-                const quantity =
-                    Number(
-                        item.quantity ??
-                        item.qty
-                    ) || 1;
-
-
-                return `
-
-                    <div class="order-item">
-
-                        <span
-                            class="order-item-name"
-                        >
-                            ${escapeHTML(name)}
-                        </span>
-
-
-                        <span
-                            class="order-item-price"
-                        >
-                            ₹${price.toFixed(2)}
-                            × ${quantity}
-                        </span>
-
-                    </div>
-
-                `;
-
-            }).join("");
-
-
-        // ====================================
-        // DELIVERY DATE
-        // ====================================
-
-        let deliveryHTML = "";
-
-
-        if (order.deliveryDate) {
-
-            deliveryHTML = `
-
-                <div
-                    class="delivery-date-box"
-                >
-
-                    🚚
-
-                    <strong>
-                        Delivery:
-                    </strong>
-
-                    ${escapeHTML(
-                        formatDeliveryDate(
-                            order.deliveryDate
-                        )
-                    )}
-
-                </div>
-
-            `;
-
-        }
-
-
-        // ====================================
-        // FINAL CARD
-        // ====================================
-
-        card.innerHTML = `
-
-            <div class="order-header">
-
-                <div class="order-heading-left">
-
-                    <div class="order-id">
-
-                        Order #${escapeHTML(
-                            order.id
-                        )}
-
-                    </div>
-
-
-                    <div class="order-date">
-
-                        ${escapeHTML(
-                            order.orderDate || ""
-                        )}
-
-                        ${
-                            order.orderTime
-                            ? " • " +
-                              escapeHTML(
-                                  order.orderTime
-                              )
-                            : ""
-                        }
-
-                    </div>
-
-                </div>
-
-
-                <div class="order-status-wrap">
-
-                    ${statusHTML}
-
-                </div>
-
-            </div>
-
-
-            ${deliveryHTML}
-
-
-            <div class="order-items">
-
-                ${itemsHTML}
-
-            </div>
-
-
-            <div class="order-summary">
-
-                <div class="order-total">
-
-                    Total:
-                    ₹${total.toFixed(2)}
-
-                </div>
-
-
-                <div class="order-payment">
-
-                    Payment:
-                    ${escapeHTML(payment)}
-
-                </div>
-
-            </div>
-
-        `;
-
-
-        ordersContainer.appendChild(card);
-
-    });
-
-}
-
-
-// ========================================
 // TOTAL
 // ========================================
 
-function getOrderTotal(
-    order,
-    items
-) {
+function getOrderTotal(order, items) {
 
     const savedTotal =
         Number(order.total);
@@ -582,6 +611,7 @@ function getOrderTotal(
 
 
     return items.reduce(
+
         (sum, item) => {
 
             const price =
@@ -598,19 +628,22 @@ function getOrderTotal(
                 ) || 1;
 
 
-            return sum +
-                price * quantity;
+            return (
+                sum +
+                price * quantity
+            );
 
         },
 
         0
+
     );
 
 }
 
 
 // ========================================
-// DELIVERY DATE FORMAT
+// FORMAT DELIVERY DATE
 // ========================================
 
 function formatDeliveryDate(value) {
@@ -633,12 +666,15 @@ function formatDeliveryDate(value) {
 
 
     return date.toLocaleDateString(
+
         "en-IN",
+
         {
             day: "2-digit",
             month: "short",
             year: "numeric"
         }
+
     );
 
 }
