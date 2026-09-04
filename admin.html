@@ -10,224 +10,648 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Admin Panel - ChemistBoys</title>
+    <title>ChemistBoys Admin Dashboard</title>
 
-    <link rel="stylesheet" href="style.css">
+    <!-- CHART.JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
 
-.delivery-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 99999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background: rgba(0, 40, 35, 0.55);
-    backdrop-filter: blur(5px);
-}
-
-.delivery-modal-box {
-    position: relative;
-    width: 100%;
-    max-width: 430px;
-    box-sizing: border-box;
-    background: white;
-    padding: 30px;
-    border-radius: 22px;
-    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25);
-}
-
-.delivery-close {
-    position: absolute;
-    top: 12px;
-    right: 15px;
-    width: 38px;
-    height: 38px;
-    border: none;
-    border-radius: 50%;
-    background: #f1f5f4;
-    color: #075f55;
-    font-size: 26px;
-    cursor: pointer;
-}
-
-.delivery-icon {
-    font-size: 42px;
-    margin-bottom: 10px;
-}
-
-.delivery-modal-box h2 {
-    margin: 0 0 8px;
-    color: #075f55;
-}
-
-.delivery-modal-box p {
-    margin: 0 0 22px;
-    color: #718987;
-}
-
-.delivery-modal-box label {
-    display: block;
-    margin-bottom: 8px;
-    color: #365853;
-    font-weight: 700;
-}
-
-#deliveryDateInput {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 13px 14px;
-    border: 2px solid #dcece8;
-    border-radius: 12px;
-    background: #f9fdfc;
-    color: #164f48;
-    font-size: 16px;
-    outline: none;
-}
-
-#deliveryDateInput:focus {
-    border-color: #0ca88f;
-}
-
-.delivery-modal-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 22px;
-}
-
-.delivery-modal-actions button {
-    flex: 1;
-    border: none;
-    padding: 13px 15px;
-    border-radius: 11px;
-    font-weight: 800;
-    cursor: pointer;
-}
-
-.delivery-cancel-btn {
-    background: #eef3f2;
-    color: #526d69;
-}
-
-.delivery-confirm-btn {
-    background: #0ca88f;
-    color: white;
-}
-
-.delivery-confirm-btn:hover {
-    background: #087c6b;
-}
-
-.delivery-confirm-btn:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
-}
-
-@media (max-width: 500px) {
-
-    .delivery-modal-box {
-        padding: 25px 20px;
-    }
-
-    .delivery-modal-actions {
-        flex-direction: column;
-    }
-
-}
+        * {
+            box-sizing: border-box;
+        }
 
         body {
-            background: #f4fbf9;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #eef8f6;
+            color: #164e49;
         }
 
-        .admin-page {
-            min-height: 80vh;
-            padding: 40px 20px;
-        }
-
-        .admin-container {
-            max-width: 1000px;
-            margin: auto;
-        }
+        /* ================================
+           HEADER
+        ================================= */
 
         .admin-header {
-            background: white;
-            padding: 25px;
-            border-radius: 18px;
-            margin-bottom: 25px;
-            box-shadow: 0 5px 20px rgba(0,0,0,.08);
+            background: linear-gradient(
+                135deg,
+                #087f70,
+                #0ca88f
+            );
+
+            color: white;
+            padding: 22px 25px;
 
             display: flex;
             justify-content: space-between;
             align-items: center;
+
             gap: 15px;
-            flex-wrap: wrap;
+
+            box-shadow:
+                0 4px 20px
+                rgba(0, 0, 0, .12);
         }
 
-        .admin-header h1 {
+        .admin-brand h1 {
             margin: 0;
-            color: #075f55;
+            font-size: 25px;
         }
 
-        .admin-header p {
+        .admin-brand p {
             margin: 5px 0 0;
-            color: #718987;
+            opacity: .9;
+            font-size: 14px;
         }
 
-        .admin-actions {
+        .header-actions {
             display: flex;
             gap: 10px;
-            flex-wrap: wrap;
+            align-items: center;
         }
 
-        .admin-btn {
-            padding: 11px 18px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
+        .live-badge {
+            background: rgba(255,255,255,.18);
+            border: 1px solid rgba(255,255,255,.3);
+            padding: 9px 13px;
+            border-radius: 30px;
+            font-size: 13px;
             font-weight: 700;
-            text-decoration: none;
-        }
-
-        .home-btn {
-            background: #0ca88f;
-            color: white;
         }
 
         .logout-btn {
-            background: #dc3545;
-            color: white;
-        }
-
-        .orders-container {
-            width: 100%;
-        }
-
-        .admin-order-card {
-            width: 100%;
-        }
-
-        .loading {
+            border: none;
             background: white;
-            padding: 50px;
-            text-align: center;
-            border-radius: 18px;
+            color: #087c6b;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        /* ================================
+           MAIN
+        ================================= */
+
+        .dashboard {
+            width: min(1400px, 94%);
+            margin: 25px auto 50px;
+        }
+
+        .section-title {
+            margin: 30px 0 15px;
+            font-size: 21px;
             color: #075f55;
         }
 
-        @media(max-width:600px) {
+        /* ================================
+           KPI CARDS
+        ================================= */
 
-            .admin-page {
-                padding: 25px 12px;
+        .kpi-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, minmax(0, 1fr));
+
+            gap: 15px;
+        }
+
+        .kpi-card {
+            background: white;
+            border-radius: 17px;
+            padding: 20px;
+
+            box-shadow:
+                0 5px 22px
+                rgba(0,0,0,.07);
+
+            border: 1px solid #e3f0ed;
+        }
+
+        .kpi-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .kpi-icon {
+            font-size: 28px;
+        }
+
+        .kpi-label {
+            color: #718987;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .kpi-value {
+            margin-top: 8px;
+            font-size: 28px;
+            font-weight: 900;
+            color: #075f55;
+        }
+
+        .kpi-small {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #8a9c99;
+        }
+
+        /* ================================
+           ALERTS
+        ================================= */
+
+        .alerts-grid {
+            display: grid;
+            grid-template-columns:
+                repeat(3, minmax(0, 1fr));
+
+            gap: 15px;
+        }
+
+        .alert-box {
+            background: white;
+            padding: 17px;
+            border-radius: 15px;
+
+            box-shadow:
+                0 5px 20px
+                rgba(0,0,0,.06);
+
+            font-weight: 700;
+        }
+
+        /* ================================
+           CHARTS
+        ================================= */
+
+        .charts-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+
+            gap: 18px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 17px;
+            padding: 20px;
+
+            box-shadow:
+                0 5px 22px
+                rgba(0,0,0,.07);
+        }
+
+        .chart-card h3 {
+            margin: 0 0 15px;
+            color: #075f55;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 310px;
+        }
+
+        /* ================================
+           CONTROLS
+        ================================= */
+
+        .controls {
+            background: white;
+            padding: 17px;
+            border-radius: 15px;
+
+            display: flex;
+            gap: 10px;
+
+            flex-wrap: wrap;
+
+            box-shadow:
+                0 5px 20px
+                rgba(0,0,0,.06);
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 220px;
+
+            border: 1px solid #d7e8e5;
+            border-radius: 10px;
+
+            padding: 12px 14px;
+            outline: none;
+
+            font-size: 14px;
+        }
+
+        .filter-select {
+            border: 1px solid #d7e8e5;
+            border-radius: 10px;
+
+            padding: 12px 14px;
+
+            background: white;
+            color: #164e49;
+
+            font-weight: 700;
+        }
+
+        .export-btn {
+            border: none;
+            background: #087f70;
+            color: white;
+
+            padding: 12px 17px;
+            border-radius: 10px;
+
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        /* ================================
+           RECENT ORDERS TABLE
+        ================================= */
+
+        .table-card {
+            margin-top: 18px;
+
+            background: white;
+
+            border-radius: 17px;
+
+            overflow-x: auto;
+
+            box-shadow:
+                0 5px 22px
+                rgba(0,0,0,.07);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 850px;
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #edf2f1;
+        }
+
+        th {
+            background: #f5fbfa;
+            color: #075f55;
+            font-size: 13px;
+        }
+
+        td {
+            font-size: 14px;
+        }
+
+        .status {
+            display: inline-flex;
+            padding: 7px 11px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .status-processing {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-accepted {
+            background: #dff8f3;
+            color: #087c6b;
+        }
+
+        .status-cancelled {
+            background: #f8d7da;
+            color: #b42318;
+        }
+
+        /* ================================
+           ORDERS
+        ================================= */
+
+        #ordersContainer {
+            margin-top: 20px;
+        }
+
+        .order-card {
+            background: white;
+            border-radius: 18px;
+
+            padding: 24px;
+
+            margin-bottom: 18px;
+
+            box-shadow:
+                0 5px 22px
+                rgba(0,0,0,.07);
+        }
+
+        .order-header {
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            gap: 15px;
+
+            margin-bottom: 20px;
+        }
+
+        .order-id {
+            margin: 0;
+
+            color: #075f55;
+
+            font-size: 21px;
+        }
+
+        .order-date {
+            margin: 6px 0 0;
+
+            color: #718987;
+
+            font-size: 14px;
+        }
+
+        .customer-box,
+        .payment-box {
+            background: #f7fbfa;
+
+            padding: 17px;
+
+            border-radius: 13px;
+
+            margin-bottom: 18px;
+        }
+
+        .customer-box h3,
+        .products-title {
+            margin-top: 0;
+
+            color: #075f55;
+        }
+
+        .customer-box p {
+            margin: 7px 0;
+        }
+
+        .product-list {
+            background: #fafdfc;
+
+            padding: 12px 15px;
+
+            border-radius: 12px;
+        }
+
+        .product-row {
+            display: flex;
+
+            justify-content: space-between;
+
+            gap: 15px;
+
+            padding: 12px 0;
+
+            border-bottom: 1px solid #e8efed;
+        }
+
+        .product-row:last-child {
+            border-bottom: none;
+        }
+
+        .delivery-box {
+            margin: 15px 0;
+
+            padding: 12px 15px;
+
+            border-radius: 12px;
+
+            background: #edf9f6;
+
+            color: #087c6b;
+
+            font-weight: 700;
+        }
+
+        .order-buttons {
+            display: flex;
+
+            gap: 10px;
+
+            margin-top: 20px;
+
+            flex-wrap: wrap;
+        }
+
+        .accept-btn,
+        .cancel-btn {
+            flex: 1;
+
+            min-width: 150px;
+
+            border: none;
+
+            padding: 13px;
+
+            border-radius: 10px;
+
+            color: white;
+
+            font-weight: 800;
+
+            cursor: pointer;
+        }
+
+        .accept-btn {
+            background: #0ca88f;
+        }
+
+        .cancel-btn {
+            background: #dc3545;
+        }
+
+        /* ================================
+           DELIVERY MODAL
+        ================================= */
+
+        .modal {
+            display: none;
+
+            position: fixed;
+
+            inset: 0;
+
+            background:
+                rgba(0,0,0,.55);
+
+            z-index: 9999;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-box {
+            width: min(430px, 100%);
+
+            background: white;
+
+            border-radius: 20px;
+
+            padding: 25px;
+
+            box-shadow:
+                0 20px 60px
+                rgba(0,0,0,.25);
+        }
+
+        .modal-box h2 {
+            margin-top: 0;
+            color: #075f55;
+        }
+
+        .modal-box p {
+            color: #718987;
+        }
+
+        .delivery-input {
+            width: 100%;
+
+            padding: 13px;
+
+            border: 1px solid #d6e7e4;
+
+            border-radius: 10px;
+
+            font-size: 16px;
+        }
+
+        .modal-buttons {
+            display: flex;
+
+            gap: 10px;
+
+            margin-top: 18px;
+        }
+
+        .modal-confirm,
+        .modal-close {
+            flex: 1;
+
+            border: none;
+
+            padding: 12px;
+
+            border-radius: 10px;
+
+            font-weight: 800;
+
+            cursor: pointer;
+        }
+
+        .modal-confirm {
+            background: #087f70;
+            color: white;
+        }
+
+        .modal-close {
+            background: #edf2f1;
+            color: #164e49;
+        }
+
+        /* ================================
+           EMPTY
+        ================================= */
+
+        .empty-box {
+            background: white;
+
+            border-radius: 17px;
+
+            padding: 40px;
+
+            text-align: center;
+
+            color: #718987;
+        }
+
+        /* ================================
+           RESPONSIVE
+        ================================= */
+
+        @media(max-width: 1000px) {
+
+            .kpi-grid {
+                grid-template-columns:
+                    repeat(2, minmax(0, 1fr));
             }
+
+            .alerts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+        @media(max-width: 600px) {
 
             .admin-header {
-                padding: 20px;
+                align-items: flex-start;
+                flex-direction: column;
             }
 
-            .admin-header h1 {
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .dashboard {
+                width: 94%;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .kpi-value {
                 font-size: 25px;
+            }
+
+            .order-card {
+                padding: 17px;
+            }
+
+            .order-header {
+                align-items: flex-start;
+            }
+
+            .order-id {
+                font-size: 18px;
+            }
+
+            .product-row {
+                flex-direction: column;
+                gap: 5px;
             }
 
         }
@@ -240,105 +664,372 @@
 <body>
 
 
-    <!-- HEADER -->
+    <!-- =====================================
+         HEADER
+    ====================================== -->
 
-    <header class="header">
+    <header class="admin-header">
 
-        <div class="container">
+        <div class="admin-brand">
 
-            <div class="header-top">
+            <h1>
+                💊 ChemistBoys Admin
+            </h1>
 
-                <a
-                    href="index.html"
-                    class="logo-link"
-                >
+            <p>
+                Business Intelligence & Order Management
+            </p>
 
-                    <div class="logo">
+        </div>
 
-                        <span class="logo-icon">
-                            💊
-                        </span>
 
-                        <span class="logo-text">
-                            ChemistBoys
-                        </span>
+        <div class="header-actions">
 
-                    </div>
-
-                </a>
-
+            <div class="live-badge">
+                🟢 LIVE DATA
             </div>
+
+            <button
+                class="logout-btn"
+                id="logoutBtn"
+            >
+                Logout
+            </button>
 
         </div>
 
     </header>
 
 
-
-    <!-- ADMIN PAGE -->
-
-    <main class="admin-page">
-
-        <div class="admin-container">
+    <main class="dashboard">
 
 
-            <!-- ADMIN HEADER -->
+        <!-- =================================
+             KPI DASHBOARD
+        ================================== -->
 
-            <div class="admin-header">
+        <h2 class="section-title">
+            📊 Business Overview
+        </h2>
 
-                <div>
 
-                    <h1>
-                        🛠️ Admin Panel
-                    </h1>
+        <div class="kpi-grid">
 
-                    <p>
-                        Manage ChemistBoys customer orders
-                    </p>
+
+            <div class="kpi-card">
+
+                <div class="kpi-top">
+
+                    <div class="kpi-label">
+                        Accepted Revenue
+                    </div>
+
+                    <div class="kpi-icon">
+                        💰
+                    </div>
 
                 </div>
 
+                <div
+                    class="kpi-value"
+                    id="revenueValue"
+                >
+                    ₹0
+                </div>
 
-                <div class="admin-actions">
+                <div class="kpi-small">
+                    From accepted orders
+                </div>
 
-                    <a
-                        href="index.html"
-                        class="admin-btn home-btn"
-                    >
-                        🏠 Home
-                    </a>
+            </div>
 
 
-                    <button
-                        type="button"
-                        class="admin-btn logout-btn"
-                        onclick="logoutAdmin()"
-                    >
-                        🚪 Logout
-                    </button>
+            <div class="kpi-card">
+
+                <div class="kpi-top">
+
+                    <div class="kpi-label">
+                        Total Orders
+                    </div>
+
+                    <div class="kpi-icon">
+                        🧾
+                    </div>
+
+                </div>
+
+                <div
+                    class="kpi-value"
+                    id="ordersValue"
+                >
+                    0
+                </div>
+
+                <div class="kpi-small">
+                    All customer orders
+                </div>
+
+            </div>
+
+
+            <div class="kpi-card">
+
+                <div class="kpi-top">
+
+                    <div class="kpi-label">
+                        Customers
+                    </div>
+
+                    <div class="kpi-icon">
+                        👥
+                    </div>
+
+                </div>
+
+                <div
+                    class="kpi-value"
+                    id="customersValue"
+                >
+                    0
+                </div>
+
+                <div class="kpi-small">
+                    Unique customers
+                </div>
+
+            </div>
+
+
+            <div class="kpi-card">
+
+                <div class="kpi-top">
+
+                    <div class="kpi-label">
+                        Average Order
+                    </div>
+
+                    <div class="kpi-icon">
+                        📈
+                    </div>
+
+                </div>
+
+                <div
+                    class="kpi-value"
+                    id="aovValue"
+                >
+                    ₹0
+                </div>
+
+                <div class="kpi-small">
+                    Accepted orders
+                </div>
+
+            </div>
+
+
+            <div class="kpi-card">
+
+                <div class="kpi-top">
+
+                    <div class="kpi-label">
+                        Processing
+                    </div>
+
+                    <div class="kpi-icon">
+                        ⏳
+                    </div>
+
+                </div>
+
+                <div
+                    class="kpi-value"
+                    id="processingValue"
+                >
+                    0
+                </div>
+
+            </div>
+
+
+            <div class="kpi-card">
+
+                <div class="kpi-top">
+
+                    <div class="kpi-label">
+                        Accepted
+                    </div>
+
+                    <div class="kpi-icon">
+                        ✅
+                    </div>
+
+                </div>
+
+                <div
+                    class="kpi-value"
+                    id="acceptedValue"
+                >
+                    0
+                </div>
+
+            </div>
+
+
+            <div class="kpi-card">
+
+                <div class="kpi-top">
+
+                    <div class="kpi-label">
+                        Cancelled
+                    </div>
+
+                    <div class="kpi-icon">
+                        ❌
+                    </div>
+
+                </div>
+
+                <div
+                    class="kpi-value"
+                    id="cancelledValue"
+                >
+                    0
+                </div>
+
+            </div>
+
+
+            <div class="kpi-card">
+
+                <div class="kpi-top">
+
+                    <div class="kpi-label">
+                        Items Sold
+                    </div>
+
+                    <div class="kpi-icon">
+                        📦
+                    </div>
+
+                </div>
+
+                <div
+                    class="kpi-value"
+                    id="itemsSoldValue"
+                >
+                    0
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================
+             ALERTS
+        ================================== -->
+
+        <h2 class="section-title">
+            🚨 Live Alerts
+        </h2>
+
+
+        <div class="alerts-grid">
+
+
+            <div
+                class="alert-box"
+                id="pendingAlert"
+            >
+                ⏳ No pending orders
+            </div>
+
+
+            <div
+                class="alert-box"
+                id="paymentAlert"
+            >
+                💳 No pending payments
+            </div>
+
+
+            <div
+                class="alert-box"
+                id="deliveryAlert"
+            >
+                🚚 No delivery actions
+            </div>
+
+        </div>
+
+
+        <!-- =================================
+             CHARTS
+        ================================== -->
+
+        <h2 class="section-title">
+            📈 Analytics
+        </h2>
+
+
+        <div class="charts-grid">
+
+
+            <div class="chart-card">
+
+                <h3>
+                    💰 Revenue Trend
+                </h3>
+
+                <div class="chart-wrapper">
+
+                    <canvas id="revenueChart"></canvas>
 
                 </div>
 
             </div>
 
 
+            <div class="chart-card">
 
-            <!-- ORDERS -->
+                <h3>
+                    🧾 Orders Trend
+                </h3>
 
-            <div
-                id="ordersContainer"
-                class="orders-container"
-            >
+                <div class="chart-wrapper">
 
-                <div class="loading">
+                    <canvas id="ordersChart"></canvas>
 
-                    <h2>
-                        🔄 Loading Orders...
-                    </h2>
+                </div>
 
-                    <p>
-                        Please wait.
-                    </p>
+            </div>
+
+
+            <div class="chart-card">
+
+                <h3>
+                    📊 Order Status
+                </h3>
+
+                <div class="chart-wrapper">
+
+                    <canvas id="statusChart"></canvas>
+
+                </div>
+
+            </div>
+
+
+            <div class="chart-card">
+
+                <h3>
+                    💳 Payment Methods
+                </h3>
+
+                <div class="chart-wrapper">
+
+                    <canvas id="paymentChart"></canvas>
 
                 </div>
 
@@ -346,38 +1037,257 @@
 
 
         </div>
+
+
+        <!-- =================================
+             PRODUCT ANALYTICS
+        ================================== -->
+
+   <h2 class="section-title">
+            🏆 Top Products
+        </h2>
+
+
+        <div class="table-card">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Rank
+                        </th>
+
+                        <th>
+                            Product
+                        </th>
+
+                        <th>
+                            Quantity Sold
+                        </th>
+
+                        <th>
+                            Revenue
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="topProductsBody">
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- =================================
+             SEARCH / FILTER
+        ================================== -->
+
+        <h2 class="section-title">
+            🔎 Order Management
+        </h2>
+
+
+        <div class="controls">
+
+            <input
+                type="text"
+                id="searchInput"
+                class="search-box"
+                placeholder="Search order ID, name, email, phone..."
+            >
+
+
+            <select
+                id="statusFilter"
+                class="filter-select"
+            >
+
+                <option value="all">
+                    All Status
+                </option>
+
+                <option value="Processing">
+                    Processing
+                </option>
+
+                <option value="Accepted">
+                    Accepted
+                </option>
+
+                <option value="Cancelled">
+                    Cancelled
+                </option>
+
+            </select>
+
+
+            <select
+                id="paymentFilter"
+                class="filter-select"
+            >
+
+                <option value="all">
+                    All Payments
+                </option>
+
+                <option value="cod">
+                    COD
+                </option>
+
+                <option value="upi">
+                    UPI
+                </option>
+
+                <option value="online">
+                    Online
+                </option>
+
+            </select>
+
+
+            <button
+                class="export-btn"
+                id="exportBtn"
+            >
+                ⬇️ Export CSV
+            </button>
+
+        </div>
+
+
+        <!-- =================================
+             RECENT ORDERS
+        ================================== -->
+
+        <h2 class="section-title">
+            🧾 Recent Orders
+        </h2>
+
+
+        <div class="table-card">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Order
+                        </th>
+
+                        <th>
+                            Customer
+                        </th>
+
+                        <th>
+                            Amount
+                        </th>
+
+                        <th>
+                            Payment
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Date
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="recentOrdersBody">
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- =================================
+             FULL ORDERS
+        ================================== -->
+
+        <div id="ordersContainer">
+
+        </div>
+
 
     </main>
 
 
+    <!-- =====================================
+         DELIVERY DATE MODAL
+    ====================================== -->
 
-    <!-- FOOTER -->
+    <div
+        class="modal"
+        id="deliveryModal"
+    >
 
-    <footer class="footer">
+        <div class="modal-box">
 
-        <div class="container">
+            <h2>
+                🚚 Select Delivery Date
+            </h2>
 
-            <div class="footer-bottom">
+            <p>
+                Choose the date on which this order
+                will be delivered.
+            </p>
 
-                <p>
-                    &copy; 2026 ChemistBoys.
-                    All rights reserved.
-                </p>
+
+            <input
+                type="date"
+                id="deliveryDateInput"
+                class="delivery-input"
+            >
+
+
+            <div class="modal-buttons">
+
+                <button
+                    class="modal-close"
+                    id="closeModalBtn"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    class="modal-confirm"
+                    id="confirmDeliveryBtn"
+                >
+                    ✅ Accept Order
+                </button>
 
             </div>
 
         </div>
 
-    </footer>
+    </div>
 
 
+    <!-- =====================================
+         ADMIN JS
+    ====================================== -->
 
-    <!-- ADMIN JAVASCRIPT -->
+    <script
+        type="module"
+        src="admin.js?v=50"
+    ></script>
 
- <script
-    type="module"
-    src="admin.js?v=40"
-></script>
 
 </body>
 
