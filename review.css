@@ -346,3 +346,23 @@ footer {
         font-size: 22px;
     }
 }
+.delete-review-btn {
+    margin-top: 15px;
+    padding: 9px 16px;
+    border: none;
+    border-radius: 8px;
+    background: #dc3545;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.delete-review-btn:hover {
+    background: #b02a37;
+}
+
+.delete-review-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
