@@ -656,6 +656,119 @@
 
         }
 
+/* =========================================
+   ADMIN REVIEWS
+========================================= */
+
+.review-admin-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+    margin-bottom: 18px;
+}
+
+.review-admin-summary > div {
+    background: white;
+    padding: 20px;
+    border-radius: 17px;
+    box-shadow: 0 5px 22px rgba(0,0,0,.07);
+    border: 1px solid #e3f0ed;
+}
+
+.review-admin-summary span {
+    display: block;
+    color: #718987;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.review-admin-summary strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 27px;
+    color: #075f55;
+}
+
+.admin-review-card {
+    background: white;
+    border-radius: 17px;
+    padding: 22px;
+    margin-bottom: 15px;
+    box-shadow: 0 5px 22px rgba(0,0,0,.07);
+    border: 1px solid #e3f0ed;
+}
+
+.admin-review-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.admin-review-name {
+    font-size: 17px;
+    font-weight: 800;
+    color: #164e49;
+}
+
+.admin-review-date {
+    color: #718987;
+    font-size: 13px;
+}
+
+.admin-review-stars {
+    margin-top: 12px;
+    color: #f5b400;
+    font-size: 23px;
+    letter-spacing: 2px;
+}
+
+.admin-review-text {
+    margin-top: 13px;
+    color: #4f6260;
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.admin-review-email {
+    margin-top: 10px;
+    color: #718987;
+    font-size: 13px;
+}
+
+.admin-delete-review {
+    margin-top: 15px;
+    border: none;
+    background: #dc3545;
+    color: white;
+    padding: 9px 15px;
+    border-radius: 9px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.admin-delete-review:hover {
+    background: #b02a37;
+}
+
+.admin-delete-review:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+@media(max-width:600px) {
+
+    .review-admin-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-review-top {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+}
+
     </style>
 
 </head>
