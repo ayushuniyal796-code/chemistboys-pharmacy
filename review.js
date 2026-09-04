@@ -10,7 +10,9 @@ import {
     query,
     orderBy,
     onSnapshot,
-    serverTimestamp
+    serverTimestamp,
+    deleteDoc,
+    doc
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 
@@ -31,37 +33,14 @@ currentUser = auth.currentUser;
 // ELEMENTS
 // ===============================
 
-const stars = document.querySelectorAll(
-    "#starRating button"
-);
-
-const ratingText = document.getElementById(
-    "ratingText"
-);
-
-const reviewText = document.getElementById(
-    "reviewText"
-);
-
-const charCount = document.getElementById(
-    "charCount"
-);
-
-const submitReview = document.getElementById(
-    "submitReview"
-);
-
-const reviewMessage = document.getElementById(
-    "reviewMessage"
-);
-
-const reviewsList = document.getElementById(
-    "reviewsList"
-);
-
-const averageNumber = document.getElementById(
-    "averageNumber"
-);
+const stars = document.querySelectorAll("#starRating button");
+const ratingText = document.getElementById("ratingText");
+const reviewText = document.getElementById("reviewText");
+const charCount = document.getElementById("charCount");
+const submitReview = document.getElementById("submitReview");
+const reviewMessage = document.getElementById("reviewMessage");
+const reviewsList = document.getElementById("reviewsList");
+const averageNumber = document.getElementById("averageNumber");
 
 
 // ===============================
@@ -90,13 +69,9 @@ function updateStars() {
             Number(star.dataset.rating);
 
         if (rating <= selectedRating) {
-
             star.classList.add("active");
-
         } else {
-
             star.classList.remove("active");
-
         }
 
     });
@@ -143,8 +118,6 @@ submitReview.addEventListener(
         reviewMessage.style.color = "";
 
 
-        // LOGIN CHECK
-
         if (!currentUser) {
 
             reviewMessage.textContent =
@@ -156,8 +129,6 @@ submitReview.addEventListener(
         }
 
 
-        // RATING CHECK
-
         if (selectedRating === 0) {
 
             reviewMessage.textContent =
@@ -168,8 +139,6 @@ submitReview.addEventListener(
             return;
         }
 
-
-        // TEXT CHECK
 
         const text =
             reviewText.value.trim();
@@ -238,8 +207,6 @@ submitReview.addEventListener(
                 "#188038";
 
 
-            // RESET
-
             selectedRating = 0;
 
             updateStars();
@@ -291,7 +258,6 @@ onSnapshot(
 
         reviewsList.innerHTML = "";
 
-
         if (snapshot.empty) {
 
             reviewsList.innerHTML = `
@@ -311,9 +277,10 @@ onSnapshot(
         let totalRating = 0;
 
 
-        snapshot.forEach((doc) => {
+        snapshot.forEach((reviewDoc) => {
 
-            const data = doc.data();
+            const data =
+                reviewDoc.data();
 
             const rating =
                 Number(data.rating) || 0;
@@ -352,6 +319,12 @@ onSnapshot(
                 "review-card";
 
 
+            // CHECK OWNER
+            const isOwner =
+                currentUser &&
+                data.userId === currentUser.uid;
+
+
             card.innerHTML = `
 
                 <div class="review-top">
@@ -374,7 +347,87 @@ onSnapshot(
                     ${review}
                 </div>
 
+                ${
+                    isOwner
+                    ? `
+                        <button
+                            class="delete-review-btn"
+                            data-review-id="${reviewDoc.id}"
+                        >
+                            🗑️ Delete Review
+                        </button>
+                    `
+                    : ""
+                }
+
             `;
+
+
+            // DELETE BUTTON
+            if (isOwner) {
+
+                const deleteButton =
+                    card.querySelector(
+                        ".delete-review-btn"
+                    );
+
+
+                deleteButton.addEventListener(
+                    "click",
+                    async () => {
+
+                        const confirmed =
+                            confirm(
+                                "Are you sure you want to delete your review?"
+                            );
+
+
+                        if (!confirmed) {
+                            return;
+                        }
+
+
+                        try {
+
+                            deleteButton.disabled =
+                                true;
+
+                            deleteButton.textContent =
+                                "Deleting...";
+
+
+                            await deleteDoc(
+                                doc(
+                                    db,
+                                    "reviews",
+                                    reviewDoc.id
+                                )
+                            );
+
+
+                        } catch (error) {
+
+                            console.error(
+                                "Delete review error:",
+                                error
+                            );
+
+                            deleteButton.disabled =
+                                false;
+
+                            deleteButton.textContent =
+                                "🗑️ Delete Review";
+
+                            alert(
+                                "Unable to delete review. Please try again."
+                            );
+
+                        }
+
+                    }
+                );
+
+            }
 
 
             reviewsList.appendChild(card);
