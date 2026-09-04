@@ -12,138 +12,248 @@
 
     <title>My Account - ChemistBoys</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
 
     <style>
 
-        .account-page {
-
-            min-height: 75vh;
-
-            padding: 50px 20px;
-
+        body {
+            background: #f4fbf9;
         }
 
+        .account-page {
+            min-height: 80vh;
+            padding: 40px 20px;
+        }
+
+        .account-container {
+            max-width: 850px;
+            margin: auto;
+        }
 
         .account-card {
-
-            max-width: 800px;
-
-            margin: auto;
-
-            background: rgba(255,255,255,.95);
-
-            padding: 35px;
-
-            border-radius: 25px;
-
+            background: white;
+            padding: 30px;
+            border-radius: 22px;
             box-shadow:
-                0 20px 60px
-                rgba(0,80,70,.12);
-
+                0 8px 30px
+                rgba(0, 80, 70, .10);
+            margin-bottom: 20px;
         }
 
+        /* PROFILE */
 
         .profile {
-
             text-align: center;
-
-            padding-bottom: 30px;
-
-            border-bottom:
-                1px solid #e3eeee;
-
+            padding-bottom: 25px;
+            border-bottom: 1px solid #e3eeee;
         }
 
-
         .profile-icon {
-
             width: 90px;
-
             height: 90px;
-
             margin: auto;
 
             display: flex;
-
             align-items: center;
-
             justify-content: center;
 
             border-radius: 50%;
-
             background: #e9faf7;
 
             font-size: 45px;
-
         }
-
 
         .profile h1 {
-
             color: #075f55;
-
-            margin-top: 15px;
-
+            margin: 15px 0 5px;
         }
 
-
-        .profile p {
-
+        .profile-email {
             color: #718987;
-
+            margin: 0;
+            word-break: break-word;
         }
 
+        /* DETAILS */
 
-        .account-menu {
-
-            display: grid;
-
-            grid-template-columns:
-                repeat(2, 1fr);
-
-            gap: 15px;
-
-            margin-top: 30px;
-
-        }
-
-
-        .account-menu a {
-
-            padding: 20px;
-
-            background: #f4fbf9;
-
-            border-radius: 15px;
-
-            text-decoration: none;
-
+        .details-title {
             color: #075f55;
-
-            font-weight: 600;
-
-            transition: .3s;
-
+            margin-top: 0;
         }
 
-
-        .account-menu a:hover {
-
-            transform:
-                translateY(-4px);
-
-            background: #e7f8f4;
-
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
         }
 
+        .detail-box {
+            background: #f7fbfa;
+            padding: 17px;
+            border-radius: 14px;
+        }
+
+        .detail-label {
+            display: block;
+            color: #718987;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            color: #164f48;
+            font-size: 16px;
+            font-weight: 800;
+            word-break: break-word;
+        }
+
+        /* STATS */
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: #edf9f6;
+            padding: 20px 12px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-icon {
+            font-size: 28px;
+        }
+
+        .stat-number {
+            color: #075f55;
+            font-size: 24px;
+            font-weight: 900;
+            margin-top: 5px;
+        }
+
+        .stat-label {
+            color: #526d69;
+            font-size: 13px;
+            margin-top: 3px;
+        }
+
+        /* LATEST ORDER */
+
+        .latest-order {
+            background: #f7fbfa;
+            padding: 18px;
+            border-radius: 15px;
+        }
+
+        .latest-order p {
+            margin: 8px 0;
+            color: #526d69;
+        }
+
+        .order-status {
+            display: inline-block;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-weight: 800;
+        }
+
+        .processing {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .accepted {
+            background: #dff8f3;
+            color: #087c6b;
+        }
+
+        .cancelled {
+            background: #f8d7da;
+            color: #b42318;
+        }
+
+        .delivery-date {
+            margin-top: 12px;
+            padding: 11px 14px;
+            border-radius: 12px;
+            background: #edf9f6;
+            color: #087c6b;
+            font-weight: 700;
+        }
+
+        /* BUTTONS */
+
+        .account-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .account-action {
+            display: block;
+            padding: 14px;
+            border-radius: 12px;
+            text-align: center;
+            text-decoration: none;
+            font-weight: 800;
+        }
+
+        .orders-btn {
+            background: #0ca88f;
+            color: white;
+        }
+
+        .cart-btn {
+            background: #075f55;
+            color: white;
+        }
+
+        .home-btn {
+            background: #eef3f2;
+            color: #526d69;
+        }
+
+        .logout-btn {
+            background: #f8d7da;
+            color: #b42318;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        /* MOBILE */
 
         @media(max-width:600px) {
 
-            .account-menu {
+            .account-page {
+                padding: 25px 12px;
+            }
 
+            .account-card {
+                padding: 22px 17px;
+            }
+
+            .details-grid {
                 grid-template-columns: 1fr;
+            }
 
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .account-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .profile h1 {
+                font-size: 25px;
             }
 
         }
@@ -155,6 +265,8 @@
 
 <body>
 
+
+<!-- HEADER -->
 
 <header class="header">
 
@@ -188,50 +300,246 @@
 </header>
 
 
+<!-- ACCOUNT -->
+
 <main class="account-page">
 
-    <div class="account-card">
+    <div class="account-container">
 
 
-        <div class="profile">
+        <!-- PROFILE -->
 
-            <div class="profile-icon">
-                👤
+        <div class="account-card">
+
+            <div class="profile">
+
+                <div class="profile-icon">
+                    👤
+                </div>
+
+                <h1 id="userName">
+                    Loading...
+                </h1>
+
+                <p
+                    id="userEmail"
+                    class="profile-email"
+                >
+                    Loading...
+                </p>
+
             </div>
 
 
-            <h1 id="userName">
-                Loading...
-            </h1>
+            <!-- STATS -->
+
+            <div class="stats-grid">
+
+                <div class="stat-box">
+
+                    <div class="stat-icon">
+                        📦
+                    </div>
+
+                    <div
+                        id="orderCount"
+                        class="stat-number"
+                    >
+                        0
+                    </div>
+
+                    <div class="stat-label">
+                        Total Orders
+                    </div>
+
+                </div>
 
 
-            <p id="userEmail">
-                Loading...
-            </p>
+                <div class="stat-box">
+
+                    <div class="stat-icon">
+                        🛒
+                    </div>
+
+                    <div
+                        id="cartCount"
+                        class="stat-number"
+                    >
+                        0
+                    </div>
+
+                    <div class="stat-label">
+                        Cart Items
+                    </div>
+
+                </div>
+
+
+                <div class="stat-box">
+
+                    <div class="stat-icon">
+                        💰
+                    </div>
+
+                    <div
+                        id="cartTotal"
+                        class="stat-number"
+                    >
+                        ₹0
+                    </div>
+
+                    <div class="stat-label">
+                        Cart Total
+                    </div>
+
+                </div>
+
+            </div>
 
         </div>
 
 
-        <div class="account-menu">
+        <!-- PERSONAL DETAILS -->
 
-            <a href="orders.html">
-                📦 My Orders
-            </a>
+        <div class="account-card">
 
-
-            <a href="wishlist.html">
-                ❤️ Wishlist
-            </a>
+            <h2 class="details-title">
+                👤 Personal Details
+            </h2>
 
 
-            <a href="cart.html">
-                🛒 My Cart
-            </a>
+            <div class="details-grid">
+
+                <div class="detail-box">
+
+                    <span class="detail-label">
+                        Name
+                    </span>
+
+                    <span
+                        id="detailName"
+                        class="detail-value"
+                    >
+                        -
+                    </span>
+
+                </div>
 
 
-            <a href="index.html">
-                🏠 Continue Shopping
-            </a>
+                <div class="detail-box">
+
+                    <span class="detail-label">
+                        Email
+                    </span>
+
+                    <span
+                        id="detailEmail"
+                        class="detail-value"
+                    >
+                        -
+                    </span>
+
+                </div>
+
+
+                <div class="detail-box">
+
+                    <span class="detail-label">
+                        Phone
+                    </span>
+
+                    <span
+                        id="detailPhone"
+                        class="detail-value"
+                    >
+                        Not provided
+                    </span>
+
+                </div>
+
+
+                <div class="detail-box">
+
+                    <span class="detail-label">
+                        City
+                    </span>
+
+                    <span
+                        id="detailCity"
+                        class="detail-value"
+                    >
+                        Not provided
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- LATEST ORDER -->
+
+        <div class="account-card">
+
+            <h2 class="details-title">
+                📦 Latest Order
+            </h2>
+
+
+            <div
+                id="latestOrder"
+                class="latest-order"
+            >
+
+                <p>
+                    Loading order information...
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- ACTIONS -->
+
+        <div class="account-card">
+
+            <div class="account-actions">
+
+                <a
+                    href="orders.html"
+                    class="account-action orders-btn"
+                >
+                    📦 My Orders
+                </a>
+
+
+                <a
+                    href="cart.html"
+                    class="account-action cart-btn"
+                >
+                    🛒 View Cart
+                </a>
+
+
+                <a
+                    href="index.html"
+                    class="account-action home-btn"
+                >
+                    🏠 Continue Shopping
+                </a>
+
+
+                <button
+                    type="button"
+                    id="logoutBtn"
+                    class="account-action logout-btn"
+                >
+                    🚪 Logout
+                </button>
+
+            </div>
 
         </div>
 
@@ -241,73 +549,30 @@
 </main>
 
 
-<script type="module">
+<!-- FOOTER -->
 
-import {
-    initializeApp
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+<footer class="footer">
 
-import {
-    getAuth,
-    onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+    <div class="container">
 
+        <div class="footer-bottom">
 
-const firebaseConfig = {
+            <p>
+                &copy; 2026 ChemistBoys.
+                All rights reserved.
+            </p>
 
-    apiKey: "YOUR_API_KEY",
+        </div>
 
-    authDomain:
-        "YOUR_PROJECT.firebaseapp.com",
+    </div>
 
-    projectId:
-        "YOUR_PROJECT_ID",
-
-    storageBucket:
-        "YOUR_PROJECT.firebasestorage.app",
-
-    messagingSenderId:
-        "YOUR_MESSAGING_SENDER_ID",
-
-    appId:
-        "YOUR_APP_ID"
-};
+</footer>
 
 
-const app =
-    initializeApp(firebaseConfig);
-
-const auth =
-    getAuth(app);
-
-
-onAuthStateChanged(auth, (user) => {
-
-    if (!user) {
-
-        window.location.href =
-            "login.html";
-
-        return;
-
-    }
-
-
-    document.getElementById(
-        "userName"
-    ).textContent =
-        user.displayName ||
-        "ChemistBoys User";
-
-
-    document.getElementById(
-        "userEmail"
-    ).textContent =
-        user.email;
-
-});
-
-</script>
+<script
+    type="module"
+    src="account-page.js"
+></script>
 
 
 </body>
