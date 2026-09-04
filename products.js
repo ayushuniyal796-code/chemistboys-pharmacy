@@ -1,7 +1,3 @@
-/* =========================================================
-   CHEMISTBOYS - PRODUCTS
-========================================================= */
-
 const products = [
 
     {
@@ -9,9 +5,7 @@ const products = [
         name: "HealMax Pain Relief Tablets",
         price: 49,
         category: "painrelief",
-        rating: 4.8,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=HealMax",
-        newest: true
+        image: "images/products/healmax.png"
     },
 
     {
@@ -19,9 +13,7 @@ const products = [
         name: "CurePlus Vitamin C",
         price: 199,
         category: "vitamins",
-        rating: 4.7,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=Vitamin+C",
-        newest: true
+        image: "images/products/cureplus.png"
     },
 
     {
@@ -29,9 +21,7 @@ const products = [
         name: "VitaBoost Multivitamin",
         price: 349,
         category: "vitamins",
-        rating: 4.6,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=VitaBoost",
-        newest: false
+        image: "images/products/vitaboost.png"
     },
 
     {
@@ -39,9 +29,7 @@ const products = [
         name: "ColdAway Relief Syrup",
         price: 129,
         category: "cough",
-        rating: 4.5,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=ColdAway",
-        newest: true
+        image: "images/products/coldaway.png"
     },
 
     {
@@ -49,9 +37,7 @@ const products = [
         name: "ThermoCheck Digital Thermometer",
         price: 249,
         category: "firstaid",
-        rating: 4.9,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=Thermometer",
-        newest: true
+        image: "images/products/thermocheck.png"
     },
 
     {
@@ -59,9 +45,7 @@ const products = [
         name: "SafeCare Antiseptic Solution",
         price: 99,
         category: "firstaid",
-        rating: 4.6,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=SafeCare",
-        newest: false
+        image: "images/products/safecare.png"
     },
 
     {
@@ -69,9 +53,7 @@ const products = [
         name: "SkinGlow Aloe Vera Gel",
         price: 179,
         category: "skincare",
-        rating: 4.7,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=SkinGlow",
-        newest: true
+        image: "images/products/skinglow.png"
     },
 
     {
@@ -79,9 +61,7 @@ const products = [
         name: "FlexiHeal Pain Relief Spray",
         price: 219,
         category: "painrelief",
-        rating: 4.4,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=FlexiHeal",
-        newest: false
+        image: "images/products/flexiheal.png"
     },
 
     {
@@ -89,9 +69,7 @@ const products = [
         name: "CareBox First Aid Kit",
         price: 599,
         category: "firstaid",
-        rating: 4.9,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=CareBox",
-        newest: true
+        image: "images/products/carebox.png"
     },
 
     {
@@ -99,9 +77,7 @@ const products = [
         name: "BreatheEasy Cold Tablets",
         price: 89,
         category: "cough",
-        rating: 4.5,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=BreatheEasy",
-        newest: false
+        image: "images/products/breatheeasy.png"
     },
 
     {
@@ -109,9 +85,7 @@ const products = [
         name: "OmegaCare Capsules",
         price: 449,
         category: "vitamins",
-        rating: 4.8,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=OmegaCare",
-        newest: true
+        image: "images/products/omegacare.png"
     },
 
     {
@@ -119,9 +93,7 @@ const products = [
         name: "DermaSoft Moisturizing Cream",
         price: 279,
         category: "skincare",
-        rating: 4.6,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=DermaSoft",
-        newest: false
+        image: "images/products/dermasoft.png"
     },
 
     {
@@ -129,9 +101,7 @@ const products = [
         name: "HealthPro Zinc Tablets",
         price: 159,
         category: "vitamins",
-        rating: 4.5,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=HealthPro",
-        newest: true
+        image: "images/products/healthpro.png"
     },
 
     {
@@ -139,9 +109,7 @@ const products = [
         name: "FreshSkin Vitamin Gel",
         price: 229,
         category: "skincare",
-        rating: 4.4,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=FreshSkin",
-        newest: false
+        image: "images/products/freshskin.png"
     },
 
     {
@@ -149,9 +117,7 @@ const products = [
         name: "QuickAid Emergency Kit",
         price: 799,
         category: "firstaid",
-        rating: 4.9,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=QuickAid",
-        newest: true
+        image: "images/products/quickaid.png"
     },
 
     {
@@ -159,9 +125,7 @@ const products = [
         name: "CoolBreathe Herbal Syrup",
         price: 149,
         category: "cough",
-        rating: 4.3,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=CoolBreathe",
-        newest: false
+        image: "images/products/coolbreathe.png"
     },
 
     {
@@ -169,19 +133,15 @@ const products = [
         name: "ActiveLife Calcium Plus",
         price: 399,
         category: "vitamins",
-        rating: 4.7,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=Calcium+Plus",
-        newest: true
+        image: "images/products/activelife.png"
     },
 
     {
         id: 18,
         name: "PureCare Hand Sanitizer",
         price: 79,
-        category: "firstaid",
-        rating: 4.6,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=PureCare",
-        newest: false
+        category: "personalcare",
+        image: "images/products/purecare.png"
     },
 
     {
@@ -189,9 +149,7 @@ const products = [
         name: "GlowCare Skin Lotion",
         price: 249,
         category: "skincare",
-        rating: 4.5,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=GlowCare",
-        newest: true
+        image: "images/products/glowcare.png"
     },
 
     {
@@ -199,16 +157,9 @@ const products = [
         name: "ReliefPro Muscle Balm",
         price: 119,
         category: "painrelief",
-        rating: 4.4,
-        image: "https://placehold.co/500x400/e9faf7/087c6b?text=ReliefPro",
-        newest: false
+        image: "images/products/reliefpro.png"
     }
 
 ];
-
-
-/* =========================================================
-   MAKE PRODUCTS AVAILABLE TO script.js
-========================================================= */
 
 window.products = products;
