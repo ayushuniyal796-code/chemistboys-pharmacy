@@ -1,6 +1,6 @@
-// ============================================================
-// CHEMISTBOYS - ADMIN DASHBOARD
-// ============================================================
+// ==========================================
+// CHEMISTBOYS ADMIN DASHBOARD
+// ==========================================
 
 import {
     auth,
@@ -20,19 +20,18 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-// ============================================================
-// ADMIN CONFIGURATION
-// ============================================================
+// ==========================================
+// ADMIN UID
+// ==========================================
 
 const ADMIN_UID = "gtTvd6XSgqXVaIrp67cM6gEJP0u2";
 
 
-// ============================================================
-// GLOBAL VARIABLES
-// ============================================================
+// ==========================================
+// GLOBAL DATA
+// ==========================================
 
 let allOrders = [];
-
 let selectedOrderId = null;
 
 let revenueChart = null;
@@ -41,39 +40,18 @@ let statusChart = null;
 let paymentChart = null;
 
 
-// ============================================================
-// SHORT DOM FUNCTION
-// ============================================================
+// ==========================================
+// HELPERS
+// ==========================================
 
 function $(id) {
     return document.getElementById(id);
 }
 
 
-// ============================================================
-// TEXT HELPER
-// ============================================================
-
-function setText(id, value) {
-
-    const element = $(id);
-
-    if (element) {
-        element.textContent = value;
-    }
-}
-
-
-// ============================================================
-// HTML ESCAPE
-// ============================================================
-
 function escapeHTML(value) {
 
-    if (
-        value === null ||
-        value === undefined
-    ) {
+    if (value === null || value === undefined) {
         return "";
     }
 
@@ -86,43 +64,14 @@ function escapeHTML(value) {
 }
 
 
-// ============================================================
-// MONEY FORMAT
-// ============================================================
-
-function formatMoney(value) {
-
-    const number = Number(value) || 0;
-
-    return "₹" +
-        number.toLocaleString(
-            "en-IN",
-            {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 2
-            }
-        );
-}
-
-
-// ============================================================
-// ORDER ID
-// ============================================================
-
 function getOrderId(order) {
 
-    return (
-        order.id ||
-        order.orderId ||
-        order.orderID ||
-        "Unknown"
-    );
+    return order.id ||
+           order.orderId ||
+           order.orderID ||
+           "Unknown";
 }
 
-
-// ============================================================
-// ORDER ITEMS
-// ============================================================
 
 function getItems(order) {
 
@@ -135,26 +84,15 @@ function getItems(order) {
     if (typeof items === "string") {
 
         try {
-
             items = JSON.parse(items);
-
         } catch {
-
             items = [];
-
         }
-
     }
 
-    return Array.isArray(items)
-        ? items
-        : [];
+    return Array.isArray(items) ? items : [];
 }
 
-
-// ============================================================
-// ORDER TOTAL
-// ============================================================
 
 function getTotal(order) {
 
@@ -166,15 +104,13 @@ function getTotal(order) {
 
     const number = Number(total);
 
-    return Number.isNaN(number)
-        ? 0
-        : number;
+    if (!Number.isNaN(number)) {
+        return number;
+    }
+
+    return 0;
 }
 
-
-// ============================================================
-// CUSTOMER NAME
-// ============================================================
 
 function getCustomerName(order) {
 
@@ -187,10 +123,6 @@ function getCustomerName(order) {
 }
 
 
-// ============================================================
-// CUSTOMER EMAIL
-// ============================================================
-
 function getCustomerEmail(order) {
 
     return (
@@ -201,9 +133,86 @@ function getCustomerEmail(order) {
 }
 
 
-// ============================================================
-// CUSTOMER PHONE
-// ============================================================
+function getPaymentMethod(order) {
+
+    const payment =
+        order.paymentMethod ||
+        order.payment ||
+        "Unknown";
+
+    const value = String(payment).toLowerCase();
+
+    if (
+        value.includes("cash") ||
+        value.includes("cod")
+    ) {
+        return "COD";
+    }
+
+    if (
+        value.includes("upi") ||
+        value.includes("online")
+    ) {
+        return "UPI";
+    }
+
+    return payment;
+}
+
+
+function getPaymentStatus(order) {
+
+    return (
+        order.paymentStatus ||
+        "Pending"
+    );
+}
+
+
+function getStatus(order) {
+
+    return (
+        order.status ||
+        "Processing"
+    );
+}
+
+
+function getOrderDate(order) {
+
+    const value =
+        order.createdAt ||
+        order.timestamp ||
+        order.date ||
+        null;
+
+    if (!value) {
+        return "N/A";
+    }
+
+    try {
+
+        if (
+            typeof value === "object" &&
+            value.seconds
+        ) {
+
+            return new Date(
+                value.seconds * 1000
+            ).toLocaleString("en-IN");
+        }
+
+        const date = new Date(value);
+
+        if (!Number.isNaN(date.getTime())) {
+            return date.toLocaleString("en-IN");
+        }
+
+    } catch {}
+
+    return "N/A";
+}
+
 
 function getCustomerPhone(order) {
 
@@ -215,10 +224,6 @@ function getCustomerPhone(order) {
 }
 
 
-// ============================================================
-// CUSTOMER ADDRESS
-// ============================================================
-
 function getCustomerAddress(order) {
 
     return (
@@ -228,10 +233,6 @@ function getCustomerAddress(order) {
     );
 }
 
-
-// ============================================================
-// CUSTOMER CITY
-// ============================================================
 
 function getCustomerCity(order) {
 
@@ -243,10 +244,6 @@ function getCustomerCity(order) {
 }
 
 
-// ============================================================
-// CUSTOMER PINCODE
-// ============================================================
-
 function getCustomerPincode(order) {
 
     return (
@@ -257,272 +254,57 @@ function getCustomerPincode(order) {
 }
 
 
-// ============================================================
-// PAYMENT METHOD
-// ============================================================
-
-function getPaymentMethod(order) {
-
-    const payment =
-        order.paymentMethod ||
-        order.payment ||
-        "Unknown";
-
-    const value =
-        String(payment).toLowerCase();
-
-    if (
-        value.includes("cash") ||
-        value.includes("cod")
-    ) {
-
-        return "COD";
-
-    }
-
-    if (
-        value.includes("upi") ||
-        value.includes("online")
-    ) {
-
-        return "UPI";
-
-    }
-
-    return payment;
-}
-
-
-// ============================================================
-// PAYMENT STATUS
-// ============================================================
-
-function getPaymentStatus(order) {
-
-    return (
-        order.paymentStatus ||
-        "Pending"
-    );
-}
-
-
-// ============================================================
-// ORDER STATUS
-// ============================================================
-
-function getStatus(order) {
-
-    return (
-        order.status ||
-        "Processing"
-    );
-}
-
-
-// ============================================================
-// DELIVERY DATE
-// ============================================================
-
 function getDeliveryDate(order) {
 
     return order.deliveryDate || "";
 }
 
 
-// ============================================================
-// TIMESTAMP
-// ============================================================
-
-function getTimestamp(order) {
-
-    const value =
-        order.createdAt ||
-        order.timestamp ||
-        order.date;
-
-    if (!value) {
-        return 0;
-    }
-
-
-    // Firestore Timestamp
-
-    if (
-        typeof value === "object" &&
-        value.seconds
-    ) {
-
-        return value.seconds * 1000;
-
-    }
-
-
-    const date =
-        new Date(value).getTime();
-
-    return Number.isNaN(date)
-        ? 0
-        : date;
-}
-
-
-// ============================================================
-// ORDER DATE
-// ============================================================
-
-function getOrderDate(order) {
-
-    const timestamp =
-        getTimestamp(order);
-
-    if (!timestamp) {
-        return "N/A";
-    }
-
-    return new Date(
-        timestamp
-    ).toLocaleString(
-        "en-IN"
-    );
-}
-
-
-// ============================================================
-// DELIVERY DATE FORMAT
-// ============================================================
-
-function formatDeliveryDate(dateString) {
-
-    if (!dateString) {
-        return "";
-    }
-
-    const date =
-        new Date(
-            `${dateString}T00:00:00`
-        );
-
-    if (
-        Number.isNaN(
-            date.getTime()
-        )
-    ) {
-
-        return dateString;
-
-    }
-
-    return date.toLocaleDateString(
-        "en-IN",
-        {
-            day: "2-digit",
-            month: "long",
-            year: "numeric"
-        }
-    );
-}
-
-
-// ============================================================
-// SHORT DATE
-// ============================================================
-
-function formatShortDate(dateString) {
-
-    const date =
-        new Date(
-            `${dateString}T00:00:00`
-        );
-
-    if (
-        Number.isNaN(
-            date.getTime()
-        )
-    ) {
-
-        return dateString;
-
-    }
-
-    return date.toLocaleDateString(
-        "en-IN",
-        {
-            day: "2-digit",
-            month: "short"
-        }
-    );
-}
-
-
-// ============================================================
-// ADMIN AUTHENTICATION
-// ============================================================
+// ==========================================
+// AUTH PROTECTION
+// ==========================================
 
 async function checkAdmin() {
 
     await authReady;
 
-    const user =
-        auth.currentUser;
-
-
-    // Not logged in
+    const user = auth.currentUser;
 
     if (!user) {
 
-        window.location.href =
-            "auth.html";
-
+        window.location.href = "auth.html";
         return false;
     }
 
-
-    // Logged in but not admin
-
-    if (
-        user.uid !== ADMIN_UID
-    ) {
+    if (user.uid !== ADMIN_UID) {
 
         document.body.innerHTML = `
-
             <div style="
                 min-height:100vh;
                 display:flex;
                 align-items:center;
                 justify-content:center;
                 background:#f4f8f7;
-                padding:30px;
                 font-family:Arial,sans-serif;
+                text-align:center;
+                padding:30px;
             ">
 
                 <div style="
                     background:white;
+                    padding:40px;
+                    border-radius:20px;
+                    box-shadow:0 10px 40px rgba(0,0,0,.08);
                     max-width:450px;
-                    width:100%;
-                    padding:45px 30px;
-                    border-radius:24px;
-                    text-align:center;
-                    box-shadow:0 15px 50px rgba(0,0,0,.10);
                 ">
 
-                    <div style="
-                        font-size:60px;
-                        margin-bottom:15px;
-                    ">
-                        🚫
-                    </div>
+                    <div style="font-size:50px;">🚫</div>
 
-                    <h2 style="
-                        color:#075f55;
-                        margin-bottom:10px;
-                    ">
+                    <h2 style="margin:15px 0;">
                         Access Denied
                     </h2>
 
-                    <p style="
-                        color:#718987;
-                        line-height:1.6;
-                    ">
+                    <p style="color:#666;">
                         You are not authorized to access
                         the ChemistBoys Admin Dashboard.
                     </p>
@@ -531,13 +313,13 @@ async function checkAdmin() {
                         onclick="window.location.href='index.html'"
                         style="
                             margin-top:20px;
-                            padding:13px 25px;
-                            border:0;
-                            border-radius:12px;
+                            padding:12px 22px;
+                            border:none;
+                            border-radius:10px;
                             background:#087c6b;
                             color:white;
-                            font-weight:700;
                             cursor:pointer;
+                            font-weight:700;
                         "
                     >
                         Go Home
@@ -546,51 +328,39 @@ async function checkAdmin() {
                 </div>
 
             </div>
-
         `;
 
         return false;
     }
 
-
     return true;
 }
 
 
-// ============================================================
+// ==========================================
 // SIDEBAR NAVIGATION
-// ============================================================
+// ==========================================
 
 function setupNavigation() {
 
-    const buttons =
-        document.querySelectorAll(
-            "[data-section]"
-        );
+    const navButtons =
+        document.querySelectorAll("[data-section]");
 
+    navButtons.forEach(button => {
 
-    buttons.forEach(button => {
+        button.addEventListener("click", () => {
 
-        button.addEventListener(
-            "click",
-            () => {
+            const section =
+                button.dataset.section;
 
-                const section =
-                    button.dataset.section;
+            showSection(section);
 
-                showSection(section);
-
-            }
-        );
+        });
 
     });
 
 }
 
-
-// ============================================================
-// SHOW SECTION
-// ============================================================
 
 function showSection(sectionName) {
 
@@ -598,22 +368,16 @@ function showSection(sectionName) {
         .querySelectorAll(".section")
         .forEach(section => {
 
-            section.classList.remove(
-                "active"
-            );
+            section.classList.remove("active");
 
         });
 
 
-    const section =
-        $(sectionName);
+    const selected =
+        document.getElementById(sectionName);
 
-    if (section) {
-
-        section.classList.add(
-            "active"
-        );
-
+    if (selected) {
+        selected.classList.add("active");
     }
 
 
@@ -621,24 +385,19 @@ function showSection(sectionName) {
         .querySelectorAll("[data-section]")
         .forEach(button => {
 
-            button.classList.remove(
-                "active"
-            );
-
+            button.classList.remove("active");
 
             if (
-                button.dataset.section
-                === sectionName
+                button.dataset.section === sectionName
             ) {
-
-                button.classList.add(
-                    "active"
-                );
-
+                button.classList.add("active");
             }
 
         });
 
+
+    const title =
+        $("pageTitle");
 
     const titles = {
 
@@ -657,11 +416,13 @@ function showSection(sectionName) {
     };
 
 
-    setText(
-        "pageTitle",
-        titles[sectionName] ||
-        "Dashboard"
-    );
+    if (title) {
+
+        title.textContent =
+            titles[sectionName] ||
+            "Dashboard";
+
+    }
 
 
     // Mobile sidebar close
@@ -670,105 +431,85 @@ function showSection(sectionName) {
         $("sidebar");
 
     if (sidebar) {
-
-        sidebar.classList.remove(
-            "open"
-        );
-
+        sidebar.classList.remove("open");
     }
 
 }
 
 
-// ============================================================
-// MOBILE SIDEBAR
-// ============================================================
+// ==========================================
+// MOBILE MENU
+// ==========================================
 
 function setupMobileMenu() {
 
-    const menuButton =
+    const menuBtn =
         $("mobileMenuBtn");
 
     const sidebar =
         $("sidebar");
 
-
-    if (
-        !menuButton ||
-        !sidebar
-    ) {
-
+    if (!menuBtn || !sidebar) {
         return;
-
     }
 
+    menuBtn.addEventListener("click", () => {
 
-    menuButton.addEventListener(
-        "click",
-        () => {
+        sidebar.classList.toggle("open");
 
-            sidebar.classList.toggle(
-                "open"
-            );
-
-        }
-    );
+    });
 
 }
 
 
-// ============================================================
+// ==========================================
 // REALTIME FIRESTORE ORDERS
-// ============================================================
+// ==========================================
 
 function listenToOrders() {
 
     const ordersRef =
-        collection(
-            db,
-            "orders"
-        );
+        collection(db, "orders");
 
 
     onSnapshot(
-
         ordersRef,
 
         snapshot => {
 
             allOrders = [];
 
+            snapshot.forEach(orderDoc => {
 
-            snapshot.forEach(
-                orderDoc => {
+                allOrders.push({
 
-                    allOrders.push({
+                    firestoreId: orderDoc.id,
 
-                        firestoreId:
-                            orderDoc.id,
+                    ...orderDoc.data()
 
-                        ...orderDoc.data()
+                });
 
-                    });
-
-                }
-            );
+            });
 
 
-            // Latest orders first
+            // Latest first
 
-            allOrders.sort(
-                (a, b) =>
-                    getTimestamp(b)
-                    -
-                    getTimestamp(a)
-            );
+            allOrders.sort((a, b) => {
+
+                const dateA =
+                    getTimestamp(a);
+
+                const dateB =
+                    getTimestamp(b);
+
+                return dateB - dateA;
+
+            });
 
 
             renderEverything();
 
         },
-
 
         error => {
 
@@ -777,40 +518,63 @@ function listenToOrders() {
                 error
             );
 
-
             const container =
                 $("ordersContainer");
-
 
             if (container) {
 
                 container.innerHTML = `
-
                     <div class="empty-state">
-
                         ❌ Unable to load orders.
-
-                        <br>
-
-                        Please check Firebase
-                        Firestore rules.
-
+                        Please check Firestore rules.
                     </div>
-
                 `;
 
             }
 
         }
-
     );
 
 }
 
 
-// ============================================================
+function getTimestamp(order) {
+
+    const value =
+        order.createdAt ||
+        order.timestamp ||
+        order.date;
+
+
+    if (!value) {
+        return 0;
+    }
+
+
+    if (
+        typeof value === "object" &&
+        value.seconds
+    ) {
+
+        return value.seconds * 1000;
+
+    }
+
+
+    const date =
+        new Date(value).getTime();
+
+
+    return Number.isNaN(date)
+        ? 0
+        : date;
+
+}
+
+
+// ==========================================
 // RENDER EVERYTHING
-// ============================================================
+// ==========================================
 
 function renderEverything() {
 
@@ -831,57 +595,53 @@ function renderEverything() {
 }
 
 
-// ============================================================
+// ==========================================
 // DASHBOARD
-// ============================================================
+// ==========================================
 
 function renderDashboard() {
 
+    const totalOrders =
+        allOrders.length;
+
+
     const acceptedOrders =
         allOrders.filter(
-            order =>
-                getStatus(order)
-                === "Accepted"
+            order => getStatus(order) === "Accepted"
         );
 
 
     const processingOrders =
         allOrders.filter(
-            order =>
-                getStatus(order)
-                === "Processing"
+            order => getStatus(order) === "Processing"
         );
 
 
     const cancelledOrders =
         allOrders.filter(
-            order =>
-                getStatus(order)
-                === "Cancelled"
+            order => getStatus(order) === "Cancelled"
         );
 
 
     const revenue =
         acceptedOrders.reduce(
             (sum, order) =>
-                sum +
-                getTotal(order),
+                sum + getTotal(order),
             0
         );
 
 
     const customers =
-        new Set();
+        new Set(
+            allOrders.map(order => {
 
+                return (
+                    order.userId ||
+                    getCustomerEmail(order)
+                );
 
-    allOrders.forEach(order => {
-
-        customers.add(
-            order.userId ||
-            getCustomerEmail(order)
+            })
         );
-
-    });
 
 
     const itemsSold =
@@ -891,22 +651,16 @@ function renderDashboard() {
                 const items =
                     getItems(order);
 
-
                 return sum +
                     items.reduce(
-                        (
-                            itemTotal,
-                            item
-                        ) => {
+                        (total, item) => {
 
-                            return (
-                                itemTotal +
+                            return total +
                                 Number(
                                     item.quantity ||
                                     item.qty ||
                                     1
-                                )
-                            );
+                                );
 
                         },
                         0
@@ -919,8 +673,7 @@ function renderDashboard() {
 
     const aov =
         acceptedOrders.length
-            ? revenue /
-              acceptedOrders.length
+            ? revenue / acceptedOrders.length
             : 0;
 
 
@@ -932,7 +685,7 @@ function renderDashboard() {
 
     setText(
         "ordersValue",
-        allOrders.length
+        totalOrders
     );
 
 
@@ -977,48 +730,47 @@ function renderDashboard() {
 }
 
 
-// ============================================================
-// DASHBOARD ALERTS
-// ============================================================
+// ==========================================
+// ALERTS
+// ==========================================
 
 function renderAlerts() {
 
-    const processing =
+    const pendingOrders =
         allOrders.filter(
-            order =>
-                getStatus(order)
-                === "Processing"
+            order => getStatus(order) === "Processing"
         );
 
 
     const pendingPayments =
-        allOrders.filter(
-            order =>
+        allOrders.filter(order => {
+
+            const status =
                 String(
                     getPaymentStatus(order)
-                )
-                .toLowerCase()
-                .includes("pending")
-        );
+                ).toLowerCase();
+
+            return (
+                status.includes("pending")
+            );
+
+        });
 
 
-    const missingDeliveryDate =
-        allOrders.filter(
-            order => {
+    const missingDelivery =
+        allOrders.filter(order => {
 
-                return (
-                    getStatus(order)
-                    === "Accepted" &&
-                    !getDeliveryDate(order)
-                );
+            return (
+                getStatus(order) === "Accepted" &&
+                !getDeliveryDate(order)
+            );
 
-            }
-        );
+        });
 
 
     setAlert(
         "pendingAlert",
-        processing.length,
+        pendingOrders.length,
         "Processing orders"
     );
 
@@ -1032,7 +784,7 @@ function renderAlerts() {
 
     setAlert(
         "deliveryAlert",
-        missingDeliveryDate.length,
+        missingDelivery.length,
         "Accepted orders need delivery date"
     );
 
@@ -1053,54 +805,51 @@ function setAlert(
     }
 
 
-    element.innerHTML = `
+    if (count > 0) {
 
-        <strong>
-            ${count}
-        </strong>
+        element.innerHTML = `
+            <strong>${count}</strong>
+            ${escapeHTML(label)}
+        `;
 
-        ${escapeHTML(label)}
+    } else {
 
-    `;
+        element.innerHTML = `
+            <strong>0</strong>
+            ${escapeHTML(label)}
+        `;
+
+    }
 
 }
 
 
-// ============================================================
+// ==========================================
 // RECENT ORDERS
-// ============================================================
-
+// ==========================================
 
 function renderRecentOrders() {
 
     const tbody =
         $("recentOrdersBody");
 
-
     if (!tbody) {
         return;
     }
 
 
-    const orders =
-        allOrders.slice(
-            0,
-            8
-        );
+    const recent =
+        allOrders.slice(0, 8);
 
 
-    if (!orders.length) {
+    if (!recent.length) {
 
         tbody.innerHTML = `
-
             <tr>
-
                 <td colspan="6">
                     No orders yet
                 </td>
-
             </tr>
-
         `;
 
         return;
@@ -1108,14 +857,9 @@ function renderRecentOrders() {
 
 
     tbody.innerHTML =
-        orders.map(order => {
-
-            const status =
-                getStatus(order);
-
+        recent.map(order => {
 
             return `
-
                 <tr>
 
                     <td>
@@ -1145,18 +889,12 @@ function renderRecentOrders() {
                     </td>
 
                     <td>
-
-                        <span class="
-                            status
-                            ${status.toLowerCase()}
-                        ">
-
+                        <span class="status ${getStatus(order)
+                            .toLowerCase()}">
                             ${escapeHTML(
-                                status
+                                getStatus(order)
                             )}
-
                         </span>
-
                     </td>
 
                     <td>
@@ -1166,7 +904,6 @@ function renderRecentOrders() {
                     </td>
 
                 </tr>
-
             `;
 
         }).join("");
@@ -1174,15 +911,14 @@ function renderRecentOrders() {
 }
 
 
-// ============================================================
-// ORDERS
-// ============================================================
+// ==========================================
+// ORDERS SECTION
+// ==========================================
 
 function renderOrders() {
 
     const container =
         $("ordersContainer");
-
 
     if (!container) {
         return;
@@ -1193,30 +929,25 @@ function renderOrders() {
         (
             $("searchInput")?.value ||
             ""
-        )
-        .toLowerCase()
-        .trim();
+        ).toLowerCase().trim();
 
 
     const statusFilter =
         (
             $("statusFilter")?.value ||
             "all"
-        )
-        .toLowerCase();
+        ).toLowerCase();
 
 
     const paymentFilter =
         (
             $("paymentFilter")?.value ||
             "all"
-        )
-        .toLowerCase();
+        ).toLowerCase();
 
 
-    const filtered =
+    let orders =
         allOrders.filter(order => {
-
 
             const searchable = [
 
@@ -1237,9 +968,7 @@ function renderOrders() {
 
             const matchesSearch =
                 !search ||
-                searchable.includes(
-                    search
-                );
+                searchable.includes(search);
 
 
             const status =
@@ -1271,16 +1000,12 @@ function renderOrders() {
         });
 
 
-    if (!filtered.length) {
+    if (!orders.length) {
 
         container.innerHTML = `
-
             <div class="empty-state">
-
                 📦 No matching orders found.
-
             </div>
-
         `;
 
         return;
@@ -1288,20 +1013,20 @@ function renderOrders() {
 
 
     container.innerHTML =
-        filtered
-            .map(
-                renderOrderCard
-            )
-            .join("");
+        orders.map(renderOrderCard).join("");
 
 }
 
 
-// ============================================================
+// ==========================================
 // ORDER CARD
-// ============================================================
+// ==========================================
 
 function renderOrderCard(order) {
+
+    const firestoreId =
+        order.firestoreId;
+
 
     const status =
         getStatus(order);
@@ -1346,34 +1071,25 @@ function renderOrderCard(order) {
 
 
                 return `
-
-                    <div class="
-                        admin-order-item
-                    ">
+                    <div class="admin-order-item">
 
                         <div>
-
                             <strong>
-                                ${escapeHTML(
-                                    name
-                                )}
+                                ${escapeHTML(name)}
                             </strong>
 
                             <small>
                                 × ${quantity}
                             </small>
-
                         </div>
 
                         <strong>
                             ${formatMoney(
-                                price *
-                                quantity
+                                price * quantity
                             )}
                         </strong>
 
                     </div>
-
                 `;
 
             }).join("");
@@ -1381,11 +1097,9 @@ function renderOrderCard(order) {
     } else {
 
         itemsHTML = `
-
             <div class="muted">
                 No item details
             </div>
-
         `;
 
     }
@@ -1394,19 +1108,14 @@ function renderOrderCard(order) {
     let actions = "";
 
 
-    // Processing
-
-    if (
-        status === "Processing"
-    ) {
+    if (status === "Processing") {
 
         actions = `
-
             <button
                 class="accept-btn"
                 data-action="accept"
                 data-id="${escapeHTML(
-                    order.firestoreId
+                    firestoreId
                 )}"
             >
                 ✓ Accept Order
@@ -1416,30 +1125,21 @@ function renderOrderCard(order) {
                 class="cancel-btn"
                 data-action="cancel"
                 data-id="${escapeHTML(
-                    order.firestoreId
+                    firestoreId
                 )}"
             >
                 ✕ Cancel
             </button>
-
         `;
 
-    }
-
-
-    // Accepted
-
-    else if (
-        status === "Accepted"
-    ) {
+    } else if (status === "Accepted") {
 
         actions = `
-
             <button
                 class="delivery-btn"
                 data-action="delivery"
                 data-id="${escapeHTML(
-                    order.firestoreId
+                    firestoreId
                 )}"
             >
                 📅 Change Delivery Date
@@ -1449,47 +1149,28 @@ function renderOrderCard(order) {
                 class="cancel-btn"
                 data-action="cancel"
                 data-id="${escapeHTML(
-                    order.firestoreId
+                    firestoreId
                 )}"
             >
                 ✕ Cancel
             </button>
-
         `;
 
-    }
-
-
-    // Cancelled
-
-    else {
+    } else {
 
         actions = `
-
             <span class="order-closed">
-
-                Order
-                ${escapeHTML(status)}
-
+                Order ${escapeHTML(status)}
             </span>
-
         `;
 
     }
 
 
     return `
+        <div class="admin-order-card">
 
-        <div class="
-            admin-order-card
-        ">
-
-
-            <!-- TOP -->
-
-            <div class="
-                admin-order-top
-            ">
+            <div class="admin-order-top">
 
                 <div>
 
@@ -1512,28 +1193,17 @@ function renderOrderCard(order) {
                     order-status
                     ${status.toLowerCase()}
                 ">
-
-                    ${escapeHTML(
-                        status
-                    )}
-
+                    ${escapeHTML(status)}
                 </span>
 
             </div>
 
 
-            <!-- CUSTOMER / ADDRESS / PAYMENT / TOTAL -->
-
-            <div class="
-                admin-order-grid
-            ">
-
+            <div class="admin-order-grid">
 
                 <div>
 
-                    <h4>
-                        Customer
-                    </h4>
+                    <h4>Customer</h4>
 
                     <p>
                         <strong>
@@ -1560,9 +1230,7 @@ function renderOrderCard(order) {
 
                 <div>
 
-                    <h4>
-                        Address
-                    </h4>
+                    <h4>Address</h4>
 
                     <p>
                         ${escapeHTML(
@@ -1585,9 +1253,7 @@ function renderOrderCard(order) {
 
                 <div>
 
-                    <h4>
-                        Payment
-                    </h4>
+                    <h4>Payment</h4>
 
                     <p>
                         <strong>
@@ -1608,9 +1274,7 @@ function renderOrderCard(order) {
 
                 <div>
 
-                    <h4>
-                        Total
-                    </h4>
+                    <h4>Total</h4>
 
                     <p class="admin-total">
                         ${formatMoney(
@@ -1623,33 +1287,20 @@ function renderOrderCard(order) {
             </div>
 
 
-            <!-- ITEMS -->
+            <div class="admin-items">
 
-            <div class="
-                admin-items
-            ">
-
-                <h4>
-                    Order Items
-                </h4>
+                <h4>Order Items</h4>
 
                 ${itemsHTML}
 
             </div>
 
 
-            <!-- DELIVERY DATE -->
-
             ${
                 deliveryDate
                 ? `
-
-                    <div class="
-                        admin-delivery-date
-                    ">
-
+                    <div class="admin-delivery-date">
                         📅 Delivery Date:
-
                         <strong>
                             ${escapeHTML(
                                 formatDeliveryDate(
@@ -1657,41 +1308,33 @@ function renderOrderCard(order) {
                                 )
                             )}
                         </strong>
-
                     </div>
-
                 `
                 : ""
             }
 
 
-            <!-- ACTIONS -->
-
-            <div class="
-                admin-order-actions
-            ">
+            <div class="admin-order-actions">
 
                 ${actions}
 
             </div>
 
-
         </div>
-
     `;
 
 }
 
 
-// ============================================================
-// ORDER BUTTON ACTIONS
-// ============================================================
+// ==========================================
+// ORDER ACTIONS
+// ==========================================
+
 function setupOrderActions() {
 
     document.addEventListener(
         "click",
         event => {
-
 
             const button =
                 event.target.closest(
@@ -1708,44 +1351,32 @@ function setupOrderActions() {
                 button.dataset.action;
 
 
-            const orderId =
+            const id =
                 button.dataset.id;
 
 
-            if (!orderId) {
+            if (!id) {
                 return;
             }
 
 
-            if (
-                action === "accept"
-            ) {
+            if (action === "accept") {
 
-                openDeliveryModal(
-                    orderId
-                );
+                openDeliveryModal(id);
 
             }
 
 
-            if (
-                action === "delivery"
-            ) {
+            if (action === "delivery") {
 
-                openDeliveryModal(
-                    orderId
-                );
+                openDeliveryModal(id);
 
             }
 
 
-            if (
-                action === "cancel"
-            ) {
+            if (action === "cancel") {
 
-                cancelOrder(
-                    orderId
-                );
+                cancelOrder(id);
 
             }
 
@@ -1755,9 +1386,9 @@ function setupOrderActions() {
 }
 
 
-// ============================================================
-// OPEN DELIVERY MODAL
-// ============================================================
+// ==========================================
+// DELIVERY MODAL
+// ==========================================
 
 function openDeliveryModal(orderId) {
 
@@ -1768,18 +1399,12 @@ function openDeliveryModal(orderId) {
     const modal =
         $("deliveryModal");
 
-
     const input =
         $("deliveryDateInput");
 
 
-    if (
-        !modal ||
-        !input
-    ) {
-
+    if (!modal || !input) {
         return;
-
     }
 
 
@@ -1796,28 +1421,18 @@ function openDeliveryModal(orderId) {
     const month =
         String(
             today.getMonth() + 1
-        )
-        .padStart(
-            2,
-            "0"
-        );
+        ).padStart(2, "0");
 
 
     const day =
         String(
             today.getDate()
-        )
-        .padStart(
-            2,
-            "0"
-        );
+        ).padStart(2, "0");
 
 
     const todayString =
         `${year}-${month}-${day}`;
 
-
-    // Past dates blocked
 
     input.min =
         todayString;
@@ -1826,16 +1441,10 @@ function openDeliveryModal(orderId) {
     input.value = "";
 
 
-    modal.classList.add(
-        "active"
-    );
+    modal.classList.add("active");
 
 }
 
-
-// ============================================================
-// CLOSE DELIVERY MODAL
-// ============================================================
 
 function closeDeliveryModal() {
 
@@ -1848,19 +1457,11 @@ function closeDeliveryModal() {
 
 
     if (modal) {
-
-        modal.classList.remove(
-            "active"
-        );
-
+        modal.classList.remove("active");
     }
 
 }
 
-
-// ============================================================
-// ACCEPT ORDER
-// ============================================================
 
 async function confirmDeliveryDate() {
 
@@ -1873,25 +1474,19 @@ async function confirmDeliveryDate() {
         $("deliveryDateInput");
 
 
-    if (
-        !input ||
-        !input.value
-    ) {
+    if (!input || !input.value) {
 
         alert(
             "Please select a delivery date."
         );
 
         return;
-
     }
 
 
     const selectedDate =
         input.value;
 
-
-    // Today
 
     const today =
         new Date();
@@ -1905,49 +1500,38 @@ async function confirmDeliveryDate() {
     );
 
 
-    // Selected
-
-    const chosenDate =
+    const chosen =
         new Date(
             `${selectedDate}T00:00:00`
         );
 
 
-    // Past date check
-
-    if (
-        chosenDate < today
-    ) {
+    if (chosen < today) {
 
         alert(
             "Past date cannot be selected."
         );
 
         return;
-
     }
 
 
     try {
 
         await updateDoc(
-
             doc(
                 db,
                 "orders",
                 selectedOrderId
             ),
-
             {
 
-                status:
-                    "Accepted",
+                status: "Accepted",
 
                 deliveryDate:
                     selectedDate
 
             }
-
         );
 
 
@@ -1963,7 +1547,7 @@ async function confirmDeliveryDate() {
 
 
         alert(
-            "Unable to accept order. Please try again."
+            "Unable to update order. Please try again."
         );
 
     }
@@ -1971,9 +1555,9 @@ async function confirmDeliveryDate() {
 }
 
 
-// ============================================================
+// ==========================================
 // CANCEL ORDER
-// ============================================================
+// ==========================================
 
 async function cancelOrder(orderId) {
 
@@ -1991,20 +1575,16 @@ async function cancelOrder(orderId) {
     try {
 
         await updateDoc(
-
             doc(
                 db,
                 "orders",
                 orderId
             ),
-
             {
 
-                status:
-                    "Cancelled"
+                status: "Cancelled"
 
             }
-
         );
 
 
@@ -2023,17 +1603,10 @@ async function cancelOrder(orderId) {
     }
 
 }
-
-
-// ============================================================
-// CUSTOMERS SECTION
-// ============================================================
-
 function renderCustomers() {
 
     const container =
         $("customersContainer");
-
 
     if (!container) {
         return;
@@ -2051,9 +1624,7 @@ function renderCustomers() {
             getCustomerEmail(order);
 
 
-        if (
-            !customersMap.has(key)
-        ) {
+        if (!customersMap.has(key)) {
 
             customersMap.set(
                 key,
@@ -2068,11 +1639,9 @@ function renderCustomers() {
                     phone:
                         getCustomerPhone(order),
 
-                    orders:
-                        0,
+                    orders: 0,
 
-                    spending:
-                        0
+                    spending: 0
 
                 }
             );
@@ -2088,8 +1657,7 @@ function renderCustomers() {
 
 
         if (
-            getStatus(order)
-            === "Accepted"
+            getStatus(order) === "Accepted"
         ) {
 
             customer.spending +=
@@ -2109,13 +1677,9 @@ function renderCustomers() {
     if (!customers.length) {
 
         container.innerHTML = `
-
             <div class="empty-state">
-
                 👥 No customers yet.
-
             </div>
-
         `;
 
         return;
@@ -2123,10 +1687,7 @@ function renderCustomers() {
 
 
     container.innerHTML = `
-
-        <div class="
-            table-wrapper
-        ">
+        <div class="table-wrapper">
 
             <table>
 
@@ -2134,25 +1695,15 @@ function renderCustomers() {
 
                     <tr>
 
-                        <th>
-                            Customer
-                        </th>
+                        <th>Customer</th>
 
-                        <th>
-                            Email
-                        </th>
+                        <th>Email</th>
 
-                        <th>
-                            Phone
-                        </th>
+                        <th>Phone</th>
 
-                        <th>
-                            Orders
-                        </th>
+                        <th>Orders</th>
 
-                        <th>
-                            Spending
-                        </th>
+                        <th>Spending</th>
 
                     </tr>
 
@@ -2161,81 +1712,78 @@ function renderCustomers() {
 
                 <tbody>
 
-                    ${customers.map(
-                        customer => `
+                    ${customers.map(customer => {
 
-                        <tr>
+                        return `
+                            <tr>
 
-                            <td>
-                                <strong>
+                                <td>
+                                    <strong>
+                                        ${escapeHTML(
+                                            customer.name
+                                        )}
+                                    </strong>
+                                </td>
+
+                                <td>
                                     ${escapeHTML(
-                                        customer.name
+                                        customer.email
                                     )}
-                                </strong>
-                            </td>
+                                </td>
 
-                            <td>
-                                ${escapeHTML(
-                                    customer.email
-                                )}
-                            </td>
+                                <td>
+                                    ${escapeHTML(
+                                        customer.phone
+                                    )}
+                                </td>
 
-                            <td>
-                                ${escapeHTML(
-                                    customer.phone
-                                )}
-                            </td>
+                                <td>
+                                    ${customer.orders}
+                                </td>
 
-                            <td>
-                                ${customer.orders}
-                            </td>
+                                <td>
+                                    ${formatMoney(
+                                        customer.spending
+                                    )}
+                                </td>
 
-                            <td>
-                                ${formatMoney(
-                                    customer.spending
-                                )}
-                            </td>
+                            </tr>
+                        `;
 
-                        </tr>
-
-                    `
-                    ).join("")}
+                    }).join("")}
 
                 </tbody>
 
             </table>
 
         </div>
-
     `;
 
 }
 
 
-// ============================================================
-// PRODUCTS SECTION
-// ============================================================
+// ==========================================
+// PRODUCTS
+// ==========================================
 
 function renderProducts() {
 
     const container =
         $("productsContainer");
 
-
     if (!container) {
         return;
     }
 
 
-    const products =
+    const productMap =
         new Map();
 
 
     allOrders
         .filter(
             order =>
-                getStatus(order)
-                === "Accepted"
+                getStatus(order) === "Accepted"
         )
         .forEach(order => {
 
@@ -2265,21 +1813,18 @@ function renderProducts() {
 
 
                     if (
-                        !products.has(name)
+                        !productMap.has(name)
                     ) {
 
-                        products.set(
+                        productMap.set(
                             name,
                             {
 
-                                name:
-                                    name,
+                                name,
 
-                                quantity:
-                                    0,
+                                quantity: 0,
 
-                                revenue:
-                                    0
+                                revenue: 0
 
                             }
                         );
@@ -2288,7 +1833,7 @@ function renderProducts() {
 
 
                     const product =
-                        products.get(name);
+                        productMap.get(name);
 
 
                     product.quantity +=
@@ -2296,205 +1841,16 @@ function renderProducts() {
 
 
                     product.revenue +=
-                        price *
-                        quantity;
+                        price * quantity;
 
                 });
 
         });
-
-
-    const productList =
-        Array.from(
-            products.values()
-        )
-        .sort(
-            (a, b) =>
-                b.quantity -
-                a.quantity
-        );
-
-
-    if (!productList.length) {
-
-        container.innerHTML = `
-
-            <div class="empty-state">
-
-                📦 No product sales yet.
-
-            </div>
-
-        `;
-
-        return;
-    }
-
-
-    container.innerHTML = `
-
-        <div class="
-            table-wrapper
-        ">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-
-                        <th>
-                            Product
-                        </th>
-
-                        <th>
-                            Units Sold
-                        </th>
-
-                        <th>
-                            Revenue
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    ${productList.map(
-                        product => `
-
-                        <tr>
-
-                            <td>
-                                <strong>
-                                    ${escapeHTML(
-                                        product.name
-                                    )}
-                                </strong>
-                            </td>
-
-                            <td>
-                                ${product.quantity}
-                            </td>
-
-                            <td>
-                                ${formatMoney(
-                                    product.revenue
-                                )}
-                            </td>
-
-                        </tr>
-
-                    `
-                    ).join("")}
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-    `;
-
-}
-
-
-// ============================================================
-// PAYMENTS SECTION
-// ============================================================
-function renderProducts() {
-
-    const container =
-        $("productsContainer");
-
-
-    if (!container) {
-        return;
-    }
 
 
     const products =
-        new Map();
-
-
-    allOrders
-        .filter(
-            order =>
-                getStatus(order)
-                === "Accepted"
-        )
-        .forEach(order => {
-
-            getItems(order)
-                .forEach(item => {
-
-                    const name =
-                        item.name ||
-                        item.productName ||
-                        "Unknown Product";
-
-
-                    const quantity =
-                        Number(
-                            item.quantity ||
-                            item.qty ||
-                            1
-                        );
-
-
-                    const price =
-                        Number(
-                            item.price ||
-                            item.productPrice ||
-                            0
-                        );
-
-
-                    if (
-                        !products.has(name)
-                    ) {
-
-                        products.set(
-                            name,
-                            {
-
-                                name:
-                                    name,
-
-                                quantity:
-                                    0,
-
-                                revenue:
-                                    0
-
-                            }
-                        );
-
-                    }
-
-
-                    const product =
-                        products.get(name);
-
-
-                    product.quantity +=
-                        quantity;
-
-
-                    product.revenue +=
-                        price *
-                        quantity;
-
-                });
-
-        });
-
-
-    const productList =
         Array.from(
-            products.values()
+            productMap.values()
         )
         .sort(
             (a, b) =>
@@ -2503,16 +1859,12 @@ function renderProducts() {
         );
 
 
-    if (!productList.length) {
+    if (!products.length) {
 
         container.innerHTML = `
-
             <div class="empty-state">
-
                 📦 No product sales yet.
-
             </div>
-
         `;
 
         return;
@@ -2520,10 +1872,7 @@ function renderProducts() {
 
 
     container.innerHTML = `
-
-        <div class="
-            table-wrapper
-        ">
+        <div class="table-wrapper">
 
             <table>
 
@@ -2531,17 +1880,11 @@ function renderProducts() {
 
                     <tr>
 
-                        <th>
-                            Product
-                        </th>
+                        <th>Product</th>
 
-                        <th>
-                            Units Sold
-                        </th>
+                        <th>Units Sold</th>
 
-                        <th>
-                            Revenue
-                        </th>
+                        <th>Revenue</th>
 
                     </tr>
 
@@ -2550,54 +1893,52 @@ function renderProducts() {
 
                 <tbody>
 
-                    ${productList.map(
-                        product => `
+                    ${products.map(product => {
 
-                        <tr>
+                        return `
+                            <tr>
 
-                            <td>
-                                <strong>
-                                    ${escapeHTML(
-                                        product.name
+                                <td>
+                                    <strong>
+                                        ${escapeHTML(
+                                            product.name
+                                        )}
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    ${product.quantity}
+                                </td>
+
+                                <td>
+                                    ${formatMoney(
+                                        product.revenue
                                     )}
-                                </strong>
-                            </td>
+                                </td>
 
-                            <td>
-                                ${product.quantity}
-                            </td>
+                            </tr>
+                        `;
 
-                            <td>
-                                ${formatMoney(
-                                    product.revenue
-                                )}
-                            </td>
-
-                        </tr>
-
-                    `
-                    ).join("")}
+                    }).join("")}
 
                 </tbody>
 
             </table>
 
         </div>
-
     `;
 
 }
 
 
-// ============================================================
-// PAYMENTS SECTION
-// ============================================================
+// ==========================================
+// PAYMENTS
+// ==========================================
 
 function renderPayments() {
 
     const container =
         $("paymentsContainer");
-
 
     if (!container) {
         return;
@@ -2608,7 +1949,8 @@ function renderPayments() {
         allOrders.filter(
             order =>
                 getPaymentMethod(order)
-                === "COD"
+                .toLowerCase()
+                === "cod"
         ).length;
 
 
@@ -2616,35 +1958,30 @@ function renderPayments() {
         allOrders.filter(
             order =>
                 getPaymentMethod(order)
-                === "UPI"
+                .toLowerCase()
+                === "upi"
         ).length;
 
 
     const pending =
-        allOrders.filter(
-            order =>
-                String(
-                    getPaymentStatus(order)
-                )
-                .toLowerCase()
-                .includes("pending")
-        ).length;
+        allOrders.filter(order => {
+
+            return String(
+                getPaymentStatus(order)
+            )
+            .toLowerCase()
+            .includes("pending");
+
+        }).length;
 
 
     container.innerHTML = `
 
-        <div class="
-            payment-stats
-        ">
+        <div class="payment-stats">
 
+            <div class="payment-stat-card">
 
-            <div class="
-                payment-stat-card
-            ">
-
-                <span>
-                    💵 COD Orders
-                </span>
+                <span>💵 COD Orders</span>
 
                 <strong>
                     ${cod}
@@ -2653,13 +1990,9 @@ function renderPayments() {
             </div>
 
 
-            <div class="
-                payment-stat-card
-            ">
+            <div class="payment-stat-card">
 
-                <span>
-                    📱 UPI Orders
-                </span>
+                <span>📱 UPI Orders</span>
 
                 <strong>
                     ${upi}
@@ -2668,13 +2001,9 @@ function renderPayments() {
             </div>
 
 
-            <div class="
-                payment-stat-card
-            ">
+            <div class="payment-stat-card">
 
-                <span>
-                    ⏳ Pending Payments
-                </span>
+                <span>⏳ Pending Payments</span>
 
                 <strong>
                     ${pending}
@@ -2682,13 +2011,10 @@ function renderPayments() {
 
             </div>
 
-
         </div>
 
 
-        <div class="
-            table-wrapper
-        ">
+        <div class="table-wrapper">
 
             <table>
 
@@ -2696,25 +2022,15 @@ function renderPayments() {
 
                     <tr>
 
-                        <th>
-                            Order
-                        </th>
+                        <th>Order</th>
 
-                        <th>
-                            Customer
-                        </th>
+                        <th>Customer</th>
 
-                        <th>
-                            Method
-                        </th>
+                        <th>Method</th>
 
-                        <th>
-                            Payment Status
-                        </th>
+                        <th>Payment Status</th>
 
-                        <th>
-                            Total
-                        </th>
+                        <th>Total</th>
 
                     </tr>
 
@@ -2723,45 +2039,45 @@ function renderPayments() {
 
                 <tbody>
 
-                    ${allOrders.map(
-                        order => `
+                    ${allOrders.map(order => {
 
-                        <tr>
+                        return `
+                            <tr>
 
-                            <td>
-                                #${escapeHTML(
-                                    getOrderId(order)
-                                )}
-                            </td>
+                                <td>
+                                    #${escapeHTML(
+                                        getOrderId(order)
+                                    )}
+                                </td>
 
-                            <td>
-                                ${escapeHTML(
-                                    getCustomerName(order)
-                                )}
-                            </td>
+                                <td>
+                                    ${escapeHTML(
+                                        getCustomerName(order)
+                                    )}
+                                </td>
 
-                            <td>
-                                ${escapeHTML(
-                                    getPaymentMethod(order)
-                                )}
-                            </td>
+                                <td>
+                                    ${escapeHTML(
+                                        getPaymentMethod(order)
+                                    )}
+                                </td>
 
-                            <td>
-                                ${escapeHTML(
-                                    getPaymentStatus(order)
-                                )}
-                            </td>
+                                <td>
+                                    ${escapeHTML(
+                                        getPaymentStatus(order)
+                                    )}
+                                </td>
 
-                            <td>
-                                ${formatMoney(
-                                    getTotal(order)
-                                )}
-                            </td>
+                                <td>
+                                    ${formatMoney(
+                                        getTotal(order)
+                                    )}
+                                </td>
 
-                        </tr>
+                            </tr>
+                        `;
 
-                    `
-                    ).join("")}
+                    }).join("")}
 
                 </tbody>
 
@@ -2774,18 +2090,16 @@ function renderPayments() {
 }
 
 
-// ============================================================
+// ==========================================
 // ANALYTICS
-// ============================================================
+// ==========================================
 
 function renderAnalytics() {
 
     if (
         typeof Chart === "undefined"
     ) {
-
         return;
-
     }
 
 
@@ -2802,15 +2116,14 @@ function renderAnalytics() {
 }
 
 
-// ============================================================
+// ==========================================
 // REVENUE CHART
-// ============================================================
+// ==========================================
 
 function renderRevenueChart() {
 
     const canvas =
         $("revenueChart");
-
 
     if (!canvas) {
         return;
@@ -2828,7 +2141,6 @@ function renderRevenueChart() {
 
         const date =
             new Date();
-
 
         date.setDate(
             date.getDate() - i
@@ -2854,9 +2166,7 @@ function renderRevenueChart() {
                         getStatus(order)
                         !== "Accepted"
                     ) {
-
                         return false;
-
                     }
 
 
@@ -2869,17 +2179,13 @@ function renderRevenueChart() {
                     }
 
 
-                    const orderDay =
-                        new Date(
-                            timestamp
-                        )
-                        .toISOString()
-                        .split("T")[0];
+                    const date =
+                        new Date(timestamp)
+                            .toISOString()
+                            .split("T")[0];
 
 
-                    return (
-                        orderDay === day
-                    );
+                    return date === day;
 
                 })
                 .reduce(
@@ -2893,9 +2199,7 @@ function renderRevenueChart() {
 
 
     if (revenueChart) {
-
         revenueChart.destroy();
-
     }
 
 
@@ -2904,14 +2208,14 @@ function renderRevenueChart() {
             canvas,
             {
 
-                type:
-                    "line",
+                type: "line",
 
                 data: {
 
                     labels:
                         days.map(
-                            formatShortDate
+                            day =>
+                                formatShortDate(day)
                         ),
 
                     datasets: [
@@ -2938,154 +2242,25 @@ function renderRevenueChart() {
 
                 options: {
 
-                    responsive:
-                        true,
-
-                    maintainAspectRatio:
-                        false
-
-                }
-
-            }
-        );
-
-}
-
-
-// ============================================================
-// ORDERS CHART
-// ============================================================
-
-function renderOrdersChart() {
-
-    const canvas =
-        $("ordersChart");
-
-
-    if (!canvas) {
-        return;
-    }
-
-
-    const days = [];
-
-
-    for (
-        let i = 6;
-        i >= 0;
-        i--
-    ) {
-
-        const date =
-            new Date();
-
-
-        date.setDate(
-            date.getDate() - i
-        );
-
-
-        days.push(
-            date
-                .toISOString()
-                .split("T")[0]
-        );
-
-    }
-
-
-    const values =
-        days.map(day => {
-
-            return allOrders.filter(
-                order => {
-
-                    const timestamp =
-                        getTimestamp(order);
-
-
-                    if (!timestamp) {
-                        return false;
-                    }
-
-
-                    const orderDay =
-                        new Date(
-                            timestamp
-                        )
-                        .toISOString()
-                        .split("T")[0];
-
-
-                    return (
-                        orderDay === day
-                    );
-
-                }
-            ).length;
-
-        });
-
-
-    if (ordersChart) {
-
-        ordersChart.destroy();
-
-    }
-
-
-    ordersChart =
-        new Chart(
-            canvas,
-            {
-
-                type:
-                    "bar",
-
-                data: {
-
-                    labels:
-                        days.map(
-                            formatShortDate
-                        ),
-
-                    datasets: [
-
-                        {
-
-                            label:
-                                "Orders",
-
-                            data:
-                                values
-
-                        }
-
-                    ]
-
-                },
-
-                options: {
-
-                    responsive:
-                        true,
+                    responsive: true,
 
                     maintainAspectRatio:
                         false,
+
+                    plugins: {
+
+                        legend: {
+                            display: true
+                        }
+
+                    },
 
                     scales: {
 
                         y: {
 
                             beginAtZero:
-                                true,
-
-                            ticks: {
-
-                                precision:
-                                    0
-
-                            }
+                                true
 
                         }
 
@@ -3098,687 +2273,3 @@ function renderOrdersChart() {
 
 }
 
-
-// ============================================================
-// STATUS CHART
-// ============================================================
-function renderStatusChart() {
-
-    const canvas =
-        $("statusChart");
-
-
-    if (!canvas) {
-        return;
-    }
-
-
-    const processing =
-        allOrders.filter(
-            order =>
-                getStatus(order)
-                === "Processing"
-        ).length;
-
-
-    const accepted =
-        allOrders.filter(
-            order =>
-                getStatus(order)
-                === "Accepted"
-        ).length;
-
-
-    const cancelled =
-        allOrders.filter(
-            order =>
-                getStatus(order)
-                === "Cancelled"
-        ).length;
-
-
-    if (statusChart) {
-
-        statusChart.destroy();
-
-    }
-
-
-    statusChart =
-        new Chart(
-            canvas,
-            {
-
-                type:
-                    "doughnut",
-
-                data: {
-
-                    labels: [
-
-                        "Processing",
-
-                        "Accepted",
-
-                        "Cancelled"
-
-                    ],
-
-                    datasets: [
-
-                        {
-
-                            data: [
-
-                                processing,
-
-                                accepted,
-
-                                cancelled
-
-                            ]
-
-                        }
-
-                    ]
-
-                },
-
-                options: {
-
-                    responsive:
-                        true,
-
-                    maintainAspectRatio:
-                        false
-
-                }
-
-            }
-        );
-
-}
-
-
-// ============================================================
-// PAYMENT CHART
-// ============================================================
-
-function renderPaymentChart() {
-
-    const canvas =
-        $("paymentChart");
-
-
-    if (!canvas) {
-        return;
-    }
-
-
-    const cod =
-        allOrders.filter(
-            order =>
-                getPaymentMethod(order)
-                === "COD"
-        ).length;
-
-
-    const upi =
-        allOrders.filter(
-            order =>
-                getPaymentMethod(order)
-                === "UPI"
-        ).length;
-
-
-    if (paymentChart) {
-
-        paymentChart.destroy();
-
-    }
-
-
-    paymentChart =
-        new Chart(
-            canvas,
-            {
-
-                type:
-                    "pie",
-
-                data: {
-
-                    labels: [
-
-                        "COD",
-
-                        "UPI"
-
-                    ],
-
-                    datasets: [
-
-                        {
-
-                            data: [
-
-                                cod,
-
-                                upi
-
-                            ]
-
-                        }
-
-                    ]
-
-                },
-
-                options: {
-
-                    responsive:
-                        true,
-
-                    maintainAspectRatio:
-                        false
-
-                }
-
-            }
-        );
-
-}
-
-
-// ============================================================
-// TOP PRODUCTS
-// ============================================================
-
-function renderTopProducts() {
-
-    const tbody =
-        $("topProductsBody");
-
-
-    if (!tbody) {
-        return;
-    }
-
-
-    const products =
-        new Map();
-
-
-    allOrders
-        .filter(
-            order =>
-                getStatus(order)
-                === "Accepted"
-        )
-        .forEach(order => {
-
-            getItems(order)
-                .forEach(item => {
-
-                    const name =
-                        item.name ||
-                        item.productName ||
-                        "Unknown Product";
-
-
-                    const quantity =
-                        Number(
-                            item.quantity ||
-                            item.qty ||
-                            1
-                        );
-
-
-                    products.set(
-                        name,
-                        (
-                            products.get(name)
-                            || 0
-                        ) +
-                        quantity
-                    );
-
-                });
-
-        });
-
-
-    const topProducts =
-        Array.from(
-            products.entries()
-        )
-        .sort(
-            (a, b) =>
-                b[1] - a[1]
-        )
-        .slice(
-            0,
-            10
-        );
-
-
-    if (!topProducts.length) {
-
-        tbody.innerHTML = `
-
-            <tr>
-
-                <td colspan="2">
-                    No product sales yet
-                </td>
-
-            </tr>
-
-        `;
-
-        return;
-    }
-
-
-    tbody.innerHTML =
-        topProducts
-            .map(
-                ([name, quantity]) => `
-
-                <tr>
-
-                    <td>
-                        ${escapeHTML(name)}
-                    </td>
-
-                    <td>
-                        ${quantity}
-                    </td>
-
-                </tr>
-
-            `
-            )
-            .join("");
-
-}
-
-
-// ============================================================
-// SEARCH AND FILTERS
-// ============================================================
-
-function setupFilters() {
-
-    const search =
-        $("searchInput");
-
-
-    const status =
-        $("statusFilter");
-
-
-    const payment =
-        $("paymentFilter");
-
-
-    if (search) {
-
-        search.addEventListener(
-            "input",
-            renderOrders
-        );
-
-    }
-
-
-    if (status) {
-
-        status.addEventListener(
-            "change",
-            renderOrders
-        );
-
-    }
-
-
-    if (payment) {
-
-        payment.addEventListener(
-            "change",
-            renderOrders
-        );
-
-    }
-
-}
-
-
-// ============================================================
-// DELIVERY MODAL
-// ============================================================
-
-function setupDeliveryModal() {
-
-    const closeButton =
-        $("closeModalBtn");
-
-
-    const confirmButton =
-        $("confirmDeliveryBtn");
-
-
-    if (closeButton) {
-
-        closeButton.addEventListener(
-            "click",
-            closeDeliveryModal
-        );
-
-    }
-
-
-    if (confirmButton) {
-
-        confirmButton.addEventListener(
-            "click",
-            confirmDeliveryDate
-        );
-
-    }
-
-
-    const modal =
-        $("deliveryModal");
-
-
-    if (modal) {
-
-        modal.addEventListener(
-            "click",
-            event => {
-
-                if (
-                    event.target === modal
-                ) {
-
-                    closeDeliveryModal();
-
-                }
-
-            }
-        );
-
-    }
-
-}
-
-
-// ============================================================
-// EXPORT ORDERS CSV
-// ============================================================
-
-function exportOrdersCSV() {
-
-    if (!allOrders.length) {
-
-        alert(
-            "No orders available to export."
-        );
-
-        return;
-
-    }
-
-
-    const headers = [
-
-        "Order ID",
-
-        "Customer",
-
-        "Email",
-
-        "Phone",
-
-        "Address",
-
-        "City",
-
-        "Pincode",
-
-        "Total",
-
-        "Payment Method",
-
-        "Payment Status",
-
-        "Status",
-
-        "Delivery Date",
-
-        "Order Date"
-
-    ];
-
-
-    const rows =
-        allOrders.map(order => [
-
-            getOrderId(order),
-
-            getCustomerName(order),
-
-            getCustomerEmail(order),
-
-            getCustomerPhone(order),
-
-            getCustomerAddress(order),
-
-            getCustomerCity(order),
-
-            getCustomerPincode(order),
-
-            getTotal(order),
-
-            getPaymentMethod(order),
-
-            getPaymentStatus(order),
-
-            getStatus(order),
-
-            getDeliveryDate(order),
-
-            getOrderDate(order)
-
-        ]);
-
-
-    const csv = [
-
-        headers,
-
-        ...rows
-
-    ]
-    .map(row =>
-
-        row
-            .map(
-                value =>
-                    `"${String(value)
-                        .replace(
-                            /"/g,
-                            '""'
-                        )}"`
-            )
-            .join(",")
-
-    )
-    .join("\n");
-
-
-    const blob =
-        new Blob(
-            [csv],
-            {
-                type:
-                    "text/csv;charset=utf-8;"
-            }
-        );
-
-
-    const url =
-        URL.createObjectURL(blob);
-
-
-    const link =
-        document.createElement(
-            "a"
-        );
-
-
-    link.href =
-        url;
-
-
-    link.download =
-        "chemistboys-orders.csv";
-
-
-    document.body.appendChild(
-        link
-    );
-
-
-    link.click();
-
-
-    link.remove();
-
-
-    URL.revokeObjectURL(
-        url
-    );
-
-}
-
-
-// ============================================================
-// EXPORT BUTTON
-// ============================================================
-
-function setupExport() {
-
-    const button =
-        $("exportBtn");
-
-
-    if (button) {
-
-        button.addEventListener(
-            "click",
-            exportOrdersCSV
-        );
-
-    }
-
-}
-
-
-// ============================================================
-// LOGOUT
-// ============================================================
-
-async function logout() {
-
-    try {
-
-        await signOut(auth);
-
-        window.location.href =
-            "auth.html";
-
-    } catch (error) {
-
-        console.error(
-            "Logout error:",
-            error
-        );
-
-    }
-
-}
-
-
-// ============================================================
-// LOGOUT BUTTON
-// ============================================================
-
-function setupLogout() {
-
-    const button =
-        $("logoutBtn");
-
-
-    if (button) {
-
-        button.addEventListener(
-            "click",
-            logout
-        );
-
-    }
-
-}
-
-
-// ============================================================
-// INITIALIZE ADMIN DASHBOARD
-// ============================================================
-
-async function init() {
-
-    const allowed =
-        await checkAdmin();
-
-
-    if (!allowed) {
-        return;
-    }
-
-
-    setupNavigation();
-
-    setupMobileMenu();
-
-    setupFilters();
-
-    setupOrderActions();
-
-    setupDeliveryModal();
-
-    setupExport();
-
-    setupLogout();
-
-
-    // Start realtime Firestore listener
-
-    listenToOrders();
-
-
-    // Open Dashboard by default
-
-    showSection(
-        "dashboard"
-    );
-
-}
-
-
-// ============================================================
-// START
-// ============================================================
-
-init();
