@@ -569,14 +569,38 @@ checkoutForm.addEventListener(
             // =================================
 
             if (selectedPayment === "cod") {
-                // ✅ COD - Direct order confirm
-                await confirmOrder(order);
+    // ✅ COD - Direct order confirm
+    order.paymentStatus = "Cash on Delivery - Pending";
+    order.status = "Pending";
+    await saveOrderToFirestore(order);
+    await saveLocalOrder(order);
+    localStorage.removeItem(CART_KEY);
+    localStorage.removeItem(OLD_CART_KEY);
+    
+    // Open UPI app
+    const upiLink = `upi://pay?pa=ayushuniyal.cyberlab@fam&pn=ChemistBoys&tn=Order%20${order.id}&am=${order.total}&tr=${order.id}`;
+    window.location.href = upiLink;
+    
+    showMessage("Order placed! Opening UPI for payment...", "success");
+    setTimeout(() => window.location.href = "orders.html", 2000);
 
-            } else if (selectedPayment === "upi" || selectedPayment === "online") {
-                // ✅ UPI - Payment first, then order
-                await handleUPIPayment(order);
-
-            }
+} else if (selectedPayment === "upi" || selectedPayment === "online") {
+    // ✅ UPI - Direct save with pending status
+    order.paymentStatus = "UPI - Pending Payment";
+    order.status = "Pending";
+    
+    await saveOrderToFirestore(order);
+    await saveLocalOrder(order);
+    localStorage.removeItem(CART_KEY);
+    localStorage.removeItem(OLD_CART_KEY);
+    
+    // Open UPI app
+    const upiLink = `upi://pay?pa=ayushuniyal.cyberlab@fam&pn=ChemistBoys&tn=Order%20${order.id}&am=${order.total}&tr=${order.id}`;
+    window.location.href = upiLink;
+    
+    showMessage("Order placed! Opening UPI for payment...", "success");
+    setTimeout(() => window.location.href = "orders.html", 2000);
+}
 
         } catch (error) {
             console.error("Place Order Error:", error);
