@@ -1,8 +1,11 @@
 import { auth, authReady, db } from "./firebase.js";
 
 import {
+    collection,
+    query,
+    where,
+    getDocs,
     doc,
-    getDoc,
     setDoc
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -12,28 +15,33 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-const ADMIN_UID = "gtTvd6XSgqXVaIrp67cM6gEJP0u2";
+const ADMIN_UID =
+    "gtTvd6XSgqXVaIrp67cM6gEJP0u2";
+
 
 let currentUser = null;
 let watchId = null;
 let tracking = false;
 
 
-/* =========================
-   HTML ELEMENTS
-========================= */
+const orderInput =
+    document.getElementById("orderId");
 
-const orderInput = document.getElementById("orderId");
-const startBtn = document.getElementById("startTrackingBtn");
-const stopBtn = document.getElementById("stopTrackingBtn");
-const statusBox = document.getElementById("trackingStatus");
-const locationBox = document.getElementById("locationInfo");
-const logoutBtn = document.getElementById("logoutBtn");
+const startBtn =
+    document.getElementById("startTrackingBtn");
 
+const stopBtn =
+    document.getElementById("stopTrackingBtn");
 
-/* =========================
-   STATUS MESSAGE
-========================= */
+const statusBox =
+    document.getElementById("trackingStatus");
+
+const locationBox =
+    document.getElementById("locationInfo");
+
+const logoutBtn =
+    document.getElementById("logoutBtn");
+
 
 function showStatus(message, type = "") {
 
@@ -47,32 +55,25 @@ function showStatus(message, type = "") {
 }
 
 
-/* =========================
-   AUTHENTICATION
-========================= */
-
 await authReady;
+
 
 onAuthStateChanged(auth, (user) => {
 
     if (!user) {
-
         window.location.href = "login.html";
+        return;
+    }
+
+    if (user.uid !== ADMIN_UID) {
+
+        document.body.innerHTML =
+            "<h2>🚫 Access Denied</h2>";
 
         return;
     }
 
     currentUser = user;
-
-    /*
-       For now admin account is allowed
-       during development.
-
-       Later we will create a separate
-       delivery-person account.
-    */
-
-    console.log("Delivery user:", user.uid);
 
 });
 
@@ -83,17 +84,43 @@ onAuthStateChanged(auth, (user) => {
 
 async function checkOrder(orderId) {
 
-    const orderRef = doc(db, "orders", orderId);
+    let snapshot;
 
-    const orderSnap = await getDoc(orderRef);
+    // First check custom "id" field
+    const q1 = query(
+        collection(db, "orders"),
+        where("id", "==", orderId)
+    );
 
-    if (!orderSnap.exists()) {
+    snapshot = await getDocs(q1);
 
-        throw new Error("Order not found.");
+    // If not found, check old "orderId" field
+    if (snapshot.empty) {
+
+        const q2 = query(
+            collection(db, "orders"),
+            where("orderId", "==", orderId)
+        );
+
+        snapshot = await getDocs(q2);
+    }
+
+
+    if (snapshot.empty) {
+
+        throw new Error(
+            "Order not found."
+        );
 
     }
 
-    const order = orderSnap.data();
+
+    const orderDoc =
+        snapshot.docs[0];
+
+    const order =
+        orderDoc.data();
+
 
     if (order.status !== "Accepted") {
 
@@ -103,8 +130,8 @@ async function checkOrder(orderId) {
 
     }
 
-    return order;
 
+    return order;
 }
 
 
@@ -118,7 +145,10 @@ async function startTracking() {
         return;
     }
 
-    const orderId = orderInput.value.trim();
+
+    const orderId =
+        orderInput.value.trim();
+
 
     if (!orderId) {
 
@@ -159,154 +189,147 @@ async function startTracking() {
         );
 
 
-        watchId = navigator.geolocation.watchPosition(
+        watchId =
+            navigator.geolocation.watchPosition(
 
-            async (position) => {
+                async (position) => {
 
-                const latitude =
-                    position.coords.latitude;
+                    const latitude =
+                        position.coords.latitude;
 
-                const longitude =
-                    position.coords.longitude;
+                    const longitude =
+                        position.coords.longitude;
 
-                const accuracy =
-                    position.coords.accuracy;
-
-
-                tracking = true;
-
-                startBtn.disabled = true;
-
-                stopBtn.disabled = false;
+                    const accuracy =
+                        position.coords.accuracy;
 
 
-                showStatus(
-                    "🟢 Live GPS tracking is active.",
-                    "success"
-                );
+                    tracking = true;
 
+                    startBtn.disabled = true;
 
-                locationBox.innerHTML = `
-                    <strong>Current Location</strong><br>
-                    Latitude: ${latitude.toFixed(6)}<br>
-                    Longitude: ${longitude.toFixed(6)}<br>
-                    Accuracy: ±${Math.round(accuracy)} meters
-                `;
+                    stopBtn.disabled = false;
 
-
-                try {
-
-                    /*
-                       Location document:
-
-                       deliveryLocations
-                          └── ORDER_ID
-                    */
-
-                    await setDoc(
-                        doc(
-                            db,
-                            "deliveryLocations",
-                            orderId
-                        ),
-                        {
-                            orderId: orderId,
-
-                            latitude: latitude,
-
-                            longitude: longitude,
-
-                            accuracy: accuracy,
-
-                            updatedAt: new Date(),
-
-                            trackingActive: true,
-
-                            deliveryUserId:
-                                currentUser
-                                    ? currentUser.uid
-                                    : null
-                        },
-                        {
-                            merge: true
-                        }
-                    );
-
-
-                    console.log(
-                        "Location uploaded:",
-                        latitude,
-                        longitude
-                    );
-
-                } catch (error) {
-
-                    console.error(
-                        "Firebase location error:",
-                        error
-                    );
 
                     showStatus(
-                        "GPS received, but Firebase update failed.",
-                        "error"
+                        "🟢 Live GPS tracking is active.",
+                        "success"
                     );
 
+
+                    locationBox.innerHTML = `
+                        <strong>Current Location</strong><br>
+                        Latitude: ${latitude.toFixed(6)}<br>
+                        Longitude: ${longitude.toFixed(6)}<br>
+                        Accuracy: ±${Math.round(accuracy)} meters
+                    `;
+
+
+                    try {
+
+                        await setDoc(
+
+                            doc(
+                                db,
+                                "deliveryLocations",
+                                orderId
+                            ),
+
+                            {
+                                orderId: orderId,
+
+                                latitude: latitude,
+
+                                longitude: longitude,
+
+                                accuracy: accuracy,
+
+                                updatedAt: new Date(),
+
+                                active: true,
+
+                                deliveryUserId:
+                                    currentUser
+                                        ? currentUser.uid
+                                        : null
+                            },
+
+                            {
+                                merge: true
+                            }
+
+                        );
+
+
+                    } catch (error) {
+
+                        console.error(
+                            "Firebase location error:",
+                            error
+                        );
+
+
+                        showStatus(
+                            "GPS received, but Firebase update failed.",
+                            "error"
+                        );
+
+                    }
+
+                },
+
+
+                (error) => {
+
+                    tracking = false;
+
+                    startBtn.disabled = false;
+
+                    stopBtn.disabled = true;
+
+
+                    if (error.code === 1) {
+
+                        showStatus(
+                            "GPS permission was denied.",
+                            "error"
+                        );
+
+                    } else if (error.code === 2) {
+
+                        showStatus(
+                            "GPS location is unavailable.",
+                            "error"
+                        );
+
+                    } else if (error.code === 3) {
+
+                        showStatus(
+                            "GPS request timed out.",
+                            "error"
+                        );
+
+                    } else {
+
+                        showStatus(
+                            "Unable to get GPS location.",
+                            "error"
+                        );
+
+                    }
+
+                },
+
+
+                {
+                    enableHighAccuracy: true,
+
+                    maximumAge: 5000,
+
+                    timeout: 10000
                 }
 
-            },
-
-
-            (error) => {
-
-                tracking = false;
-
-                startBtn.disabled = false;
-
-                stopBtn.disabled = true;
-
-
-                if (error.code === 1) {
-
-                    showStatus(
-                        "GPS permission was denied.",
-                        "error"
-                    );
-
-                } else if (error.code === 2) {
-
-                    showStatus(
-                        "GPS location is unavailable.",
-                        "error"
-                    );
-
-                } else if (error.code === 3) {
-
-                    showStatus(
-                        "GPS request timed out.",
-                        "error"
-                    );
-
-                } else {
-
-                    showStatus(
-                        "Unable to get GPS location.",
-                        "error"
-                    );
-
-                }
-
-            },
-
-
-            {
-                enableHighAccuracy: true,
-
-                maximumAge: 5000,
-
-                timeout: 10000
-            }
-
-        );
+            );
 
     } catch (error) {
 
@@ -346,7 +369,8 @@ async function stopTracking() {
     stopBtn.disabled = true;
 
 
-    const orderId = orderInput.value.trim();
+    const orderId =
+        orderInput.value.trim();
 
 
     if (orderId) {
@@ -354,19 +378,23 @@ async function stopTracking() {
         try {
 
             await setDoc(
+
                 doc(
                     db,
                     "deliveryLocations",
                     orderId
                 ),
+
                 {
-                    trackingActive: false,
+                    active: false,
 
                     updatedAt: new Date()
                 },
+
                 {
                     merge: true
                 }
+
             );
 
         } catch (error) {
@@ -403,7 +431,8 @@ logoutBtn.addEventListener(
 
             await signOut(auth);
 
-            window.location.href = "login.html";
+            window.location.href =
+                "login.html";
 
         } catch (error) {
 
@@ -423,6 +452,7 @@ startBtn.addEventListener(
     "click",
     startTracking
 );
+
 
 stopBtn.addEventListener(
     "click",
