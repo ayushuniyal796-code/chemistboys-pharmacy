@@ -188,8 +188,7 @@ async function trackOrder() {
         // ===============================
 
         const locationRef =
-            doc(db, "deliveryLocations", orderSnap.id);
-
+    doc(db, "deliveryLocations", orderId);
 
         unsubscribeLocation =
             onSnapshot(
@@ -332,7 +331,7 @@ async function trackOrder() {
 
 
                     if (
-                        location.trackingActive === false
+                        location.active === false
                     ) {
 
                         showStatus(
