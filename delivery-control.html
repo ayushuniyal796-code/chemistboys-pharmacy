@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delivery Tracking - ChemistBoys</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#eef8f6;
+    padding:20px;
+}
+
+.box{
+    max-width:520px;
+    margin:30px auto;
+    background:white;
+    padding:25px;
+    border-radius:20px;
+    box-shadow:0 10px 35px rgba(0,0,0,.12);
+}
+
+h1{
+    color:#075f55;
+}
+
+input,button{
+    width:100%;
+    box-sizing:border-box;
+    padding:14px;
+    margin-top:12px;
+    border-radius:10px;
+    font-size:16px;
+}
+
+input{
+    border:1px solid #c9ddda;
+}
+
+button{
+    border:none;
+    background:#075f55;
+    color:white;
+    font-weight:700;
+}
+
+.stop{
+    background:#b3261e;
+}
+
+#message{
+    margin-top:18px;
+    padding:15px;
+    border-radius:12px;
+    background:#eef8f6;
+}
+
+#gps{
+    margin-top:12px;
+    color:#607b77;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+<h1>🚚 Delivery Tracking Control</h1>
+
+<p>Enter the accepted Order ID:</p>
+
+<input
+    id="orderId"
+    type="text"
+    placeholder="CB517364284"
+>
+
+<button id="startBtn">
+📍 Start Live Location
+</button>
+
+<button id="stopBtn" class="stop">
+⛔ Stop Sharing
+</button>
+
+<div id="message">
+Waiting to start tracking...
+</div>
+
+<div id="gps"></div>
+
+</div>
+
+<script type="module" src="delivery-control.js"></script>
+
+</body>
+</html>
