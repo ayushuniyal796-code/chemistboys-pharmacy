@@ -477,6 +477,17 @@ function renderOrder(order) {
             </div>
 
         </div>
+${
+    status === "Accepted"
+        ? `
+            <button
+                class="track-delivery-btn"
+                onclick="window.location.href='track-order.html?orderId=${encodeURIComponent(orderId)}'">
+                📍 Track Delivery
+            </button>
+        `
+        : ""
+}
 
     `;
 
