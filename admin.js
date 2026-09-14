@@ -3783,3 +3783,344 @@ window.addEventListener("click", async (event) => {
     }
 
 }, true);
+
+/* =========================================================
+   CHEMISTBOYS - FINAL DELIVERY STATUS FIX
+   APPEND ONLY - DO NOT DELETE EXISTING CODE
+   ========================================================= */
+
+(() => {
+
+    const FIRESTORE_URL =
+        "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+    let fixingStatus = false;
+
+
+    async function saveDeliveryStatus(
+        orderId,
+        newStatus,
+        trackingStage
+    ) {
+
+        if (fixingStatus) return;
+
+        fixingStatus = true;
+
+        try {
+
+            /*
+             * Find the REAL Firestore document from
+             * the realtime-loaded allOrders array.
+             */
+
+            const order = allOrders.find(
+                item =>
+                    String(getOrderId(item)).trim()
+                    === String(orderId).trim()
+            );
+
+
+            if (!order || !order.firestoreId) {
+
+                throw new Error(
+                    "Order document not found"
+                );
+
+            }
+
+
+            const {
+                serverTimestamp
+            } = await import(
+                FIRESTORE_URL
+            );
+
+
+            const updateData = {
+
+                status: newStatus,
+
+                trackingUpdatedAt:
+                    serverTimestamp(),
+
+                [`tracking.${trackingStage}`]: {
+
+                    timestamp:
+                        serverTimestamp(),
+
+                    locationName:
+                        "Dehradun",
+
+                    message:
+                        trackingStage === "shipped"
+                            ? "Your item has been shipped."
+                            : trackingStage === "outForDelivery"
+                                ? "Your item is out for delivery."
+                                : "Your order has been delivered."
+
+                }
+
+            };
+
+
+            await updateDoc(
+
+                doc(
+                    db,
+                    "orders",
+                    order.firestoreId
+                ),
+
+                updateData
+
+            );
+
+
+            console.log(
+                "ChemistBoys status saved:",
+                orderId,
+                newStatus
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "FINAL DELIVERY STATUS ERROR:",
+                error
+            );
+
+            alert(
+                "Unable to update order status.\n\n" +
+                error.message
+            );
+
+        } finally {
+
+            fixingStatus = false;
+
+        }
+
+    }
+
+
+    /*
+     * IMPORTANT:
+     * Capture phase runs BEFORE the old delivery handlers.
+     * Therefore the old conflicting handler will NOT run.
+     */
+
+    document.addEventListener(
+        "click",
+        function (event) {
+
+            const button =
+                event.target.closest(
+                    ".cb-status-btn"
+                );
+
+
+            if (!button) return;
+
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+            event.stopImmediatePropagation();
+
+
+            const card =
+                button.closest(
+                    ".order-card, .order-item, .admin-order-card, [data-order-id]"
+                );
+
+
+            let orderId =
+                button.dataset.orderId ||
+                card?.dataset.orderId;
+
+
+            if (!orderId) {
+
+                const text =
+                    card?.textContent || "";
+
+                const match =
+                    text.match(
+                        /CB[A-Z0-9]+/i
+                    );
+
+                if (match) {
+
+                    orderId =
+                        match[0];
+
+                }
+
+            }
+
+
+            const newStatus =
+                button.dataset.status;
+
+
+            let trackingStage =
+                "shipped";
+
+
+            if (
+                newStatus ===
+                "Out For Delivery"
+            ) {
+
+                trackingStage =
+                    "outForDelivery";
+
+            }
+
+            if (
+                newStatus ===
+                "Delivered"
+            ) {
+
+                trackingStage =
+                    "delivered";
+
+            }
+
+
+            if (
+                !orderId ||
+                !newStatus
+            ) {
+
+                console.error(
+                    "Missing order ID/status"
+                );
+
+                return;
+
+            }
+
+
+            saveDeliveryStatus(
+                orderId,
+                newStatus,
+                trackingStage
+            );
+
+        },
+
+        true
+    );
+
+
+    /*
+     * Keep delivery buttons only for Accepted+
+     * orders. Processing orders keep their original
+     * Accept / Cancel controls.
+     */
+
+    function fixDeliveryButtonVisibility() {
+
+        document
+            .querySelectorAll(
+                ".order-card, .order-item, .admin-order-card, [data-order-id]"
+            )
+            .forEach(card => {
+
+                const orderId =
+                    card.dataset.orderId ||
+                    (
+                        card.textContent.match(
+                            /CB[A-Z0-9]+/i
+                        ) || []
+                    )[0];
+
+
+                if (!orderId) return;
+
+
+                const order =
+                    allOrders.find(
+                        item =>
+                            String(
+                                getOrderId(item)
+                            ).trim()
+                            ===
+                            String(
+                                orderId
+                            ).trim()
+                    );
+
+
+                if (!order) return;
+
+
+                const status =
+                    getStatus(order);
+
+
+                const deliverySection =
+                    card.querySelector(
+                        ".cb-tracking"
+                    );
+
+
+                if (
+                    deliverySection
+                ) {
+
+                    if (
+                        status ===
+                        "Processing"
+                    ) {
+
+                        deliverySection.style.display =
+                            "none";
+
+                    } else {
+
+                        deliverySection.style.display =
+                            "";
+
+                    }
+
+                }
+
+            });
+
+    }
+
+
+    /*
+     * Run after realtime order rendering.
+     */
+
+    const observer =
+        new MutationObserver(
+            () => {
+
+                fixDeliveryButtonVisibility();
+
+            }
+        );
+
+
+    observer.observe(
+        document.body,
+        {
+            childList: true,
+            subtree: true
+        }
+    );
+
+
+    setTimeout(
+        fixDeliveryButtonVisibility,
+        500
+    );
+
+})();
