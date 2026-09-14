@@ -3387,3 +3387,176 @@ loadAdminReviews();
     );
 
 })();
+
+/* =========================================================
+   CHEMISTBOYS - SAFE STATUS UPDATE
+   ADD THIS BELOW THE PREVIOUS CODE
+   DO NOT DELETE EXISTING CODE
+   ========================================================= */
+
+(() => {
+
+    document.addEventListener("click", async (event) => {
+
+        const button =
+            event.target.closest(".cb-status-btn");
+
+        if (!button) return;
+
+        // Stop the previous status handler
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        const controls =
+            button.closest(".cb-tracking-controls");
+
+        if (!controls) return;
+
+        const orderIdElement =
+            controls.querySelector(".cb-status-current");
+
+        if (!orderIdElement) return;
+
+        const text =
+            orderIdElement.innerText || "";
+
+        const match =
+            text.match(/Order ID:\s*([A-Za-z0-9_-]+)/i);
+
+        if (!match) {
+            alert("Order ID not found.");
+            return;
+        }
+
+        const orderId =
+            match[1];
+
+        const status =
+            button.dataset.status;
+
+        let trackingStage;
+        let message;
+
+        if (status === "Shipped") {
+
+            trackingStage = "shipped";
+            message = "Your item has been shipped.";
+
+        } else if (status === "Out For Delivery") {
+
+            trackingStage = "outForDelivery";
+            message = "Your item is out for delivery.";
+
+        } else if (status === "Delivered") {
+
+            trackingStage = "delivered";
+            message = "Your item has been delivered.";
+
+        } else {
+            return;
+        }
+
+        try {
+
+            const firestore =
+                await import(
+                    "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js"
+                );
+
+            const {
+                collection,
+                query,
+                where,
+                getDocs,
+                updateDoc,
+                doc,
+                serverTimestamp
+            } = firestore;
+
+
+            /* -----------------------------------------
+               FIND ORDER USING CUSTOM ORDER ID
+               ----------------------------------------- */
+
+            const ordersRef =
+                collection(db, "orders");
+
+            const q =
+                query(
+                    ordersRef,
+                    where("orderId", "==", orderId)
+                );
+
+            const snapshot =
+                await getDocs(q);
+
+
+            if (snapshot.empty) {
+
+                alert(
+                    "Order not found in Firestore."
+                );
+
+                return;
+            }
+
+
+            const orderDoc =
+                snapshot.docs[0];
+
+
+            /* -----------------------------------------
+               UPDATE ACTUAL FIRESTORE DOCUMENT
+               ----------------------------------------- */
+
+            await updateDoc(
+                doc(
+                    db,
+                    "orders",
+                    orderDoc.id
+                ),
+                {
+
+                    status: status,
+
+                    [`tracking.${trackingStage}`]: {
+
+                        timestamp:
+                            serverTimestamp(),
+
+                        locationName:
+                            "Dehradun",
+
+                        message:
+                            message
+
+                    },
+
+                    trackingUpdatedAt:
+                        serverTimestamp()
+
+                }
+            );
+
+
+            alert(
+                `✅ Order ${orderId} marked as ${status}`
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Delivery status error:",
+                error
+            );
+
+            alert(
+                "❌ Status update failed."
+            );
+
+        }
+
+    }, true);
+
+})();
