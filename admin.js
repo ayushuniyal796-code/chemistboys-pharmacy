@@ -3560,3 +3560,226 @@ loadAdminReviews();
     }, true);
 
 })();
+
+/* =========================================================
+   CHEMISTBOYS - FINAL STATUS UPDATE FIX
+   ADD AT THE VERY END OF admin.js
+   DO NOT DELETE EXISTING CODE
+   ========================================================= */
+
+window.addEventListener("click", async (event) => {
+
+    const button =
+        event.target.closest(".cb-status-btn");
+
+    if (!button) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    const controls =
+        button.closest(".cb-tracking-controls");
+
+    if (!controls) return;
+
+    const orderText =
+        controls.querySelector(
+            ".cb-status-current"
+        )?.innerText || "";
+
+    const match =
+        orderText.match(
+            /Order ID:\s*([A-Za-z0-9_-]+)/i
+        );
+
+    if (!match) {
+        alert("❌ Order ID not found.");
+        return;
+    }
+
+    const orderId =
+        match[1];
+
+    const status =
+        button.dataset.status;
+
+    let stage = "";
+    let message = "";
+
+    if (status === "Shipped") {
+
+        stage = "shipped";
+        message =
+            "Your item has been shipped.";
+
+    } else if (
+        status === "Out For Delivery"
+    ) {
+
+        stage = "outForDelivery";
+        message =
+            "Your item is out for delivery.";
+
+    } else if (
+        status === "Delivered"
+    ) {
+
+        stage = "delivered";
+        message =
+            "Your item has been delivered.";
+
+    } else {
+        return;
+    }
+
+
+    button.disabled = true;
+
+    try {
+
+        const firestore =
+            await import(
+                "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js"
+            );
+
+        const {
+            collection,
+            query,
+            where,
+            getDocs,
+            updateDoc,
+            doc,
+            serverTimestamp
+        } = firestore;
+
+
+        const ordersRef =
+            collection(
+                db,
+                "orders"
+            );
+
+
+        /* -----------------------------------------
+           FIRST: SEARCH BY orderId
+           ----------------------------------------- */
+
+        let orderSnapshot =
+            await getDocs(
+                query(
+                    ordersRef,
+                    where(
+                        "orderId",
+                        "==",
+                        orderId
+                    )
+                )
+            );
+
+
+        /* -----------------------------------------
+           SECOND: SEARCH BY id
+           ----------------------------------------- */
+
+        if (orderSnapshot.empty) {
+
+            orderSnapshot =
+                await getDocs(
+                    query(
+                        ordersRef,
+                        where(
+                            "id",
+                            "==",
+                            orderId
+                        )
+                    )
+                );
+
+        }
+
+
+        if (orderSnapshot.empty) {
+
+            alert(
+                "❌ Order not found in Firestore."
+            );
+
+            button.disabled = false;
+
+            return;
+        }
+
+
+        const orderDoc =
+            orderSnapshot.docs[0];
+
+
+        console.log(
+            "Updating Firestore document:",
+            orderDoc.id
+        );
+
+
+        /* -----------------------------------------
+           UPDATE REAL FIRESTORE DOCUMENT
+           ----------------------------------------- */
+
+        await updateDoc(
+            doc(
+                db,
+                "orders",
+                orderDoc.id
+            ),
+            {
+
+                status: status,
+
+                [`tracking.${stage}`]: {
+
+                    timestamp:
+                        serverTimestamp(),
+
+                    locationName:
+                        "Dehradun",
+
+                    message:
+                        message
+
+                },
+
+                trackingUpdatedAt:
+                    serverTimestamp()
+
+            }
+        );
+
+
+        console.log(
+            "✅ Firestore updated successfully"
+        );
+
+
+        alert(
+            `✅ ${orderId} → ${status}`
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ FINAL STATUS UPDATE ERROR:",
+            error
+        );
+
+        alert(
+            "❌ Firestore update failed:\n" +
+            error.message
+        );
+
+    } finally {
+
+        button.disabled = false;
+
+    }
+
+}, true);
