@@ -2990,3 +2990,400 @@ function adminReviewDate(timestamp) {
    ========================================================= */
 
 loadAdminReviews();
+
+
+/* =========================================================
+   CHEMISTBOYS - ORDER TRACKING STATUS CONTROL
+   ADD THIS CODE AT THE VERY END OF admin.js
+   DO NOT DELETE OR MODIFY EXISTING CODE
+   ========================================================= */
+
+(() => {
+
+    const trackingStyle = document.createElement("style");
+
+    trackingStyle.textContent = `
+        .cb-tracking-controls {
+            margin-top: 15px;
+            padding: 15px;
+            border-top: 1px solid #ddd;
+        }
+
+        .cb-tracking-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #075f55;
+        }
+
+        .cb-status-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .cb-status-btn {
+            border: none;
+            padding: 9px 13px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .cb-status-btn:hover {
+            opacity: 0.85;
+        }
+
+        .cb-status-btn.shipped {
+            background: #e8f1ff;
+            color: #1455a0;
+        }
+
+        .cb-status-btn.out {
+            background: #fff4d6;
+            color: #8a5a00;
+        }
+
+        .cb-status-btn.delivered {
+            background: #e4f7e9;
+            color: #18733b;
+        }
+
+        .cb-status-current {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .cb-status-message {
+            margin-top: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+    `;
+
+    document.head.appendChild(trackingStyle);
+
+
+    /* -----------------------------------------------------
+       FIRESTORE STATUS UPDATE
+       ----------------------------------------------------- */
+
+    async function updateDeliveryStatus(
+        orderId,
+        newStatus,
+        trackingStage,
+        message
+    ) {
+
+        try {
+
+            if (!orderId) {
+                console.error("Order ID missing");
+                return;
+            }
+
+            const firestore =
+                await import(
+                    "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js"
+                );
+
+            const {
+                doc,
+                updateDoc,
+                serverTimestamp
+            } = firestore;
+
+
+            const orderRef =
+                doc(
+                    db,
+                    "orders",
+                    orderId
+                );
+
+
+            await updateDoc(
+                orderRef,
+                {
+
+                    status: newStatus,
+
+                    [`tracking.${trackingStage}`]: {
+                        timestamp: serverTimestamp(),
+                        locationName: "Dehradun",
+                        message: message
+                    },
+
+                    trackingUpdatedAt:
+                        serverTimestamp()
+
+                }
+            );
+
+
+            console.log(
+                "Order status updated:",
+                newStatus
+            );
+
+
+            alert(
+                `Order status changed to ${newStatus}`
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Status update error:",
+                error
+            );
+
+            alert(
+                "Unable to update order status."
+            );
+
+        }
+
+    }
+
+
+    /* -----------------------------------------------------
+       ADD BUTTONS TO ORDER CARDS
+       ----------------------------------------------------- */
+
+    function addTrackingControls() {
+
+        /*
+         * This tries to find existing order cards
+         * without changing their existing HTML.
+         */
+
+        const possibleCards =
+            document.querySelectorAll(
+                ".order-card, .order-item, .admin-order-card, [data-order-id]"
+            );
+
+
+        possibleCards.forEach(
+            (card) => {
+
+                if (
+                    card.dataset.cbTrackingAdded === "true"
+                ) {
+                    return;
+                }
+
+
+                /*
+                 * Try to find Order ID.
+                 */
+
+                let orderId =
+                    card.dataset.orderId ||
+                    card.getAttribute("data-order-id");
+
+
+                if (!orderId) {
+
+                    const text =
+                        card.innerText || "";
+
+
+                    const match =
+                        text.match(
+                            /CB[A-Z0-9]+/i
+                        );
+
+
+                    if (match) {
+                        orderId =
+                            match[0];
+                    }
+
+                }
+
+
+                if (!orderId) {
+                    return;
+                }
+
+
+                card.dataset.cbTrackingAdded =
+                    "true";
+
+
+                const controls =
+                    document.createElement("div");
+
+
+                controls.className =
+                    "cb-tracking-controls";
+
+
+                controls.innerHTML = `
+
+                    <div class="cb-tracking-title">
+                        📦 Delivery Status
+                    </div>
+
+                    <div class="cb-status-buttons">
+
+                        <button
+                            type="button"
+                            class="cb-status-btn shipped"
+                            data-status="Shipped">
+                            🚚 Mark Shipped
+                        </button>
+
+                        <button
+                            type="button"
+                            class="cb-status-btn out"
+                            data-status="Out For Delivery">
+                            🛵 Out For Delivery
+                        </button>
+
+                        <button
+                            type="button"
+                            class="cb-status-btn delivered"
+                            data-status="Delivered">
+                            ✅ Mark Delivered
+                        </button>
+
+                    </div>
+
+                    <div class="cb-status-current">
+                        Order ID: <strong>${orderId}</strong>
+                    </div>
+
+                    <div class="cb-status-message"></div>
+
+                `;
+
+
+                card.appendChild(
+                    controls
+                );
+
+
+                const messageBox =
+                    controls.querySelector(
+                        ".cb-status-message"
+                    );
+
+
+                const buttons =
+                    controls.querySelectorAll(
+                        ".cb-status-btn"
+                    );
+
+
+                buttons.forEach(
+                    (button) => {
+
+                        button.addEventListener(
+                            "click",
+                            async () => {
+
+                                const status =
+                                    button.dataset.status;
+
+
+                                let stage;
+                                let message;
+
+
+                                if (
+                                    status === "Shipped"
+                                ) {
+
+                                    stage =
+                                        "shipped";
+
+                                    message =
+                                        "Your item has been shipped.";
+
+                                } else if (
+                                    status === "Out For Delivery"
+                                ) {
+
+                                    stage =
+                                        "outForDelivery";
+
+                                    message =
+                                        "Your item is out for delivery.";
+
+                                } else if (
+                                    status === "Delivered"
+                                ) {
+
+                                    stage =
+                                        "delivered";
+
+                                    message =
+                                        "Your item has been delivered.";
+
+                                }
+
+
+                                button.disabled =
+                                    true;
+
+
+                                await updateDeliveryStatus(
+                                    orderId,
+                                    status,
+                                    stage,
+                                    message
+                                );
+
+
+                                button.disabled =
+                                    false;
+
+
+                                if (messageBox) {
+
+                                    messageBox.textContent =
+                                        `✓ ${status} updated`;
+
+                                }
+
+                            }
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+    }
+
+
+    /* -----------------------------------------------------
+       WATCH FOR REALTIME ADMIN ORDER CARDS
+       ----------------------------------------------------- */
+
+    addTrackingControls();
+
+
+    const trackingObserver =
+        new MutationObserver(
+            () => {
+
+                addTrackingControls();
+
+            }
+        );
+
+
+    trackingObserver.observe(
+        document.body,
+        {
+            childList: true,
+            subtree: true
+        }
+    );
+
+})();
