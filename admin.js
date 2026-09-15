@@ -1932,11 +1932,20 @@ function attachOrderButtons() {
 
                         select.disabled = true;
 
+                        const historyKey = {
+                            "Placed": "placedAt",
+                            "Shipped": "shippedAt",
+                            "Out for Delivery": "outForDeliveryAt",
+                            "Delivered": "deliveredAt"
+                        }[trackingStatus];
+
                         await updateDoc(
                             doc(db, "orders", firestoreId),
                             {
-                                trackingStatus:
-                                    trackingStatus
+                                trackingStatus: trackingStatus,
+                                ...(historyKey ? {
+                                    [`trackingHistory.${historyKey}`]: new Date()
+                                } : {})
                             }
                         );
 
@@ -2158,6 +2167,10 @@ document
 
                         trackingStatus:
                             "Placed",
+
+                        trackingHistory: {
+                            placedAt: new Date()
+                        },
 
                         deliveryDate:
                             selectedDate

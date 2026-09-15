@@ -1,103 +1,165 @@
 import { auth, authReady, db } from "./firebase.js";
 
 import {
-    doc,
-    onSnapshot
+    collection,
+    getDocs,
+    onSnapshot,
+    query,
+    where,
+    doc
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 import {
     onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
+const STEPS = ["Placed", "Shipped", "Out for Delivery", "Delivered"];
+const HISTORY_KEYS = {
+    "Placed": "placedAt",
+    "Shipped": "shippedAt",
+    "Out for Delivery": "outForDeliveryAt",
+    "Delivered": "deliveredAt"
+};
 
 let currentUser = null;
 let unsubscribeOrder = null;
 
-const STEPS = [
-    "Placed",
-    "Shipped",
-    "Out for Delivery",
-    "Delivered"
-];
-
-
-function showStatus(message) {
-
-    const box =
-        document.getElementById("trackingStatus");
-
-    if (box) {
-        box.textContent = message;
-    }
-
+function showStatus(text, type = "normal") {
+    const box = document.getElementById("trackingStatus");
+    if (!box) return;
+    box.textContent = text;
+    box.className = `status-box ${type}`;
 }
 
+function getOrderIdFromUrl() {
+    return new URLSearchParams(window.location.search).get("orderId") || "";
+}
 
-function renderTimeline(status) {
+function formatTime(value) {
+    if (!value) return "";
 
-    const timeline =
-        document.getElementById("trackingTimeline");
+    try {
+        const date = typeof value.toDate === "function"
+            ? value.toDate()
+            : new Date(value);
 
+        if (Number.isNaN(date.getTime())) return "";
+
+        return date.toLocaleString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    } catch {
+        return "";
+    }
+}
+
+function renderTimeline(status, history = {}) {
+    const timeline = document.getElementById("trackingTimeline");
     if (!timeline) return;
 
-    const currentIndex =
-        STEPS.indexOf(status);
-
-    const activeIndex =
-        currentIndex >= 0 ? currentIndex : 0;
+    const activeIndex = Math.max(0, STEPS.indexOf(status));
 
     timeline.innerHTML = STEPS.map((step, index) => {
+        const completed =
+            index < activeIndex ||
+            (status === "Delivered" && index === activeIndex);
 
-        const completed = index < activeIndex;
-        const active = index === activeIndex;
+        const active =
+            index === activeIndex && status !== "Delivered";
+
+        const key = HISTORY_KEYS[step];
+        const stamp = formatTime(history[key]);
+
+        let label;
+
+        if (completed) {
+            label = stamp ? `Completed • ${stamp}` : "Completed";
+        } else if (active) {
+            label = stamp ? `Current status • ${stamp}` : "Current status";
+        } else {
+            label = "Waiting";
+        }
 
         return `
-            <div class="timeline-step ${completed ? "completed" : ""} ${active ? "active" : ""}">
-                <div class="timeline-dot">
-                    ${completed ? "✓" : active ? "●" : "○"}
-                </div>
-                <div class="timeline-content">
+            <div class="step ${completed ? "completed" : ""} ${active ? "active" : ""}">
+                <div class="dot">${completed ? "✓" : active ? "•" : "○"}</div>
+                <div class="content">
                     <strong>${step}</strong>
-                    <span>${
-                        active
-                            ? "Current status"
-                            : completed
-                                ? "Completed"
-                                : "Waiting"
-                    }</span>
+                    <small>${label}</small>
                 </div>
             </div>
         `;
     }).join("");
-
 }
 
+function renderLocation(location) {
+    const locationText = document.getElementById("locationText");
+    const locationUpdated = document.getElementById("locationUpdated");
 
-function getOrderIdFromUrl() {
+    if (!locationText || !locationUpdated) return;
 
-    const params =
-        new URLSearchParams(window.location.search);
+    // Customer gets ONLY the written location name/address.
+    // Latitude/longitude are intentionally never rendered here.
+    if (!location || !location.address) {
+        locationText.textContent =
+            "Waiting for the delivery location to be shared...";
+        locationUpdated.textContent =
+            "The delivery person's latest place will appear here.";
+        return;
+    }
 
-    return params.get("orderId") || "";
+    locationText.innerHTML =
+        `<span class="live-dot"></span>${escapeHTML(location.address)}`;
 
+    const time = formatTime(location.updatedAt);
+
+    locationUpdated.textContent =
+        (location.active
+            ? "Live delivery location"
+            : "Last shared delivery location") +
+        (time ? ` • Updated ${time}` : "");
 }
 
+function escapeHTML(value) {
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
 
-function trackOrder() {
+async function findOwnOrder(orderId) {
+    // Avoid a composite Firestore index by querying only the user's orders
+    // and matching the visible order ID locally.
+    const snap = await getDocs(
+        query(
+            collection(db, "orders"),
+            where("userId", "==", currentUser.uid)
+        )
+    );
 
-    const input =
-        document.getElementById("orderIdInput");
+    return snap.docs.find(item => {
+        const data = item.data();
+        return data.orderId === orderId;
+    }) || null;
+}
 
-    const orderId =
-        input.value.trim();
+async function trackOrder() {
+    const input = document.getElementById("orderIdInput");
+    const orderId = input.value.trim();
 
     if (!orderId) {
-        showStatus("Please enter your Order ID.");
+        showStatus("Please enter your Order ID.", "error");
         return;
     }
 
     if (!currentUser) {
-        showStatus("Please login first.");
+        showStatus("Please login first.", "error");
         return;
     }
 
@@ -106,119 +168,108 @@ function trackOrder() {
         unsubscribeOrder = null;
     }
 
-    showStatus("Checking your order...");
+    showStatus("Checking your order...", "normal");
 
-    // Orders are stored with the custom order ID as the document field,
-    // so resolve the matching document once, then listen to it live.
-    import("https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js")
-        .then(async ({ collection, getDocs, query, where }) => {
+    try {
+        const found = await findOwnOrder(orderId);
 
-            const ordersQuery = query(
-                collection(db, "orders"),
-                where("userId", "==", currentUser.uid),
-                where("orderId", "==", orderId)
-            );
+        if (!found) {
+            showStatus("Order not found in your account.", "error");
+            renderTimeline("Placed");
+            renderLocation(null);
+            return;
+        }
 
-            const snapshot = await getDocs(ordersQuery);
+        const orderRef = doc(db, "orders", found.id);
 
-            if (snapshot.empty) {
-                showStatus("Order not found.");
-                renderTimeline("Placed");
-                return;
-            }
-
-            const orderDoc = snapshot.docs[0];
-            const orderRef = doc(db, "orders", orderDoc.id);
-
-            unsubscribeOrder = onSnapshot(
-                orderRef,
-                (orderSnap) => {
-
-                    if (!orderSnap.exists()) {
-                        showStatus("Order not found.");
-                        return;
-                    }
-
-                    const order = orderSnap.data();
-
-                    if (order.userId !== currentUser.uid) {
-                        showStatus("You can only track your own orders.");
-                        return;
-                    }
-
-                    if (order.status === "Cancelled") {
-                        showStatus("This order has been cancelled.");
-                        renderTimeline("Placed");
-                        return;
-                    }
-
-                    if (order.status !== "Accepted") {
-                        showStatus("Tracking will be available after your order is accepted.");
-                        renderTimeline("Placed");
-                        return;
-                    }
-
-                    const trackingStatus =
-                        order.trackingStatus || "Placed";
-
-                    renderTimeline(trackingStatus);
-
-                    if (trackingStatus === "Delivered") {
-                        showStatus("✅ Order delivered successfully.");
-                    } else if (trackingStatus === "Out for Delivery") {
-                        showStatus("🚚 Your order is out for delivery.");
-                    } else if (trackingStatus === "Shipped") {
-                        showStatus("📦 Your order has been shipped.");
-                    } else {
-                        showStatus("🟢 Your order has been placed and accepted.");
-                    }
-                },
-                (error) => {
-                    console.error("Order tracking error:", error);
-                    showStatus("Unable to load tracking status.");
+        unsubscribeOrder = onSnapshot(
+            orderRef,
+            snapshot => {
+                if (!snapshot.exists()) {
+                    showStatus("Order not found.", "error");
+                    return;
                 }
-            );
-        })
-        .catch(error => {
-            console.error("Tracking error:", error);
-            showStatus("Unable to start tracking. Please try again.");
-        });
+
+                const order = snapshot.data();
+
+                if (order.userId !== currentUser.uid) {
+                    showStatus("You can only track your own orders.", "error");
+                    return;
+                }
+
+                if (order.status === "Cancelled") {
+                    showStatus("This order has been cancelled.", "error");
+                    renderTimeline("Placed", {});
+                    renderLocation(null);
+                    return;
+                }
+
+                if (order.status !== "Accepted") {
+                    showStatus(
+                        "Tracking will be available after your order is accepted.",
+                        "normal"
+                    );
+                    renderTimeline("Placed", {});
+                    renderLocation(null);
+                    return;
+                }
+
+                const trackingStatus = STEPS.includes(order.trackingStatus)
+                    ? order.trackingStatus
+                    : "Placed";
+
+                renderTimeline(
+                    trackingStatus,
+                    order.trackingHistory || {}
+                );
+
+                renderLocation(order.trackingLocation);
+
+                if (trackingStatus === "Delivered") {
+                    showStatus("✅ Your order has been delivered successfully.", "success");
+                } else if (trackingStatus === "Out for Delivery") {
+                    showStatus("🚚 Your order is out for delivery.", "success");
+                } else if (trackingStatus === "Shipped") {
+                    showStatus("📦 Your order has been shipped.", "success");
+                } else {
+                    showStatus("🟢 Your order has been placed and accepted.", "success");
+                }
+            },
+            error => {
+                console.error(error);
+                showStatus("Unable to load tracking status.", "error");
+            }
+        );
+    } catch (error) {
+        console.error(error);
+        showStatus("Unable to start tracking. Please try again.", "error");
+    }
 }
 
+await authReady;
 
-onAuthStateChanged(auth, async (user) => {
-
-    await authReady;
-
+onAuthStateChanged(auth, user => {
     currentUser = user;
 
     if (!user) {
-        showStatus("Please login to track your order.");
+        showStatus("Please login to track your order.", "error");
         return;
     }
 
-    const urlOrderId = getOrderIdFromUrl();
+    const urlId = getOrderIdFromUrl();
     const input = document.getElementById("orderIdInput");
 
-    if (urlOrderId && input) {
-        input.value = urlOrderId;
+    if (urlId && input) {
+        input.value = urlId;
         trackOrder();
-        return;
+    } else {
+        showStatus("Enter your Order ID to see delivery status.", "normal");
+        renderTimeline("Placed");
     }
-
-    showStatus("Enter your Order ID to see delivery status.");
 });
 
+document.getElementById("trackBtn").addEventListener("click", trackOrder);
 
-document
-    .getElementById("trackBtn")
-    .addEventListener("click", trackOrder);
-
-
-document
-    .getElementById("orderIdInput")
-    .addEventListener("keydown", event => {
-        if (event.key === "Enter") {
-            trackOrder();
-        }
-    });
+document.getElementById("orderIdInput").addEventListener("keydown", event => {
+    if (event.key === "Enter") trackOrder();
+});

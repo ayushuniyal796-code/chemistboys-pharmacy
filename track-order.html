@@ -1,149 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Track Order - ChemistBoys</title>
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f9f8;
-            color: #164e49;
-        }
-        header {
-            background: #075f55;
-            color: white;
-            padding: 18px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        header h2 { margin: 0; font-size: 21px; }
-        .back-btn {
-            text-decoration: none;
-            color: white;
-            background: rgba(255,255,255,.15);
-            padding: 9px 14px;
-            border-radius: 8px;
-            font-weight: 700;
-        }
-        .container { width: min(760px, 94%); margin: 25px auto; }
-        .tracking-box, .timeline-box {
-            background: white;
-            padding: 24px;
-            border-radius: 18px;
-            box-shadow: 0 5px 25px rgba(0,0,0,.08);
-            margin-bottom: 20px;
-        }
-        .tracking-box h1 { margin: 0 0 8px; font-size: 25px; }
-        .tracking-box p { color: #667b78; line-height: 1.6; }
-        .order-input {
-            width: 100%;
-            padding: 13px;
-            border: 1px solid #cbdedb;
-            border-radius: 9px;
-            font-size: 15px;
-            margin-top: 10px;
-        }
-        .track-btn {
-            width: 100%;
-            margin-top: 12px;
-            padding: 13px;
-            border: none;
-            border-radius: 9px;
-            background: #075f55;
-            color: white;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-        .status-box {
-            margin-top: 18px;
-            padding: 14px;
-            border-radius: 10px;
-            background: #edf8f6;
-            color: #075f55;
-            font-weight: 700;
-        }
-        .timeline-box h2 { margin-top: 0; }
-        .timeline { margin-top: 25px; }
-        .timeline-step {
-            position: relative;
-            display: flex;
-            gap: 16px;
-            min-height: 78px;
-        }
-        .timeline-step:not(:last-child)::before {
-            content: "";
-            position: absolute;
-            left: 14px;
-            top: 31px;
-            bottom: 0;
-            width: 2px;
-            background: #d9e8e5;
-        }
-        .timeline-dot {
-            position: relative;
-            z-index: 1;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #eef3f2;
-            color: #7b8c89;
-            font-weight: 800;
-            flex: 0 0 30px;
-        }
-        .timeline-step.completed .timeline-dot,
-        .timeline-step.active .timeline-dot {
-            background: #0ca88f;
-            color: white;
-        }
-        .timeline-step.completed:not(:last-child)::before,
-        .timeline-step.active:not(:last-child)::before {
-            background: #0ca88f;
-        }
-        .timeline-content {
-            padding-top: 3px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        .timeline-content strong { font-size: 16px; }
-        .timeline-content span { color: #718987; font-size: 13px; }
-        @media (max-width: 600px) {
-            .container { width: 94%; margin: 18px auto; }
-            header h2 { font-size: 18px; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Track Order - ChemistBoys</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f2f8f7;color:#164e49}
+header{background:#075f55;color:#fff;padding:18px 22px;display:flex;justify-content:space-between;align-items:center}
+header h2{margin:0;font-size:21px}.back-btn{text-decoration:none;color:#fff;background:rgba(255,255,255,.15);padding:9px 14px;border-radius:9px;font-weight:700}
+.container{width:min(760px,94%);margin:25px auto}
+.card{background:#fff;padding:25px;border-radius:22px;box-shadow:0 8px 30px rgba(0,0,0,.08);margin-bottom:20px}
+.tracking-box h1{margin:0 0 7px;font-size:26px}.tracking-box p{color:#718987;line-height:1.6}
+.order-input{width:100%;padding:14px;border:1px solid #cbdedb;border-radius:11px;font-size:15px;margin-top:10px}
+.track-btn{width:100%;margin-top:12px;padding:14px;border:0;border-radius:11px;background:#075f55;color:#fff;font-size:16px;font-weight:800;cursor:pointer}.track-btn:hover{background:#064d46}
+.status-box{margin-top:16px;padding:14px 16px;border-radius:12px;background:#edf8f6;color:#075f55;font-weight:700}.status-box.error{background:#fff0ef;color:#b3261e}.status-box.success{background:#eaf8f3;color:#087c6b}
+.section-title{margin:0;font-size:23px}.timeline{margin-top:25px}
+.step{position:relative;display:flex;gap:16px;min-height:94px}.step:not(:last-child)::before{content:"";position:absolute;left:16px;top:34px;bottom:0;width:3px;background:#dfeae8;transition:.5s}.step.completed:not(:last-child)::before{background:#11a88f}
+.dot{position:relative;z-index:2;width:34px;height:34px;border-radius:50%;background:#edf2f1;color:#839491;display:flex;align-items:center;justify-content:center;font-weight:900;flex:0 0 34px;border:3px solid #edf2f1;transition:.35s}
+.step.completed .dot{background:#11a88f;color:#fff;border-color:#11a88f;animation:pop .45s ease}.step.active .dot{background:#fff;color:#0ca88f;border-color:#0ca88f;box-shadow:0 0 0 0 rgba(12,168,143,.35);animation:pulse 1.8s infinite}
+.content{padding-top:2px}.content strong{display:block;font-size:17px}.content small{display:block;margin-top:5px;color:#829491;font-size:13px}.step.completed .content strong,.step.active .content strong{color:#075f55}
+.location-card{background:linear-gradient(135deg,#f1fbf8,#fff);border:1px solid #dcece9}.location-card h3{margin:0 0 10px;color:#075f55}.location-text{background:#f7faf9;border:1px solid #e1eeeb;border-radius:12px;padding:15px;word-break:break-word;color:#164e49;font-size:16px;font-weight:700;line-height:1.6}.live-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#11a88f;margin-right:8px;animation:blink 1.3s infinite}.muted{color:#718987;font-size:13px;margin-top:9px;line-height:1.5}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(12,168,143,.4)}70%{box-shadow:0 0 0 12px rgba(12,168,143,0)}100%{box-shadow:0 0 0 0 rgba(12,168,143,0)}}
+@keyframes pop{0%{transform:scale(.7)}70%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@media(max-width:600px){.container{width:94%;margin:18px auto}.card{padding:20px}header h2{font-size:18px}.step{min-height:88px}}
+</style>
 </head>
 <body>
-    <header>
-        <h2>💊 ChemistBoys</h2>
-        <a href="orders.html" class="back-btn">← My Orders</a>
-    </header>
+<header><h2>💊 ChemistBoys</h2><a href="orders.html" class="back-btn">← My Orders</a></header>
+<main class="container">
+<section class="card tracking-box">
+    <h1>📦 Track Your Order</h1>
+    <p>Follow every delivery step in real time. The latest delivery place is shown as written text.</p>
+    <input type="text" id="orderIdInput" class="order-input" placeholder="Enter your Order ID">
+    <button id="trackBtn" class="track-btn">Track My Order</button>
+    <div id="trackingStatus" class="status-box">Enter your Order ID to see delivery status.</div>
+</section>
 
-    <main class="container">
-        <div class="tracking-box">
-            <h1>📦 Track Your Order</h1>
-            <p>See the current delivery status of your accepted order.</p>
+<section class="card">
+    <h2 class="section-title">🚚 Delivery Status</h2>
+    <div id="trackingTimeline" class="timeline"></div>
+</section>
 
-            <input type="text" id="orderIdInput" class="order-input" placeholder="Enter your Order ID">
-            <button id="trackBtn" class="track-btn">Track My Order</button>
-
-            <div id="trackingStatus" class="status-box">Enter your Order ID to see delivery status.</div>
-        </div>
-
-        <div class="timeline-box">
-            <h2>🚚 Delivery Status</h2>
-            <div id="trackingTimeline" class="timeline"></div>
-        </div>
-    </main>
-
-    <script type="module" src="track-order.js"></script>
+<section class="card location-card">
+    <h3>📍 Delivery Person's Current Location</h3>
+    <div id="locationText" class="location-text">Waiting for the delivery location to be shared...</div>
+    <div id="locationUpdated" class="muted">The latest written place will appear here.</div>
+</section>
+</main>
+<script type="module" src="track-order.js"></script>
 </body>
 </html>

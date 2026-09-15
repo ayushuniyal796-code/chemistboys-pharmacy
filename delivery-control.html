@@ -3,98 +3,54 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Delivery Tracking - ChemistBoys</title>
-
+<title>Delivery Control - ChemistBoys</title>
 <style>
-body{
-    margin:0;
-    font-family:Arial,sans-serif;
-    background:#eef8f6;
-    padding:20px;
-}
-
-.box{
-    max-width:520px;
-    margin:30px auto;
-    background:white;
-    padding:25px;
-    border-radius:20px;
-    box-shadow:0 10px 35px rgba(0,0,0,.12);
-}
-
-h1{
-    color:#075f55;
-}
-
-input,button{
-    width:100%;
-    box-sizing:border-box;
-    padding:14px;
-    margin-top:12px;
-    border-radius:10px;
-    font-size:16px;
-}
-
-input{
-    border:1px solid #c9ddda;
-}
-
-button{
-    border:none;
-    background:#075f55;
-    color:white;
-    font-weight:700;
-}
-
-.stop{
-    background:#b3261e;
-}
-
-#message{
-    margin-top:18px;
-    padding:15px;
-    border-radius:12px;
-    background:#eef8f6;
-}
-
-#gps{
-    margin-top:12px;
-    color:#607b77;
-}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#eef8f6,#f7fbfa);color:#164e49;padding:22px}
+.box{max-width:650px;margin:20px auto;background:#fff;padding:28px;border-radius:24px;box-shadow:0 12px 40px rgba(0,0,0,.10)}
+h1{margin:0;color:#075f55;font-size:27px}.subtitle{color:#718987;line-height:1.6;margin:8px 0 20px}
+label{display:block;margin-top:16px;font-weight:800;color:#164e49}
+input,select,button{width:100%;padding:14px;margin-top:8px;border-radius:12px;font-size:15px}input,select{border:1px solid #cbdedb;background:#fff;color:#164e49}button{border:0;background:#075f55;color:#fff;font-weight:800;cursor:pointer;transition:.2s}button:hover{transform:translateY(-1px);box-shadow:0 7px 18px rgba(7,95,85,.18)}button:disabled{opacity:.55;cursor:not-allowed;transform:none}.stop{background:#b3261e}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.panel{margin-top:20px;padding:18px;border-radius:16px;background:#f4fbf9;border:1px solid #dcece9}.panel h3{margin:0 0 12px;color:#075f55}
+.message{padding:13px;border-radius:12px;background:#edf8f6;color:#075f55;font-weight:700}.success{background:#eaf8f3;color:#087c6b}.error{background:#fff0ef;color:#b3261e}
+.location-name{margin-top:12px;padding:14px;border-radius:12px;background:#fff;border:1px solid #dcece9;font-size:15px;font-weight:700;line-height:1.6;word-break:break-word}.location-updated{margin-top:8px;color:#718987;font-size:13px;line-height:1.5}.status-note{margin-top:10px;color:#718987;font-size:13px}
+@media(max-width:600px){body{padding:12px}.box{padding:20px}.row{grid-template-columns:1fr}h1{font-size:23px}}
 </style>
 </head>
-
 <body>
-
 <div class="box">
+<h1>🚚 Delivery Control</h1>
+<p class="subtitle">Set the customer's delivery status and share the delivery person's latest location as a written place name.</p>
 
-<h1>🚚 Delivery Tracking Control</h1>
+<label for="orderId">Order ID</label>
+<input id="orderId" type="text" placeholder="CB517364284">
 
-<p>Enter the accepted Order ID:</p>
-
-<input
-    id="orderId"
-    type="text"
-    placeholder="CB517364284"
->
-
-<button id="startBtn">
-📍 Start Live Location
-</button>
-
-<button id="stopBtn" class="stop">
-⛔ Stop Sharing
-</button>
-
-<div id="message">
-Waiting to start tracking...
+<div class="row">
+    <div>
+        <label for="trackingStatus">Delivery Status</label>
+        <select id="trackingStatus">
+            <option value="Placed">Placed</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Out for Delivery">Out for Delivery</option>
+            <option value="Delivered">Delivered</option>
+        </select>
+    </div>
+    <div style="display:flex;align-items:end">
+        <button id="saveStatusBtn">✓ Save Status</button>
+    </div>
 </div>
 
-<div id="gps"></div>
+<button id="startBtn">📍 Start Live Location</button>
+<button id="stopBtn" class="stop">⛔ Stop Sharing Location</button>
 
+<div class="panel">
+    <h3>Current Control Status</h3>
+    <div id="message" class="message">Enter an Order ID to begin.</div>
+    <div id="locationName" class="location-name">No delivery location shared yet.</div>
+    <div id="locationUpdated" class="location-updated">The latest written location will appear here.</div>
+    <div id="statusNote" class="status-note"></div>
 </div>
-
+</div>
 <script type="module" src="delivery-control.js"></script>
-
 </body>
 </html>

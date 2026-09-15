@@ -1,56 +1,30 @@
 rules_version = '2';
-
 service cloud.firestore {
-
+  match /databases/{database}/documents {
     function isAdmin() {
-        return request.auth != null
-            && request.auth.uid == "gtTvd6XSgqXVaIrp67cM6gEJP0u2";
+      return request.auth != null && request.auth.uid == "gtTvd6XSgqXVaIrp67cM6gEJP0u2";
     }
-
-    match /databases/{database}/documents {
-
-        match /users/{userId} {
-            allow read, create, update:
-                if request.auth != null
-                && request.auth.uid == userId;
-            allow delete: if false;
-        }
-
-        match /products/{productId} {
-            allow read: if true;
-            allow create, update, delete: if false;
-        }
-
-        match /orders/{orderId} {
-            allow create:
-                if request.auth != null
-                && request.resource.data.userId == request.auth.uid;
-
-            allow read:
-                if isAdmin()
-                || (request.auth != null
-                    && resource.data.userId == request.auth.uid);
-
-            allow update, delete: if isAdmin();
-        }
-
-        match /deliveryLocations/{orderId} {
-            // Delivery GPS is private to the admin only.
-            allow read, create, update, delete: if isAdmin();
-        }
-
-        match /reviews/{reviewId} {
-            allow create:
-                if request.auth != null
-                && request.resource.data.userId == request.auth.uid;
-            allow read: if true;
-            allow update, delete:
-                if request.auth != null
-                && resource.data.userId == request.auth.uid;
-        }
-
-        match /{document=**} {
-            allow read, write: if false;
-        }
+    match /users/{userId} {
+      allow read, create, update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
     }
+    match /products/{productId} {
+      allow read: if true;
+      allow create, update, delete: if false;
+    }
+    match /orders/{orderId} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null && (isAdmin() || resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+    match /deliveryLocations/{orderId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    match /reviews/{reviewId} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read: if true;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
 }
