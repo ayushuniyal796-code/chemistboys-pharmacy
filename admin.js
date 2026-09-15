@@ -1552,6 +1552,40 @@ function renderOrder(order) {
             : "";
 
 
+    const trackingStatus =
+        order.trackingStatus ||
+        (status === "Accepted" ? "Placed" : "Placed");
+
+
+    const trackingHTML =
+
+        status === "Accepted"
+
+            ? `
+
+                <div class="tracking-control-box">
+
+                    <div class="tracking-control-title">
+                        📦 Delivery Tracking Status
+                    </div>
+
+                    <select
+                        class="tracking-status-select"
+                        data-id="${escapeHTML(order.firestoreId)}"
+                    >
+                        <option value="Placed" ${trackingStatus === "Placed" ? "selected" : ""}>Placed</option>
+                        <option value="Shipped" ${trackingStatus === "Shipped" ? "selected" : ""}>Shipped</option>
+                        <option value="Out for Delivery" ${trackingStatus === "Out for Delivery" ? "selected" : ""}>Out for Delivery</option>
+                        <option value="Delivered" ${trackingStatus === "Delivered" ? "selected" : ""}>Delivered</option>
+                    </select>
+
+                </div>
+
+            `
+
+            : "";
+
+
     const buttonsHTML =
 
         status === "Processing"
@@ -1822,6 +1856,9 @@ function renderOrder(order) {
             ${deliveryHTML}
 
 
+            ${trackingHTML}
+
+
             <div class="payment-box">
 
                 <p>
@@ -1876,6 +1913,53 @@ function renderOrder(order) {
    ========================================================= */
 
 function attachOrderButtons() {
+
+    document
+        .querySelectorAll(".tracking-status-select")
+        .forEach(select => {
+
+            select.addEventListener(
+                "change",
+                async () => {
+
+                    const firestoreId =
+                        select.dataset.id;
+
+                    const trackingStatus =
+                        select.value;
+
+                    try {
+
+                        select.disabled = true;
+
+                        await updateDoc(
+                            doc(db, "orders", firestoreId),
+                            {
+                                trackingStatus:
+                                    trackingStatus
+                            }
+                        );
+
+                    } catch (error) {
+
+                        console.error(
+                            "Tracking status update error:",
+                            error
+                        );
+
+                        alert(
+                            "Unable to update delivery tracking status."
+                        );
+
+                    } finally {
+
+                        select.disabled = false;
+                    }
+                }
+            );
+
+        });
+
 
     document
         .querySelectorAll(".accept-btn")
@@ -2071,6 +2155,9 @@ document
 
                         status:
                             "Accepted",
+
+                        trackingStatus:
+                            "Placed",
 
                         deliveryDate:
                             selectedDate
