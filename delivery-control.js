@@ -30,6 +30,22 @@ let currentOrderId = null;
 let currentOrderRef = null;
 let isAdmin = false;
 
+function isDelivered(data) {
+    return data?.trackingStatus === "Delivered" || data?.status === "Delivered";
+}
+
+function applyDeliveryLock(status) {
+    const delivered = status === "Delivered";
+    startBtn.disabled = delivered;
+    saveStatusBtn.disabled = false;
+    if (delivered) {
+        startBtn.textContent = "🔒 Location Sharing Disabled (Delivered)";
+        statusNote.textContent = "Status: Delivered • Live location sharing is disabled.";
+    } else {
+        startBtn.textContent = "📍 Start Live Location";
+    }
+}
+
 await authReady;
 
 onAuthStateChanged(auth, user => {
@@ -149,19 +165,42 @@ async function saveStatus() {
         const selected = trackingStatus.value;
         const key = historyKey(selected);
 
-        await updateDoc(ref, {
+        // Delivered is terminal: stop GPS sharing and mark the location inactive.
+        if (selected === "Delivered" && watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+        }
+
+        const orderUpdates = {
             trackingStatus: selected,
             ...(key ? {
                 [`trackingHistory.${key}`]: serverTimestamp()
             } : {})
-        });
+        };
+
+        if (selected === "Delivered") {
+            orderUpdates["trackingLocation.active"] = false;
+            orderUpdates["trackingLocation.updatedAt"] = serverTimestamp();
+        }
+
+        await updateDoc(ref, orderUpdates);
+
+        if (selected === "Delivered") {
+            await setDoc(
+                doc(db, "deliveryLocations", orderIdInput.value.trim()),
+                { active: false, updatedAt: serverTimestamp() },
+                { merge: true }
+            );
+        }
 
         currentOrderId = orderIdInput.value.trim();
         currentOrderRef = ref;
 
         setMessage(`✓ Delivery status saved: ${selected}`, "success");
-        statusNote.textContent =
-            "Customer's Track Order page will update automatically.";
+        applyDeliveryLock(selected);
+        statusNote.textContent = selected === "Delivered"
+            ? "Customer's Track Order page will hide delivery location."
+            : "Customer's Track Order page will update automatically.";
     } catch (error) {
         console.error(error);
         setMessage(error.message || "Unable to update status.", "error");
@@ -179,6 +218,7 @@ async function loadCurrentOrder() {
             : "Placed";
 
         trackingStatus.value = status;
+        applyDeliveryLock(status);
         statusNote.textContent = `Current delivery status: ${status}`;
 
         const location = data.trackingLocation;
@@ -206,13 +246,19 @@ async function startTracking() {
         return;
     }
 
-    if (!navigator.geolocation) {
-        setMessage("GPS is not supported on this device.", "error");
-        return;
-    }
-
     try {
         const { ref, data } = await findOrder();
+
+        if (isDelivered(data)) {
+            applyDeliveryLock("Delivered");
+            setMessage("🔒 Order is delivered. Live location sharing is disabled.", "normal");
+            return;
+        }
+
+        if (!navigator.geolocation) {
+            setMessage("GPS is not supported on this device.", "error");
+            return;
+        }
 
         if (data.status !== "Accepted") {
             setMessage("Accept the order first before sharing delivery location.", "error");

@@ -64,28 +64,29 @@ function renderTimeline(status, history = {}) {
     const activeIndex = Math.max(0, STEPS.indexOf(status));
 
     timeline.innerHTML = STEPS.map((step, index) => {
-        // The current status is already achieved, so it should also show a tick.
-        // Only future statuses remain as hollow/waiting steps.
-        const completed = index <= activeIndex;
+        const completed =
+            index < activeIndex ||
+            (status === "Delivered" && index === activeIndex);
 
-        const active = false;
+        const active =
+            index === activeIndex && status !== "Delivered";
 
         const key = HISTORY_KEYS[step];
         const stamp = formatTime(history[key]);
 
         let label;
 
-        if (index === activeIndex) {
-            label = stamp ? `Current status • ${stamp}` : "Current status";
-        } else if (completed) {
+        if (completed) {
             label = stamp ? `Completed • ${stamp}` : "Completed";
+        } else if (active) {
+            label = stamp ? `Current status • ${stamp}` : "Current status";
         } else {
             label = "Waiting";
         }
 
         return `
             <div class="step ${completed ? "completed" : ""} ${active ? "active" : ""}">
-                <div class="dot">${completed ? "✓" : "○"}</div>
+                <div class="dot">${completed ? "✓" : active ? "•" : "○"}</div>
                 <div class="content">
                     <strong>${step}</strong>
                     <small>${label}</small>
@@ -95,31 +96,20 @@ function renderTimeline(status, history = {}) {
     }).join("");
 }
 
-function renderStatusMessage(status) {
-    const box = document.getElementById("statusMessage");
-    if (!box) return;
-
-    const messages = {
-        "Placed": "✅ Order placed successfully.",
-        "Shipped": "📦 Order shipped successfully.",
-        "Out for Delivery": "🚚 Order is out for delivery.",
-        "Delivered": "🎉 Order delivered successfully."
-    };
-
-    box.textContent = messages[status] || "Your order status will appear here.";
-}
-
-function renderLocation(location, delivered = false) {
-    const section = document.getElementById("deliveryLocationSection");
+function renderLocation(location, trackingStatus = "Placed") {
+    const locationCard = document.querySelector(".location-card");
     const locationText = document.getElementById("locationText");
     const locationUpdated = document.getElementById("locationUpdated");
 
     if (!locationText || !locationUpdated) return;
 
-    // Once the order is delivered, do not show the delivery person's
-    // current/last location to the customer anymore.
-    if (section) section.style.display = delivered ? "none" : "";
-    if (delivered) return;
+    // Once the order is delivered, never show the delivery person's location.
+    if (trackingStatus === "Delivered") {
+        if (locationCard) locationCard.style.display = "none";
+        return;
+    }
+
+    if (locationCard) locationCard.style.display = "";
 
     // Customer gets ONLY the written location name/address.
     // Latitude/longitude are intentionally never rendered here.
@@ -195,8 +185,7 @@ async function trackOrder() {
         if (!found) {
             showStatus("Order not found in your account.", "error");
             renderTimeline("Placed");
-            renderStatusMessage("Placed");
-            renderLocation(null);
+            renderLocation(null, "Placed");
             return;
         }
 
@@ -220,8 +209,7 @@ async function trackOrder() {
                 if (order.status === "Cancelled") {
                     showStatus("This order has been cancelled.", "error");
                     renderTimeline("Placed", {});
-                    renderStatusMessage("Placed");
-                    renderLocation(null);
+                    renderLocation(null, "Placed");
                     return;
                 }
 
@@ -231,7 +219,6 @@ async function trackOrder() {
                         "normal"
                     );
                     renderTimeline("Placed", {});
-                    renderStatusMessage("Placed");
                     renderLocation(null);
                     return;
                 }
@@ -244,9 +231,8 @@ async function trackOrder() {
                     trackingStatus,
                     order.trackingHistory || {}
                 );
-                renderStatusMessage(trackingStatus);
 
-                renderLocation(order.trackingLocation, trackingStatus === "Delivered");
+                renderLocation(order.trackingLocation, trackingStatus);
 
                 if (trackingStatus === "Delivered") {
                     showStatus("✅ Your order has been delivered successfully.", "success");
@@ -288,7 +274,6 @@ onAuthStateChanged(auth, user => {
     } else {
         showStatus("Enter your Order ID to see delivery status.", "normal");
         renderTimeline("Placed");
-        renderStatusMessage("Placed");
     }
 });
 
