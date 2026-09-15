@@ -2,7 +2,6 @@ import { auth, authReady, db } from "./firebase.js";
 
 import {
     doc,
-    getDoc,
     onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -12,432 +11,214 @@ import {
 
 
 let currentUser = null;
-let unsubscribeLocation = null;
-let marker = null;
-let map = null;
+let unsubscribeOrder = null;
 
+const STEPS = [
+    "Placed",
+    "Shipped",
+    "Out for Delivery",
+    "Delivered"
+];
 
-// ===============================
-// INITIALIZE MAP
-// ===============================
-
-function initializeMap() {
-
-    map = L.map("map").setView([28.6139, 77.2090], 5);
-
-    L.tileLayer(
-        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        {
-            maxZoom: 19,
-            attribution: "&copy; OpenStreetMap contributors"
-        }
-    ).addTo(map);
-}
-
-
-// ===============================
-// STATUS MESSAGE
-// ===============================
 
 function showStatus(message) {
 
-    const box = document.getElementById("trackingStatus");
+    const box =
+        document.getElementById("trackingStatus");
 
     if (box) {
         box.textContent = message;
     }
+
 }
 
 
-// ===============================
-// TRACK ORDER
-// ===============================
+function renderTimeline(status) {
 
-async function trackOrder() {
+    const timeline =
+        document.getElementById("trackingTimeline");
 
-    const input = document.getElementById("orderIdInput");
+    if (!timeline) return;
 
-    const orderId = input.value.trim();
+    const currentIndex =
+        STEPS.indexOf(status);
+
+    const activeIndex =
+        currentIndex >= 0 ? currentIndex : 0;
+
+    timeline.innerHTML = STEPS.map((step, index) => {
+
+        const completed = index < activeIndex;
+        const active = index === activeIndex;
+
+        return `
+            <div class="timeline-step ${completed ? "completed" : ""} ${active ? "active" : ""}">
+                <div class="timeline-dot">
+                    ${completed ? "✓" : active ? "●" : "○"}
+                </div>
+                <div class="timeline-content">
+                    <strong>${step}</strong>
+                    <span>${
+                        active
+                            ? "Current status"
+                            : completed
+                                ? "Completed"
+                                : "Waiting"
+                    }</span>
+                </div>
+            </div>
+        `;
+    }).join("");
+
+}
+
+
+function getOrderIdFromUrl() {
+
+    const params =
+        new URLSearchParams(window.location.search);
+
+    return params.get("orderId") || "";
+
+}
+
+
+function trackOrder() {
+
+    const input =
+        document.getElementById("orderIdInput");
+
+    const orderId =
+        input.value.trim();
 
     if (!orderId) {
-
         showStatus("Please enter your Order ID.");
-
         return;
     }
-
 
     if (!currentUser) {
-
         showStatus("Please login first.");
-
         return;
     }
 
-
-    // Stop previous realtime listener
-
-    if (unsubscribeLocation) {
-
-        unsubscribeLocation();
-
-        unsubscribeLocation = null;
+    if (unsubscribeOrder) {
+        unsubscribeOrder();
+        unsubscribeOrder = null;
     }
 
+    showStatus("Checking your order...");
 
-    try {
+    // Orders are stored with the custom order ID as the document field,
+    // so resolve the matching document once, then listen to it live.
+    import("https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js")
+        .then(async ({ collection, getDocs, query, where }) => {
 
-        showStatus("Checking your order...");
+            const ordersQuery = query(
+                collection(db, "orders"),
+                where("userId", "==", currentUser.uid),
+                where("orderId", "==", orderId)
+            );
 
+            const snapshot = await getDocs(ordersQuery);
 
-        /*
-         * We support both:
-         * 1. Firestore document ID
-         * 2. Custom orderId / id stored inside document
-         */
-
-        let orderRef = doc(db, "orders", orderId);
-
-        let orderSnap = await getDoc(orderRef);
-
-
-        // If document ID did not work,
-        // search all orders for custom orderId/id.
-
-        if (!orderSnap.exists()) {
-
-            const { collection, getDocs } =
-                await import(
-                    "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js"
-                );
-
-            const ordersSnap =
-                await getDocs(collection(db, "orders"));
-
-            let found = null;
-
-            ordersSnap.forEach((item) => {
-
-                const data = item.data();
-
-                const storedOrderId =
-                    data.orderId ||
-                    data.id ||
-                    item.id;
-
-                if (storedOrderId === orderId) {
-
-                    found = item;
-                }
-
-            });
-
-
-            if (!found) {
-
+            if (snapshot.empty) {
                 showStatus("Order not found.");
-
+                renderTimeline("Placed");
                 return;
             }
 
+            const orderDoc = snapshot.docs[0];
+            const orderRef = doc(db, "orders", orderDoc.id);
 
-            orderRef = doc(db, "orders", found.id);
+            unsubscribeOrder = onSnapshot(
+                orderRef,
+                (orderSnap) => {
 
-            orderSnap = found;
-        }
-
-
-        const order = orderSnap.data();
-
-
-        // ===============================
-        // SECURITY CHECK
-        // ===============================
-
-        if (order.userId !== currentUser.uid) {
-
-            showStatus(
-                "You can only track your own orders."
-            );
-
-            return;
-        }
-
-
-        // ===============================
-        // ORDER STATUS CHECK
-        // ===============================
-
-        if (order.status !== "Accepted") {
-
-            showStatus(
-                "Live tracking will be available after your order is accepted."
-            );
-
-            return;
-        }
-
-
-        showStatus(
-            "🚚 Live tracking is active."
-        );
-
-
-        // ===============================
-        // LISTEN TO GPS LOCATION
-        // ===============================
-
-        const locationRef =
-    doc(db, "deliveryLocations", orderId);
-
-        unsubscribeLocation =
-            onSnapshot(
-                locationRef,
-                (locationSnap) => {
-
-                    if (!locationSnap.exists()) {
-
-                        showStatus(
-                            "Waiting for delivery person's location..."
-                        );
-
+                    if (!orderSnap.exists()) {
+                        showStatus("Order not found.");
                         return;
                     }
 
+                    const order = orderSnap.data();
 
-                    const location =
-                        locationSnap.data();
-
-
-                    if (
-                        typeof location.latitude !== "number" ||
-                        typeof location.longitude !== "number"
-                    ) {
-
-                        showStatus(
-                            "Waiting for valid GPS location..."
-                        );
-
+                    if (order.userId !== currentUser.uid) {
+                        showStatus("You can only track your own orders.");
                         return;
                     }
 
+                    if (order.status === "Cancelled") {
+                        showStatus("This order has been cancelled.");
+                        renderTimeline("Placed");
+                        return;
+                    }
 
-                    const latitude =
-                        location.latitude;
+                    if (order.status !== "Accepted") {
+                        showStatus("Tracking will be available after your order is accepted.");
+                        renderTimeline("Placed");
+                        return;
+                    }
 
-                    const longitude =
-                        location.longitude;
+                    const trackingStatus =
+                        order.trackingStatus || "Placed";
 
+                    renderTimeline(trackingStatus);
 
-                    // ===============================
-                    // UPDATE MAP
-                    // ===============================
-
-                    const position =
-                        [latitude, longitude];
-
-
-                    if (!marker) {
-
-                        marker =
-                            L.marker(position)
-                                .addTo(map)
-                                .bindPopup(
-                                    "🚚 Delivery Person"
-                                )
-                                .openPopup();
-
+                    if (trackingStatus === "Delivered") {
+                        showStatus("✅ Order delivered successfully.");
+                    } else if (trackingStatus === "Out for Delivery") {
+                        showStatus("🚚 Your order is out for delivery.");
+                    } else if (trackingStatus === "Shipped") {
+                        showStatus("📦 Your order has been shipped.");
                     } else {
-
-                        marker.setLatLng(position);
+                        showStatus("🟢 Your order has been placed and accepted.");
                     }
-
-
-                    map.setView(
-                        position,
-                        16
-                    );
-
-
-                    // ===============================
-                    // LOCATION INFORMATION
-                    // ===============================
-
-                    const info =
-                        document.getElementById(
-                            "locationInfo"
-                        );
-
-
-                    if (info) {
-
-                        let accuracyText = "";
-
-                        if (
-                            typeof location.accuracy ===
-                            "number"
-                        ) {
-
-                            accuracyText =
-                                `<br>GPS Accuracy: approximately ${Math.round(
-                                    location.accuracy
-                                )} meters`;
-                        }
-
-
-                        let updatedText =
-                            "Location updating live";
-
-
-                        if (
-                            location.updatedAt
-                        ) {
-
-                            try {
-
-                                const updatedDate =
-                                    location.updatedAt
-                                        .toDate
-                                        ? location.updatedAt.toDate()
-                                        : new Date(
-                                            location.updatedAt
-                                        );
-
-
-                                updatedText =
-                                    "Last update: " +
-                                    updatedDate.toLocaleTimeString();
-
-                            } catch (error) {
-
-                                updatedText =
-                                    "Location updating live";
-                            }
-                        }
-
-
-                        info.innerHTML =
-                            `
-                            <strong>🚚 Delivery person location</strong>
-                            <br>
-                            Latitude: ${latitude.toFixed(6)}
-                            <br>
-                            Longitude: ${longitude.toFixed(6)}
-                            ${accuracyText}
-                            <br>
-                            ${updatedText}
-                            `;
-                    }
-
-
-                    if (
-                        location.active === false
-                    ) {
-
-                        showStatus(
-                            "Delivery tracking has been stopped."
-                        );
-
-                    } else {
-
-                        showStatus(
-                            "🟢 Delivery location is updating live."
-                        );
-                    }
-
                 },
                 (error) => {
-
-                    console.error(
-                        "Location listener error:",
-                        error
-                    );
-
-
-                    showStatus(
-                        "Unable to receive live delivery location."
-                    );
+                    console.error("Order tracking error:", error);
+                    showStatus("Unable to load tracking status.");
                 }
             );
-
-
-    } catch (error) {
-
-        console.error(
-            "Tracking error:",
-            error
-        );
-
-
-        showStatus(
-            "Unable to start tracking. Please try again."
-        );
-    }
+        })
+        .catch(error => {
+            console.error("Tracking error:", error);
+            showStatus("Unable to start tracking. Please try again.");
+        });
 }
 
 
-// ===============================
-// AUTHENTICATION
-// ===============================
+onAuthStateChanged(auth, async (user) => {
 
-onAuthStateChanged(
-    auth,
-    async (user) => {
+    await authReady;
 
-        await authReady;
+    currentUser = user;
 
-        currentUser = user;
-
-
-        if (!user) {
-
-            showStatus(
-                "Please login to track your order."
-            );
-
-            return;
-        }
-
-
-        showStatus(
-            "Enter your Order ID to start tracking."
-        );
+    if (!user) {
+        showStatus("Please login to track your order.");
+        return;
     }
-);
 
+    const urlOrderId = getOrderIdFromUrl();
+    const input = document.getElementById("orderIdInput");
 
-// ===============================
-// BUTTON
-// ===============================
+    if (urlOrderId && input) {
+        input.value = urlOrderId;
+        trackOrder();
+        return;
+    }
+
+    showStatus("Enter your Order ID to see delivery status.");
+});
+
 
 document
     .getElementById("trackBtn")
-    .addEventListener(
-        "click",
-        trackOrder
-    );
+    .addEventListener("click", trackOrder);
 
-
-// ===============================
-// ENTER KEY
-// ===============================
 
 document
     .getElementById("orderIdInput")
-    .addEventListener(
-        "keydown",
-        (event) => {
-
-            if (event.key === "Enter") {
-
-                trackOrder();
-            }
+    .addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+            trackOrder();
         }
-    );
-
-
-// ===============================
-// START MAP
-// ===============================
-
-initializeMap();
+    });
