@@ -96,6 +96,20 @@ function renderTimeline(status, history = {}) {
     }).join("");
 }
 
+function renderStatusMessage(status) {
+    const box = document.getElementById("statusMessage");
+    if (!box) return;
+
+    const messages = {
+        "Placed": "✅ Order placed successfully.",
+        "Shipped": "📦 Order shipped successfully.",
+        "Out for Delivery": "🚚 Order is out for delivery.",
+        "Delivered": "🎉 Order delivered successfully."
+    };
+
+    box.textContent = messages[status] || "Your order status will appear here.";
+}
+
 function renderLocation(location) {
     const locationText = document.getElementById("locationText");
     const locationUpdated = document.getElementById("locationUpdated");
@@ -176,6 +190,7 @@ async function trackOrder() {
         if (!found) {
             showStatus("Order not found in your account.", "error");
             renderTimeline("Placed");
+            renderStatusMessage("Placed");
             renderLocation(null);
             return;
         }
@@ -200,6 +215,7 @@ async function trackOrder() {
                 if (order.status === "Cancelled") {
                     showStatus("This order has been cancelled.", "error");
                     renderTimeline("Placed", {});
+                    renderStatusMessage("Placed");
                     renderLocation(null);
                     return;
                 }
@@ -210,6 +226,7 @@ async function trackOrder() {
                         "normal"
                     );
                     renderTimeline("Placed", {});
+                    renderStatusMessage("Placed");
                     renderLocation(null);
                     return;
                 }
@@ -222,6 +239,7 @@ async function trackOrder() {
                     trackingStatus,
                     order.trackingHistory || {}
                 );
+                renderStatusMessage(trackingStatus);
 
                 renderLocation(order.trackingLocation);
 
@@ -265,6 +283,7 @@ onAuthStateChanged(auth, user => {
     } else {
         showStatus("Enter your Order ID to see delivery status.", "normal");
         renderTimeline("Placed");
+        renderStatusMessage("Placed");
     }
 });
 
