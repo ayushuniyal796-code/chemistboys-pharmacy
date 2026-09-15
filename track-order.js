@@ -64,12 +64,10 @@ function renderTimeline(status, history = {}) {
     const activeIndex = Math.max(0, STEPS.indexOf(status));
 
     timeline.innerHTML = STEPS.map((step, index) => {
-        const completed =
-            index < activeIndex ||
-            (status === "Delivered" && index === activeIndex);
-
-        const active =
-            index === activeIndex && status !== "Delivered";
+        // The current status is already achieved, so it also gets a tick.
+        // Only future steps remain hollow.
+        const completed = index <= activeIndex;
+        const active = false;
 
         const key = HISTORY_KEYS[step];
         const stamp = formatTime(history[key]);
@@ -94,6 +92,21 @@ function renderTimeline(status, history = {}) {
             </div>
         `;
     }).join("");
+}
+
+function renderStatusMessage(status) {
+    const box = document.getElementById("statusMessage");
+    if (!box) return;
+
+    const messages = {
+        "Placed": "📦 Order placed successfully.",
+        "Shipped": "📦 Order shipped successfully.",
+        "Out for Delivery": "🚚 Order is out for delivery.",
+        "Delivered": "🎉 Order delivered successfully."
+    };
+
+    box.textContent = messages[status] || "";
+    box.style.display = messages[status] ? "block" : "none";
 }
 
 function renderLocation(location, trackingStatus = "Placed") {
@@ -185,6 +198,7 @@ async function trackOrder() {
         if (!found) {
             showStatus("Order not found in your account.", "error");
             renderTimeline("Placed");
+            renderStatusMessage("Placed");
             renderLocation(null, "Placed");
             return;
         }
@@ -209,6 +223,7 @@ async function trackOrder() {
                 if (order.status === "Cancelled") {
                     showStatus("This order has been cancelled.", "error");
                     renderTimeline("Placed", {});
+                    renderStatusMessage("Placed");
                     renderLocation(null, "Placed");
                     return;
                 }
@@ -219,6 +234,7 @@ async function trackOrder() {
                         "normal"
                     );
                     renderTimeline("Placed", {});
+                    renderStatusMessage("Placed");
                     renderLocation(null);
                     return;
                 }
@@ -231,6 +247,7 @@ async function trackOrder() {
                     trackingStatus,
                     order.trackingHistory || {}
                 );
+                renderStatusMessage(trackingStatus);
 
                 renderLocation(order.trackingLocation, trackingStatus);
 
@@ -274,6 +291,7 @@ onAuthStateChanged(auth, user => {
     } else {
         showStatus("Enter your Order ID to see delivery status.", "normal");
         renderTimeline("Placed");
+        renderStatusMessage("Placed");
     }
 });
 
