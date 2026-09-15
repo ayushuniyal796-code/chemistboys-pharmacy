@@ -109,11 +109,17 @@ function renderStatusMessage(status) {
     box.textContent = messages[status] || "Your order status will appear here.";
 }
 
-function renderLocation(location) {
+function renderLocation(location, delivered = false) {
+    const section = document.getElementById("deliveryLocationSection");
     const locationText = document.getElementById("locationText");
     const locationUpdated = document.getElementById("locationUpdated");
 
     if (!locationText || !locationUpdated) return;
+
+    // Once the order is delivered, do not show the delivery person's
+    // current/last location to the customer anymore.
+    if (section) section.style.display = delivered ? "none" : "";
+    if (delivered) return;
 
     // Customer gets ONLY the written location name/address.
     // Latitude/longitude are intentionally never rendered here.
@@ -240,7 +246,7 @@ async function trackOrder() {
                 );
                 renderStatusMessage(trackingStatus);
 
-                renderLocation(order.trackingLocation);
+                renderLocation(order.trackingLocation, trackingStatus === "Delivered");
 
                 if (trackingStatus === "Delivered") {
                     showStatus("✅ Your order has been delivered successfully.", "success");
