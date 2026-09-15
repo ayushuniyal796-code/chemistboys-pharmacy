@@ -64,29 +64,28 @@ function renderTimeline(status, history = {}) {
     const activeIndex = Math.max(0, STEPS.indexOf(status));
 
     timeline.innerHTML = STEPS.map((step, index) => {
-        const completed =
-            index < activeIndex ||
-            (status === "Delivered" && index === activeIndex);
+        // The current status is already achieved, so it should also show a tick.
+        // Only future statuses remain as hollow/waiting steps.
+        const completed = index <= activeIndex;
 
-        const active =
-            index === activeIndex && status !== "Delivered";
+        const active = false;
 
         const key = HISTORY_KEYS[step];
         const stamp = formatTime(history[key]);
 
         let label;
 
-        if (completed) {
-            label = stamp ? `Completed • ${stamp}` : "Completed";
-        } else if (active) {
+        if (index === activeIndex) {
             label = stamp ? `Current status • ${stamp}` : "Current status";
+        } else if (completed) {
+            label = stamp ? `Completed • ${stamp}` : "Completed";
         } else {
             label = "Waiting";
         }
 
         return `
             <div class="step ${completed ? "completed" : ""} ${active ? "active" : ""}">
-                <div class="dot">${completed ? "✓" : active ? "•" : "○"}</div>
+                <div class="dot">${completed ? "✓" : "○"}</div>
                 <div class="content">
                     <strong>${step}</strong>
                     <small>${label}</small>
