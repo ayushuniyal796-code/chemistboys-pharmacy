@@ -731,7 +731,10 @@ if (checkoutForm) {
                     now.toISOString(),
 
                 status:
-                    "Processing"
+                    "Processing",
+
+                trackingStatus:
+                    "Placed"
 
                 // IMPORTANT:
                 // deliveryDate is NOT created here.
