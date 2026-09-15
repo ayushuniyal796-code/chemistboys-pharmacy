@@ -25,10 +25,14 @@ let currentUser = null;
 let unsubscribeOrder = null;
 
 function showStatus(text, type = "normal") {
-    const box = document.getElementById("trackingStatus");
+    // The top status banner is intentionally removed.
+    // Keep errors visible in the existing message area below the timeline.
+    if (type !== "error") return;
+
+    const box = document.getElementById("statusMessage");
     if (!box) return;
     box.textContent = text;
-    box.className = `status-box ${type}`;
+    box.style.display = "block";
 }
 
 function getOrderIdFromUrl() {
