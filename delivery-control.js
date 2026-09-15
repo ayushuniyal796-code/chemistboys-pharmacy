@@ -30,22 +30,6 @@ let currentOrderId = null;
 let currentOrderRef = null;
 let isAdmin = false;
 
-function isDelivered(data) {
-    return data?.trackingStatus === "Delivered" || data?.status === "Delivered";
-}
-
-function applyDeliveryLock(status) {
-    const delivered = status === "Delivered";
-    startBtn.disabled = delivered;
-    saveStatusBtn.disabled = false;
-    if (delivered) {
-        startBtn.textContent = "🔒 Location Sharing Disabled (Delivered)";
-        statusNote.textContent = "Status: Delivered • Live location sharing is disabled.";
-    } else {
-        startBtn.textContent = "📍 Start Live Location";
-    }
-}
-
 await authReady;
 
 onAuthStateChanged(auth, user => {
@@ -74,6 +58,21 @@ function historyKey(status) {
         "Out for Delivery": "outForDeliveryAt",
         "Delivered": "deliveredAt"
     }[status];
+}
+
+function statusIndex(status) {
+    return STEPS.indexOf(status);
+}
+
+function applyStatusLock(status) {
+    const isDelivered = status === "Delivered";
+    trackingStatus.disabled = isDelivered;
+    saveStatusBtn.disabled = isDelivered;
+    startBtn.disabled = isDelivered;
+    if (isDelivered && watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+    }
 }
 
 async function findOrder() {
@@ -162,32 +161,34 @@ async function saveStatus() {
             throw new Error("Accept the order first before changing delivery status.");
         }
 
+        const current = STEPS.includes(data.trackingStatus)
+            ? data.trackingStatus
+            : "Placed";
         const selected = trackingStatus.value;
-        const key = historyKey(selected);
 
-        // Delivered is terminal: stop GPS sharing and mark the location inactive.
-        if (selected === "Delivered" && watchId !== null) {
-            navigator.geolocation.clearWatch(watchId);
-            watchId = null;
+        if (current === "Delivered") {
+            throw new Error("This order is already Delivered and cannot be moved back.");
         }
 
-        const orderUpdates = {
+        if (statusIndex(selected) < statusIndex(current)) {
+            throw new Error(`Cannot move an order backward from ${current} to ${selected}.`);
+        }
+
+        const key = historyKey(selected);
+
+        await updateDoc(ref, {
             trackingStatus: selected,
             ...(key ? {
                 [`trackingHistory.${key}`]: serverTimestamp()
+            } : {}),
+            ...(selected === "Delivered" ? {
+                "trackingLocation.active": false
             } : {})
-        };
-
-        if (selected === "Delivered") {
-            orderUpdates["trackingLocation.active"] = false;
-            orderUpdates["trackingLocation.updatedAt"] = serverTimestamp();
-        }
-
-        await updateDoc(ref, orderUpdates);
+        });
 
         if (selected === "Delivered") {
             await setDoc(
-                doc(db, "deliveryLocations", orderIdInput.value.trim()),
+                doc(db, "deliveryLocations", currentOrderId || orderIdInput.value.trim()),
                 { active: false, updatedAt: serverTimestamp() },
                 { merge: true }
             );
@@ -197,10 +198,8 @@ async function saveStatus() {
         currentOrderRef = ref;
 
         setMessage(`✓ Delivery status saved: ${selected}`, "success");
-        applyDeliveryLock(selected);
-        statusNote.textContent = selected === "Delivered"
-            ? "Customer's Track Order page will hide delivery location."
-            : "Customer's Track Order page will update automatically.";
+        statusNote.textContent =
+            "Customer's Track Order page will update automatically.";
     } catch (error) {
         console.error(error);
         setMessage(error.message || "Unable to update status.", "error");
@@ -218,8 +217,10 @@ async function loadCurrentOrder() {
             : "Placed";
 
         trackingStatus.value = status;
-        applyDeliveryLock(status);
-        statusNote.textContent = `Current delivery status: ${status}`;
+        applyStatusLock(status);
+        statusNote.textContent = status === "Delivered"
+            ? "Status: Delivered • Tracking is permanently locked."
+            : `Current delivery status: ${status}`;
 
         const location = data.trackingLocation;
 
@@ -246,22 +247,22 @@ async function startTracking() {
         return;
     }
 
+    if (!navigator.geolocation) {
+        setMessage("GPS is not supported on this device.", "error");
+        return;
+    }
+
     try {
         const { ref, data } = await findOrder();
 
-        if (isDelivered(data)) {
-            applyDeliveryLock("Delivered");
-            setMessage("🔒 Order is delivered. Live location sharing is disabled.", "normal");
-            return;
-        }
-
-        if (!navigator.geolocation) {
-            setMessage("GPS is not supported on this device.", "error");
-            return;
-        }
-
         if (data.status !== "Accepted") {
             setMessage("Accept the order first before sharing delivery location.", "error");
+            return;
+        }
+
+        if (data.trackingStatus === "Delivered") {
+            applyStatusLock("Delivered");
+            setMessage("🔒 This order is already Delivered. Location sharing is locked.", "error");
             return;
         }
 

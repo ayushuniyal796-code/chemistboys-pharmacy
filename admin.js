@@ -1516,6 +1516,10 @@ function renderOrders() {
    RENDER SINGLE ORDER
    ========================================================= */
 
+function trackingStatusIndex(status) {
+    return ["Placed", "Shipped", "Out for Delivery", "Delivered"].indexOf(status);
+}
+
 function renderOrder(order) {
 
     const status =
@@ -1572,6 +1576,8 @@ function renderOrder(order) {
                     <select
                         class="tracking-status-select"
                         data-id="${escapeHTML(order.firestoreId)}"
+                        data-current-status="${escapeHTML(trackingStatus)}"
+                        ${trackingStatus === "Delivered" ? "disabled" : ""}
                     >
                         <option value="Placed" ${trackingStatus === "Placed" ? "selected" : ""}>Placed</option>
                         <option value="Shipped" ${trackingStatus === "Shipped" ? "selected" : ""}>Shipped</option>
@@ -1928,6 +1934,22 @@ function attachOrderButtons() {
                     const trackingStatus =
                         select.value;
 
+                    const currentSelectStatus = select.dataset.currentStatus ||
+                        select.querySelector("option[selected]")?.value ||
+                        "Placed";
+
+                    if (currentSelectStatus === "Delivered") {
+                        select.value = "Delivered";
+                        select.disabled = true;
+                        return;
+                    }
+
+                    if (trackingStatusIndex(trackingStatus) < trackingStatusIndex(currentSelectStatus)) {
+                        alert(`Cannot move an order backward from ${currentSelectStatus} to ${trackingStatus}.`);
+                        select.value = currentSelectStatus;
+                        return;
+                    }
+
                     try {
 
                         select.disabled = true;
@@ -1945,9 +1967,18 @@ function attachOrderButtons() {
                                 trackingStatus: trackingStatus,
                                 ...(historyKey ? {
                                     [`trackingHistory.${historyKey}`]: new Date()
+                                } : {}),
+                                ...(trackingStatus === "Delivered" ? {
+                                    "trackingLocation.active": false
                                 } : {})
                             }
                         );
+
+                        select.dataset.currentStatus = trackingStatus;
+
+                        if (trackingStatus === "Delivered") {
+                            select.disabled = true;
+                        }
 
                     } catch (error) {
 
@@ -1962,7 +1993,11 @@ function attachOrderButtons() {
 
                     } finally {
 
-                        select.disabled = false;
+                        if (select.dataset.currentStatus === "Delivered") {
+                            select.disabled = true;
+                        } else {
+                            select.disabled = false;
+                        }
                     }
                 }
             );
