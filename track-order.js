@@ -64,27 +64,19 @@ function renderTimeline(status, history = {}) {
     const activeIndex = Math.max(0, STEPS.indexOf(status));
 
     timeline.innerHTML = STEPS.map((step, index) => {
-        // The current status is already achieved, so it also gets a tick.
-        // Only future steps remain hollow.
+        // The current status is already achieved, so it gets a tick too.
+        // Only steps after the current status remain hollow.
         const completed = index <= activeIndex;
-        const active = false;
 
         const key = HISTORY_KEYS[step];
         const stamp = formatTime(history[key]);
-
-        let label;
-
-        if (completed) {
-            label = stamp ? `Completed • ${stamp}` : "Completed";
-        } else if (active) {
-            label = stamp ? `Current status • ${stamp}` : "Current status";
-        } else {
-            label = "Waiting";
-        }
+        const label = completed
+            ? (stamp ? `Completed • ${stamp}` : "Completed")
+            : "Waiting";
 
         return `
-            <div class="step ${completed ? "completed" : ""} ${active ? "active" : ""}">
-                <div class="dot">${completed ? "✓" : active ? "•" : "○"}</div>
+            <div class="step ${completed ? "completed" : ""}">
+                <div class="dot">${completed ? "✓" : "○"}</div>
                 <div class="content">
                     <strong>${step}</strong>
                     <small>${label}</small>
@@ -105,8 +97,9 @@ function renderStatusMessage(status) {
         "Delivered": "🎉 Order delivered successfully."
     };
 
-    box.textContent = messages[status] || "";
-    box.style.display = messages[status] ? "block" : "none";
+    const message = messages[status];
+    box.textContent = message || "";
+    box.style.display = message ? "block" : "none";
 }
 
 function renderLocation(location, trackingStatus = "Placed") {
@@ -117,7 +110,7 @@ function renderLocation(location, trackingStatus = "Placed") {
     if (!locationText || !locationUpdated) return;
 
     // Once the order is delivered, never show the delivery person's location.
-    if (trackingStatus === "Delivered") {
+    if (String(trackingStatus).trim().toLowerCase() === "delivered") {
         if (locationCard) locationCard.style.display = "none";
         return;
     }
@@ -198,7 +191,6 @@ async function trackOrder() {
         if (!found) {
             showStatus("Order not found in your account.", "error");
             renderTimeline("Placed");
-            renderStatusMessage("Placed");
             renderLocation(null, "Placed");
             return;
         }
@@ -251,7 +243,7 @@ async function trackOrder() {
 
                 renderLocation(order.trackingLocation, trackingStatus);
 
-                if (trackingStatus === "Delivered") {
+                if (String(trackingStatus).trim().toLowerCase() === "delivered") {
                     showStatus("✅ Your order has been delivered successfully.", "success");
                 } else if (trackingStatus === "Out for Delivery") {
                     showStatus("🚚 Your order is out for delivery.", "success");
